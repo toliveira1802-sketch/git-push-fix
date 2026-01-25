@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  mustChangePassword: boolean;
+  setMustChangePassword: (value: boolean) => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string, phone: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -18,6 +20,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -26,6 +29,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Check if user needs to change password (deferred to avoid deadlock)
+        if (session?.user) {
+          setTimeout(() => {
+            checkMustChangePassword(session.user.id);
+          }, 0);
+        } else {
+          setMustChangePassword(false);
+        }
       }
     );
 
@@ -34,10 +46,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      if (session?.user) {
+        checkMustChangePassword(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkMustChangePassword = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('must_change_password')
+        .eq('user_id', userId)
+        .single();
+      
+      if (!error && data) {
+        setMustChangePassword(data.must_change_password === true);
+      }
+    } catch (err) {
+      console.error('Error checking must_change_password:', err);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -78,10 +110,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    setMustChangePassword(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      mustChangePassword, 
+      setMustChangePassword,
+      signIn, 
+      signUp, 
+      signInWithGoogle, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

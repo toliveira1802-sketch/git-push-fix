@@ -32,10 +32,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Loader2 } from "lucide-react";
 import TikTokIcon from "@/components/icons/TikTokIcon";
+import ForcePasswordChange from "@/components/auth/ForcePasswordChange";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, mustChangePassword, setMustChangePassword } = useAuth();
   const { canAccessAdmin, canAccessGestao, isLoading: roleLoading } = useUserRole();
   const [userName, setUserName] = useState("...");
   const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
@@ -97,6 +98,15 @@ const Index = () => {
 
   if (!user) {
     return null;
+  }
+
+  // Show password change screen if required
+  if (mustChangePassword) {
+    return (
+      <ForcePasswordChange 
+        onSuccess={() => setMustChangePassword(false)} 
+      />
+    );
   }
 
   return (

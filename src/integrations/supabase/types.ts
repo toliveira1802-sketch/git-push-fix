@@ -326,6 +326,7 @@ export type Database = {
           id: string
           loyalty_level: string
           loyalty_points: number
+          must_change_password: boolean
           phone: string | null
           updated_at: string
           user_id: string
@@ -338,6 +339,7 @@ export type Database = {
           id?: string
           loyalty_level?: string
           loyalty_points?: number
+          must_change_password?: boolean
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -350,6 +352,7 @@ export type Database = {
           id?: string
           loyalty_level?: string
           loyalty_points?: number
+          must_change_password?: boolean
           phone?: string | null
           updated_at?: string
           user_id?: string
