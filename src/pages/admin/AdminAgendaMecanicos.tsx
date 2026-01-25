@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   CalendarIcon, Plus, RefreshCw, Check, 
-  ChevronLeft, ChevronRight, Car, CalendarCheck, Save, Star, Search
+  ChevronLeft, ChevronRight, Car, CalendarCheck, Star, MessageSquare, AlertTriangle
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, addDays, subDays } from "date-fns";
@@ -535,9 +536,11 @@ export default function AdminAgendaMecanicos() {
               Atualizar
             </Button>
 
-            <Button variant="default" onClick={saveSnapshot} className="gap-2">
-              <Save className="w-4 h-4" />
-              Salvar Retrato
+            <Button variant="default" asChild className="gap-2">
+              <Link to="/admin/feedback-mecanicos">
+                <MessageSquare className="w-4 h-4" />
+                Feedback Diário
+              </Link>
             </Button>
           </div>
         </div>
@@ -688,53 +691,89 @@ export default function AdminAgendaMecanicos() {
           </div>
         </div>
 
-        {/* Veículos no Pátio */}
+        {/* Veículos no Pátio - Lista FIFO */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Car className="w-5 h-5 text-primary" />
-              Veículos no Pátio ({patioVehicles.length})
+              Aguardando Alocação ({patioVehicles.filter(v => !Object.values(schedule).some(s => Object.values(s).some(slot => slot.serviceOrderId === v.id))).length})
               <span className="text-xs text-muted-foreground font-normal ml-2">
-                Clique para atribuir a um slot
+                Ordem FIFO • Clique para atribuir
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[200px]">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                {patioVehicles.map(v => (
-                  <div
-                    key={v.id}
-                    className="p-2 rounded-lg border bg-card hover:border-primary hover:shadow-sm transition-all cursor-pointer"
-                    onClick={() => {
-                      // Encontrar primeiro slot vazio do primeiro mecânico
-                      if (mechanics.length > 0) {
-                        const m = mechanics[0];
-                        const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
-                        const horaVazia = allHoras.find(h => !schedule[m.id]?.[h]);
-                        if (horaVazia) {
-                          setEditingCell({ mechanicId: m.id, hora: horaVazia });
-                          setInputValue(v.plate);
-                        }
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-primary shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-mono font-bold text-xs">{v.plate}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{v.brand} {v.model}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{v.clientName}</p>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[280px]">
+              <div className="divide-y">
+                {patioVehicles
+                  .filter(v => !Object.values(schedule).some(s => Object.values(s).some(slot => slot.serviceOrderId === v.id)))
+                  .map((v, index) => {
+                    // Definir criticidade: primeiros 3 são críticos
+                    const isCritical = index < 3;
+                    const isUrgent = index < 5 && !isCritical;
+                    
+                    return (
+                      <div
+                        key={v.id}
+                        className={cn(
+                          "flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-all",
+                          isCritical && "bg-red-500/5 border-l-4 border-l-red-500",
+                          isUrgent && "bg-amber-500/5 border-l-4 border-l-amber-500"
+                        )}
+                        onClick={() => {
+                          if (mechanics.length > 0) {
+                            const m = mechanics[0];
+                            const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
+                            const horaVazia = allHoras.find(h => !schedule[m.id]?.[h]);
+                            if (horaVazia) {
+                              setEditingCell({ mechanicId: m.id, hora: horaVazia });
+                              setInputValue(v.plate);
+                            }
+                          }
+                        }}
+                      >
+                        {/* Posição FIFO */}
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                          isCritical ? "bg-red-500 text-white" : isUrgent ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+                        )}>
+                          {index + 1}
+                        </div>
+
+                        {/* Indicador crítico */}
+                        {isCritical && (
+                          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                        )}
+
+                        {/* Info do veículo */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-mono font-bold text-sm">{v.plate}</p>
+                            <Badge variant="outline" className="text-[9px]">
+                              {v.osNumber}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {v.brand} {v.model} • {v.clientName}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {v.servico}
+                          </p>
+                        </div>
+
+                        {/* Status */}
+                        <Badge 
+                          variant={isCritical ? "destructive" : isUrgent ? "secondary" : "outline"} 
+                          className="shrink-0 text-[10px]"
+                        >
+                          {v.status}
+                        </Badge>
                       </div>
-                    </div>
-                    <Badge variant="outline" className="text-[9px] mt-1">
-                      {v.status}
-                    </Badge>
-                  </div>
-                ))}
-                {patioVehicles.length === 0 && (
-                  <p className="text-sm text-muted-foreground col-span-full text-center py-4">
-                    Nenhum veículo no pátio
+                    );
+                  })}
+                {patioVehicles.filter(v => !Object.values(schedule).some(s => Object.values(s).some(slot => slot.serviceOrderId === v.id))).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Todos os veículos estão alocados
                   </p>
                 )}
               </div>
