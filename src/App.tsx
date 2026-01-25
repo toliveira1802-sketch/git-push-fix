@@ -24,7 +24,7 @@ import NotFound from "./pages/NotFound";
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import OrdensServico from "./pages/admin/OrdensServico";
-import NovaOS from "./pages/admin/NovaOS";
+
 import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
@@ -87,7 +87,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/pendencias" element={<Pendencias />} />
                 <Route path="/admin/ordens-servico" element={<OrdensServico />} />
-                <Route path="/admin/nova-os" element={<NovaOS />} />
+                <Route path="/admin/os/nova" element={<AdminOSDetalhes />} />
                 <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} />
                 <Route path="/admin/clientes" element={<Clientes />} />
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
