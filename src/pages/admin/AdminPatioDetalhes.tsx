@@ -302,7 +302,7 @@ const AdminPatioDetalhes = () => {
           <div className="flex items-center gap-3">
             <Button 
               className="gradient-primary"
-              onClick={() => navigate(`/admin/ordens-servico/new?patioId=${patio.id}`)}
+              onClick={() => navigate(`/admin/os/nova`)}
             >
               <Wrench className="w-4 h-4 mr-2" />
               Abrir OS
