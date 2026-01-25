@@ -300,13 +300,6 @@ const AdminPatioDetalhes = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              className="gradient-primary"
-              onClick={() => navigate(`/admin/os/nova`)}
-            >
-              <Wrench className="w-4 h-4 mr-2" />
-              Abrir OS
-            </Button>
             <div className={cn(
               "px-4 py-2 rounded-full text-sm font-medium border",
               statusConfig[currentStatus].color
