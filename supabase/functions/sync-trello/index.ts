@@ -132,6 +132,9 @@ const customFieldMapping: Record<string, keyof ExtractedCardData> = {
   'price': 'total',
   'orcamento': 'total',
   'orçamento': 'total',
+  'valor aprovado': 'total',
+  'valor apv': 'total',
+  'aprovado': 'total',
   
   // KM
   'km': 'km',
@@ -547,11 +550,46 @@ Deno.serve(async (req) => {
           if (updateError) {
             results.errors.push(`Atualizar OS ${existingOS.id}: ${updateError.message}`);
           } else {
+            // Atualizar ou criar item padrão com o valor se existir
+            if (extractedData.total && extractedData.total > 0) {
+              // Verificar se já existe item padrão
+              const { data: existingItem } = await supabase
+                .from('service_order_items')
+                .select('id')
+                .eq('service_order_id', existingOS.id)
+                .eq('description', 'Serviço (Trello)')
+                .maybeSingle();
+              
+              if (existingItem) {
+                // Atualizar item existente
+                await supabase
+                  .from('service_order_items')
+                  .update({
+                    unit_price: extractedData.total,
+                    total_price: extractedData.total,
+                    status: 'aprovado',
+                  })
+                  .eq('id', existingItem.id);
+              } else {
+                // Criar item padrão
+                await supabase
+                  .from('service_order_items')
+                  .insert({
+                    service_order_id: existingOS.id,
+                    type: 'servico',
+                    description: 'Serviço (Trello)',
+                    quantity: 1,
+                    unit_price: extractedData.total,
+                    total_price: extractedData.total,
+                    status: 'aprovado',
+                  });
+              }
+            }
             results.updated++;
           }
         } else {
           // Criar nova OS
-          const { error: osError } = await supabase
+          const { data: newOS, error: osError } = await supabase
             .from('service_orders')
             .insert({
               client_id: clientId,
@@ -563,12 +601,28 @@ Deno.serve(async (req) => {
               observations: extractedData.observations,
               entry_km: extractedData.km,
               completed_at: status === 'entregue' ? new Date().toISOString() : null,
-            });
+            })
+            .select('id')
+            .single();
 
           if (osError) {
             console.error(`Erro ao criar OS para ${extractedData.plate}:`, osError);
             results.errors.push(`OS ${extractedData.plate}: ${osError.message}`);
           } else {
+            // Criar item padrão com o valor se existir
+            if (newOS && extractedData.total && extractedData.total > 0) {
+              await supabase
+                .from('service_order_items')
+                .insert({
+                  service_order_id: newOS.id,
+                  type: 'servico',
+                  description: 'Serviço (Trello)',
+                  quantity: 1,
+                  unit_price: extractedData.total,
+                  total_price: extractedData.total,
+                  status: 'aprovado',
+                });
+            }
             results.created++;
           }
         }
