@@ -201,11 +201,11 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="bg-[#111] border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center text-white">
             <Car className="w-6 h-6" />
           </div>
           <h1 className="text-lg font-bold">Doctor Auto Prime</h1>
@@ -213,7 +213,7 @@ const Index = () => {
 
         {/* Navigation Tabs - Only show if user has access to other modules */}
         {(canAccessAdmin || canAccessGestao) && (
-          <div className="flex items-center gap-1 bg-[#1a1a1a] rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant="ghost"
               size="sm"
@@ -226,7 +226,7 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-white hover:bg-[#252525]"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent"
                 onClick={() => navigate("/admin")}
               >
                 <Settings className="w-4 h-4 mr-1" />
@@ -237,7 +237,7 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-white hover:bg-[#252525]"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent"
                 onClick={() => navigate("/gestao")}
               >
                 <TrendingUp className="w-4 h-4 mr-1" />
@@ -267,52 +267,52 @@ const Index = () => {
         </div>
 
         {/* Visão do Dia */}
-        <Card className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border-gray-800 p-4 mb-4">
+        <Card className="bg-card border-border p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <Sun className="w-5 h-5 text-yellow-500" />
             <h3 className="font-semibold">Visão do Dia</h3>
-            <span className="text-sm text-gray-400 ml-auto">
+            <span className="text-sm text-muted-foreground ml-auto">
               {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </span>
           </div>
           
           <div className="flex items-center gap-2 mb-4 text-sm">
-            <Clock className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-400">Funcionamento:</span>
-            <Badge variant="outline" className="border-gray-700 text-gray-300">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Funcionamento:</span>
+            <Badge variant="outline">
               {visaoDia.horarioFuncionamento}
             </Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+            <div className="bg-muted rounded-lg p-3 border border-border">
               <div className="flex items-center gap-2 mb-1">
-                <Car className="w-4 h-4 text-blue-400" />
-                <span className="text-xs text-gray-400">No Pátio</span>
+                <Car className="w-4 h-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">No Pátio</span>
               </div>
               <p className="text-2xl font-bold">{visaoDia.veiculosPatio}</p>
             </div>
 
-            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+            <div className="bg-muted rounded-lg p-3 border border-border">
               <div className="flex items-center gap-2 mb-1">
-                <Wrench className="w-4 h-4 text-orange-400" />
-                <span className="text-xs text-gray-400">Em Andamento</span>
+                <Wrench className="w-4 h-4 text-orange-500" />
+                <span className="text-xs text-muted-foreground">Em Andamento</span>
               </div>
               <p className="text-2xl font-bold">{visaoDia.osEmAndamento}</p>
             </div>
 
-            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+            <div className="bg-muted rounded-lg p-3 border border-border">
               <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
-                <span className="text-xs text-gray-400">Entregas Hoje</span>
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-muted-foreground">Entregas Hoje</span>
               </div>
               <p className="text-2xl font-bold">{visaoDia.entregasHoje}</p>
             </div>
 
-            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+            <div className="bg-muted rounded-lg p-3 border border-border">
               <div className="flex items-center gap-2 mb-1">
-                <Calendar className="w-4 h-4 text-purple-400" />
-                <span className="text-xs text-gray-400">Agendamentos</span>
+                <Calendar className="w-4 h-4 text-purple-500" />
+                <span className="text-xs text-muted-foreground">Agendamentos</span>
               </div>
               <p className="text-2xl font-bold">{visaoDia.agendamentosHoje}</p>
             </div>
@@ -321,7 +321,7 @@ const Index = () => {
 
         {/* Meus Veículos - Modal */}
         <Card
-          className="bg-[#111] border-gray-800 p-4 mb-4 cursor-pointer hover:bg-[#151515] transition-colors"
+          className="bg-card border-border p-4 mb-4 cursor-pointer hover:bg-accent transition-colors"
           onClick={() => setVeiculosModalOpen(true)}
         >
           <div className="flex items-center justify-between">
@@ -334,18 +334,18 @@ const Index = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">MEUS VEÍCULOS</h3>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {veiculosMock.length} veículo{veiculosMock.length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>
         </Card>
 
         {/* Modal de Veículos */}
         <Dialog open={veiculosModalOpen} onOpenChange={setVeiculosModalOpen}>
-          <DialogContent className="max-w-[90%] rounded-xl bg-[#111] border-gray-800 text-white">
+          <DialogContent className="max-w-[90%] rounded-xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Car className="w-5 h-5 text-red-500" />
@@ -359,13 +359,13 @@ const Index = () => {
                   className={`p-3 rounded-lg border ${
                     veiculo.emServico 
                       ? "bg-red-600/10 border-red-500/30" 
-                      : "bg-[#1a1a1a] border-gray-700"
+                      : "bg-muted border-border"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">{veiculo.marca} {veiculo.modelo}</p>
-                      <p className="text-sm text-gray-400 font-mono">{veiculo.placa}</p>
+                      <p className="text-sm text-muted-foreground font-mono">{veiculo.placa}</p>
                     </div>
                     {veiculo.emServico && (
                       <Badge className="bg-red-600 text-white text-xs">
@@ -380,7 +380,7 @@ const Index = () => {
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 
-                  className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                  className="flex-1"
                   onClick={() => {
                     setVeiculosModalOpen(false);
                     navigate("/veiculos");
@@ -389,7 +389,7 @@ const Index = () => {
                   Ver todos
                 </Button>
                 <Button 
-                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => {
                     setVeiculosModalOpen(false);
                     navigate("/veiculos");
@@ -417,7 +417,7 @@ const Index = () => {
           
           return (
             <Card
-              className="bg-[#111] border-gray-800 p-4 mb-4 cursor-pointer hover:bg-[#151515] transition-colors"
+              className="bg-card border-border p-4 mb-4 cursor-pointer hover:bg-accent transition-colors"
               onClick={() => navigate(destino)}
             >
               <div className="flex items-center justify-between">
@@ -430,10 +430,10 @@ const Index = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg">Lembretes e Avisos</h3>
-                    <p className="text-sm text-gray-400">{descricao}</p>
+                    <p className="text-sm text-muted-foreground">{descricao}</p>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
             </Card>
           );
@@ -441,7 +441,7 @@ const Index = () => {
 
         {/* Promoções */}
         <Card
-          className="bg-[#111] border-gray-800 p-4 mb-6 cursor-pointer hover:bg-[#151515] transition-colors"
+          className="bg-card border-border p-4 mb-6 cursor-pointer hover:bg-accent transition-colors"
           onClick={() => navigate("/blog")}
         >
           <div className="flex items-center justify-between">
@@ -451,10 +451,10 @@ const Index = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Promoções</h3>
-                <p className="text-sm text-gray-400">Aguarde novidades</p>
+                <p className="text-sm text-muted-foreground">Aguarde novidades</p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>
         </Card>
 
@@ -462,7 +462,7 @@ const Index = () => {
         <div className="grid grid-cols-4 gap-3">
           <button
             onClick={() => handleSocialClick("instagram")}
-            className="relative bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform"
+            className="relative bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform text-white"
           >
             <Instagram className="w-8 h-8" />
             <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full" />
@@ -470,7 +470,7 @@ const Index = () => {
 
           <button
             onClick={() => handleSocialClick("youtube")}
-            className="relative bg-red-600 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform"
+            className="relative bg-red-600 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform text-white"
           >
             <Youtube className="w-8 h-8" />
             <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full" />
@@ -478,7 +478,7 @@ const Index = () => {
 
           <button
             onClick={() => handleSocialClick("tiktok")}
-            className="relative bg-gradient-to-br from-cyan-500 to-pink-500 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform"
+            className="relative bg-gradient-to-br from-cyan-500 to-pink-500 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform text-white"
           >
             <TikTokIcon size={32} />
             <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full" />
@@ -486,7 +486,7 @@ const Index = () => {
 
           <button
             onClick={() => handleSocialClick("blog")}
-            className="relative bg-orange-600 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform"
+            className="relative bg-orange-600 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform text-white"
           >
             <BookOpen className="w-8 h-8" />
             <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full" />
@@ -495,7 +495,7 @@ const Index = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#111] border-t border-gray-800 px-4 py-3">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3">
         <div className="max-w-2xl mx-auto grid grid-cols-4 gap-2">
           <Button
             variant="ghost"
@@ -507,7 +507,7 @@ const Index = () => {
 
           <Button
             variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-2 text-gray-400"
+            className="flex flex-col items-center gap-1 h-auto py-2 text-muted-foreground"
             onClick={() => navigate("/agenda")}
           >
             <Calendar className="w-5 h-5" />
@@ -516,7 +516,7 @@ const Index = () => {
 
           <Button
             variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-2 text-gray-400"
+            className="flex flex-col items-center gap-1 h-auto py-2 text-muted-foreground"
             onClick={() => navigate("/historico")}
           >
             <History className="w-5 h-5" />
@@ -525,7 +525,7 @@ const Index = () => {
 
           <Button
             variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-2 text-gray-400"
+            className="flex flex-col items-center gap-1 h-auto py-2 text-muted-foreground"
             onClick={() => navigate("/performance")}
           >
             <TrendingUp className="w-5 h-5" />
