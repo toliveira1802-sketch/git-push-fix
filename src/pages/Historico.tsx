@@ -1,17 +1,52 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, Wrench, CheckCircle2, XCircle, Clock, Loader2, Home } from "lucide-react";
+import { ChevronDown, ChevronUp, Wrench, CheckCircle2, XCircle, Clock, Loader2, Home, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
-import { useClientData } from "@/hooks/useClientData";
+import { useClientData, type ClientServiceHistory } from "@/hooks/useClientData";
+import { OSResumoDialog, type OSResumoData } from "@/components/veiculos/OSResumoDialog";
 
 export default function Historico() {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { serviceHistory, loading } = useClientData();
+  const [osResumoOpen, setOsResumoOpen] = useState(false);
+  const [selectedOSResumo, setSelectedOSResumo] = useState<OSResumoData | null>(null);
+
+  const handleVerOS = (item: ClientServiceHistory) => {
+    const itensAprovados = item.items.filter(i => i.status === 'aprovado');
+    const itensPendentes = item.items.filter(i => i.status === 'pendente' || i.status === 'orcamento');
+    const itensRecusados = item.items.filter(i => i.status === 'recusado');
+    
+    const resumo: OSResumoData = {
+      osNumero: item.order_number,
+      veiculo: {
+        placa: item.vehicle_plate,
+        modelo: `${item.vehicle_brand} ${item.vehicle_model}`,
+      },
+      servico: item.problem_description || 'Serviço realizado',
+      entrada: new Date(item.order_date).toLocaleDateString('pt-BR'),
+      previsaoSaida: item.completed_at ? new Date(item.completed_at).toLocaleDateString('pt-BR') : '-',
+      itens: item.items.map(i => ({
+        id: i.id,
+        descricao: i.description,
+        tipo: i.type as 'peca' | 'servico',
+        valor: i.unit_price,
+        quantidade: i.quantity || 1,
+        status: (i.status === 'aprovado' ? 'aprovado' : 
+                i.status === 'recusado' ? 'recusado' : 'pendente') as 'aprovado' | 'recusado' | 'pendente',
+      })),
+      totalAprovado: itensAprovados.reduce((sum, i) => sum + (i.total_price || 0), 0),
+      totalPendente: itensPendentes.reduce((sum, i) => sum + (i.total_price || 0), 0),
+      totalRecusado: itensRecusados.reduce((sum, i) => sum + (i.total_price || 0), 0),
+    };
+    
+    setSelectedOSResumo(resumo);
+    setOsResumoOpen(true);
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -211,6 +246,20 @@ export default function Historico() {
                           )}
                         </div>
                       )}
+                      
+                      {/* Ver OS Button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVerOS(item);
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Ver detalhes da OS
+                      </Button>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
@@ -230,6 +279,13 @@ export default function Historico() {
         {/* Extra space for bottom nav */}
         <div className="h-4" />
       </div>
+
+      {/* Dialog de Resumo da OS */}
+      <OSResumoDialog 
+        open={osResumoOpen} 
+        onOpenChange={setOsResumoOpen} 
+        data={selectedOSResumo} 
+      />
 
       <BottomNavigation />
     </div>
