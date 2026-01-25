@@ -243,6 +243,94 @@ export type Database = {
         }
         Relationships: []
       }
+      gestao_alerts: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          lido: boolean
+          lido_em: string | null
+          lido_por: string | null
+          metadata: Json | null
+          service_order_id: string | null
+          tipo: string
+          titulo: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          lido?: boolean
+          lido_em?: string | null
+          lido_por?: string | null
+          metadata?: Json | null
+          service_order_id?: string | null
+          tipo: string
+          titulo: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          lido?: boolean
+          lido_em?: string | null
+          lido_por?: string | null
+          metadata?: Json | null
+          service_order_id?: string | null
+          tipo?: string
+          titulo?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestao_alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "gestao_alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gestao_alerts_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["service_order_id"]
+          },
+          {
+            foreignKeyName: "gestao_alerts_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gestao_alerts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "gestao_alerts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mechanic_daily_feedback: {
         Row: {
           created_at: string
@@ -789,6 +877,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_old_entregues: { Args: never; Returns: number }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
