@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Gift, Settings, LogOut, ChevronRight, Award, Crown, Edit2, Camera, Loader2 } from "lucide-react";
+import { ArrowLeft, Gift, Settings, LogOut, ChevronRight, Award, Crown, Edit2, Camera, Loader2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -179,6 +179,12 @@ export default function Profile() {
 
         {/* Menu Options */}
         <div className="space-y-2">
+          <MenuOption 
+            icon={TrendingUp} 
+            label="Visão Geral" 
+            badge="Novo"
+            onClick={() => navigate("/performance")}
+          />
           <MenuOption 
             icon={Settings} 
             label="Configurações" 

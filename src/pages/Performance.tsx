@@ -1,171 +1,132 @@
-import { TrendingUp, Target, Zap, Award, Car } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Rocket, Sparkles, Zap, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Performance() {
-  // Mock performance data
-  const stats = {
-    totalServices: 12,
-    totalSpent: 2450,
-    cashbackEarned: 367.50,
-    vehiclesManaged: 2,
-    nextServiceIn: 45,
-  };
-
-  const achievements = [
-    { id: 1, name: "Primeiro Serviço", icon: Car, unlocked: true },
-    { id: 2, name: "Cliente Fiel", icon: Award, unlocked: true },
-    { id: 3, name: "5 Serviços", icon: Target, unlocked: true },
-    { id: 4, name: "10 Serviços", icon: TrendingUp, unlocked: true },
-    { id: 5, name: "Cliente VIP", icon: Zap, unlocked: false },
-  ];
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 pt-12 pb-8">
-        <h1 className="text-2xl font-bold text-white">Performance</h1>
-        <p className="text-white/80 mt-1">Seu histórico de cuidados</p>
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a0a0a] to-[#0a0a0a] text-white overflow-hidden relative">
+      {/* Animated Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Glowing orbs */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-red-600/20 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-40 right-10 w-96 h-96 bg-red-500/15 rounded-full blur-[120px] animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-600/10 rounded-full blur-[150px]" />
+        
+        {/* Floating particles */}
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-red-500/60 rounded-full animate-float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${3 + Math.random() * 4}s`,
+            }}
+          />
+        ))}
       </div>
 
-      <div className="px-4 -mt-4 space-y-4">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                  <Car className="h-5 w-5 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.totalServices}</p>
-                  <p className="text-xs text-muted-foreground">Serviços realizados</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Header */}
+      <header className="relative z-10 px-4 py-4 flex items-center gap-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-white hover:bg-white/10"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="text-lg font-bold">Visão Geral</h1>
+      </header>
 
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">R$ {stats.cashbackEarned.toFixed(0)}</p>
-                  <p className="text-xs text-muted-foreground">Cashback ganho</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Main Content */}
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
+        {/* Icon Container */}
+        <div className="relative mb-8">
+          {/* Outer ring animation */}
+          <div className="absolute inset-0 w-40 h-40 -m-4 rounded-full border-2 border-red-500/30 animate-ping" style={{ animationDuration: '2s' }} />
+          <div className="absolute inset-0 w-36 h-36 -m-2 rounded-full border border-red-500/20 animate-spin" style={{ animationDuration: '8s' }} />
+          
+          {/* Main icon */}
+          <div className="relative w-32 h-32 bg-gradient-to-br from-red-600 to-red-800 rounded-full flex items-center justify-center shadow-2xl shadow-red-600/40">
+            <Rocket className="w-16 h-16 text-white animate-bounce" style={{ animationDuration: '2s' }} />
+          </div>
+
+          {/* Sparkle decorations */}
+          <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-yellow-400 animate-pulse" />
+          <Star className="absolute -bottom-1 -left-3 w-6 h-6 text-yellow-400 animate-pulse delay-500" />
+          <Zap className="absolute top-0 -left-4 w-5 h-5 text-red-400 animate-pulse delay-1000" />
         </div>
 
-        {/* Total Spent */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Investimento em Manutenção</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-red-500">
-              R$ {stats.totalSpent.toLocaleString('pt-BR')}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Total investido em cuidados com seu veículo
-            </p>
-          </CardContent>
-        </Card>
+        {/* Title */}
+        <h2 className="text-4xl font-black mb-4 bg-gradient-to-r from-white via-red-200 to-white bg-clip-text text-transparent">
+          Em Construção
+        </h2>
 
-        {/* Next Service */}
-        <Card className="shadow-lg border-0 bg-amber-500/10 border-amber-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-amber-600 font-medium">Próxima revisão em</p>
-                <p className="text-2xl font-bold text-amber-600">{stats.nextServiceIn} dias</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-amber-500/20 flex items-center justify-center">
-                <Target className="h-6 w-6 text-amber-600" />
-              </div>
+        {/* Subtitle */}
+        <p className="text-xl text-gray-300 mb-2 font-medium">
+          Algo incrível está chegando!
+        </p>
+        <p className="text-gray-500 max-w-sm mb-8">
+          Estamos preparando uma experiência épica para você acompanhar toda sua jornada com a Doctor Auto Prime.
+        </p>
+
+        {/* Feature Preview Cards */}
+        <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-8">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center">
+            <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
+              <span className="text-xl">📊</span>
             </div>
-            <Progress value={70} className="h-2 mt-3" />
-          </CardContent>
-        </Card>
-
-        {/* Achievements */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Award className="h-5 w-5 text-red-500" />
-              Conquistas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 gap-2">
-              {achievements.map(achievement => {
-                const Icon = achievement.icon;
-                return (
-                  <div
-                    key={achievement.id}
-                    className={`flex flex-col items-center p-2 rounded-lg ${
-                      achievement.unlocked 
-                        ? "bg-red-500/10" 
-                        : "bg-muted/50 opacity-50"
-                    }`}
-                  >
-                    <Icon className={`h-6 w-6 ${
-                      achievement.unlocked ? "text-red-500" : "text-muted-foreground"
-                    }`} />
-                    <p className="text-[10px] text-center mt-1 text-muted-foreground">
-                      {achievement.name}
-                    </p>
-                  </div>
-                );
-              })}
+            <span className="text-xs text-gray-400">Estatísticas</span>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center">
+            <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
+              <span className="text-xl">🏆</span>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Vehicle Stats */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Seus Veículos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Car className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="font-medium">Honda Civic</p>
-                  <p className="text-xs text-muted-foreground">ABC-1234</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium">8 serviços</p>
-                <p className="text-xs text-muted-foreground">R$ 1.650</p>
-              </div>
+            <span className="text-xs text-gray-400">Conquistas</span>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center">
+            <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
+              <span className="text-xl">💰</span>
             </div>
-            
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Car className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="font-medium">Toyota Corolla</p>
-                  <p className="text-xs text-muted-foreground">XYZ-5678</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium">4 serviços</p>
-                <p className="text-xs text-muted-foreground">R$ 800</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <span className="text-xs text-gray-400">Economia</span>
+          </div>
+        </div>
 
-        <div className="h-4" />
-      </div>
+        {/* CTA Button */}
+        <Button 
+          className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold px-8 py-6 rounded-full shadow-lg shadow-red-600/30 transition-all hover:scale-105"
+          onClick={() => navigate(-1)}
+        >
+          <Sparkles className="w-5 h-5 mr-2" />
+          Voltar ao Perfil
+        </Button>
 
-      <BottomNavigation />
+        {/* Footer text */}
+        <p className="mt-8 text-sm text-gray-600">
+          Fique ligado nas novidades! 🔥
+        </p>
+      </main>
+
+      {/* Custom CSS for animations */}
+      <style>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px) translateX(0px);
+            opacity: 0.6;
+          }
+          50% {
+            transform: translateY(-20px) translateX(10px);
+            opacity: 1;
+          }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
