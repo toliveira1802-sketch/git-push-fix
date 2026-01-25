@@ -78,7 +78,7 @@ const systemMenuItems: MenuItem[] = [
     path: '/admin/configuracoes',
     subItems: [
       { icon: Lightbulb, label: 'Melhorias', path: '/admin/melhorias' },
-      { icon: SlidersHorizontal, label: 'Parâmetros', path: '/admin/configuracoes' },
+      { icon: SlidersHorizontal, label: 'Parâmetros', path: '/admin/parametros' },
     ]
   },
 ];
