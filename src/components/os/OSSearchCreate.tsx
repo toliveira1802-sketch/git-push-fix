@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { formatPlate } from '@/lib/utils'
-import { AdminLayout } from '@/components/layout/AdminLayout'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 import {
@@ -44,7 +43,11 @@ interface SearchResult {
   vehicle?: Vehicle;
 }
 
-export default function NovaOS() {
+interface OSSearchCreateProps {
+  onOSCreated?: (osId: string) => void;
+}
+
+export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [showQuickRegister, setShowQuickRegister] = useState(false)
@@ -183,7 +186,6 @@ export default function NovaOS() {
           client_id: result.client.id,
           vehicle_id: result.vehicle.id,
           status: 'orcamento',
-          entry_km: result.vehicle.year ? null : null, // Will be filled later
         })
         .select('id')
         .single()
@@ -191,7 +193,12 @@ export default function NovaOS() {
       if (error) throw error
       
       toast.success(`OS ${orderNumber} criada!`)
-      navigate(`/admin/os/${data.id}?new=true`)
+      
+      if (onOSCreated) {
+        onOSCreated(data.id)
+      } else {
+        navigate(`/admin/os/${data.id}?new=true`)
+      }
     } catch (error) {
       console.error('Erro ao criar OS:', error)
       toast.error('Erro ao criar ordem de serviço')
@@ -257,7 +264,12 @@ export default function NovaOS() {
       
       toast.success(`Cliente, veículo e OS ${orderNumber} criados!`)
       setShowQuickRegister(false)
-      navigate(`/admin/os/${osData.id}?new=true`)
+      
+      if (onOSCreated) {
+        onOSCreated(osData.id)
+      } else {
+        navigate(`/admin/os/${osData.id}?new=true`)
+      }
     } catch (error) {
       console.error('Erro ao criar:', error)
       toast.error('Erro ao criar cliente/veículo')
@@ -267,141 +279,139 @@ export default function NovaOS() {
   }
 
   return (
-    <AdminLayout>
-      <div className="p-6 space-y-6 max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">Nova Ordem de Serviço</h1>
-          <p className="text-muted-foreground">
-            Busque por cliente, placa ou veículo para iniciar
-          </p>
-        </div>
+    <div className="p-6 space-y-6 max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-bold">Nova Ordem de Serviço</h1>
+        <p className="text-muted-foreground">
+          Busque por cliente, placa ou veículo para iniciar
+        </p>
+      </div>
 
-        {/* Search Box */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Digite nome do cliente, placa ou modelo do veículo..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 h-14 text-lg"
-                autoFocus
-              />
-              {isLoading && (
-                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
-              )}
-            </div>
-
-            {/* Quick Register Button */}
-            <div className="mt-4 flex justify-center">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowQuickRegister(true)}
-                className="gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Cadastro Rápido (Novo Cliente)
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Search Results */}
-        {search.trim() && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground px-1">
-              {searchResults.length} resultado(s) encontrado(s)
-            </p>
-
-            {searchResults.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-muted-foreground mb-4">
-                    Nenhum resultado para "{search}"
-                  </p>
-                  <Button onClick={() => setShowQuickRegister(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Cadastrar Novo Cliente
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-2">
-                {searchResults.map((result, index) => (
-                  <Card 
-                    key={`${result.client.id}-${result.vehicle?.id || index}`}
-                    className="hover:bg-accent/50 transition-colors cursor-pointer group"
-                    onClick={() => handleSelectResult(result)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        {/* Icon */}
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          {result.vehicle ? (
-                            <Car className="h-6 w-6 text-primary" />
-                          ) : (
-                            <User className="h-6 w-6 text-primary" />
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-foreground truncate">
-                            {result.client.name}
-                          </p>
-                          {result.vehicle ? (
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <Badge variant="outline" className="font-mono">
-                                {formatPlate(result.vehicle.plate)}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {result.vehicle.brand} {result.vehicle.model} {result.vehicle.year && `(${result.vehicle.year})`}
-                              </span>
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              {result.client.phone || result.client.email}
-                              <span className="text-amber-600 ml-2">(sem veículo cadastrado)</span>
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Arrow */}
-                        {isCreating ? (
-                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        ) : (
-                          <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+      {/* Search Box */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Digite nome do cliente, placa ou modelo do veículo..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-12 h-14 text-lg"
+              autoFocus
+            />
+            {isLoading && (
+              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
             )}
           </div>
-        )}
 
-        {/* Empty State - when no search */}
-        {!search.trim() && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
-              <Car className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
-              <h3 className="text-lg font-medium mb-2">Comece a digitar para buscar</h3>
-              <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                Busque pelo nome do cliente, placa do veículo ou modelo do carro
-              </p>
-              {clients.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-4">
-                  {clients.length} clientes • {vehicles.length} veículos cadastrados
+          {/* Quick Register Button */}
+          <div className="mt-4 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowQuickRegister(true)}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Cadastro Rápido (Novo Cliente)
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Search Results */}
+      {search.trim() && (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground px-1">
+            {searchResults.length} resultado(s) encontrado(s)
+          </p>
+
+          {searchResults.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <p className="text-muted-foreground mb-4">
+                  Nenhum resultado para "{search}"
                 </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                <Button onClick={() => setShowQuickRegister(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Cadastrar Novo Cliente
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {searchResults.map((result, index) => (
+                <Card 
+                  key={`${result.client.id}-${result.vehicle?.id || index}`}
+                  className="hover:bg-accent/50 transition-colors cursor-pointer group"
+                  onClick={() => handleSelectResult(result)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      {/* Icon */}
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        {result.vehicle ? (
+                          <Car className="h-6 w-6 text-primary" />
+                        ) : (
+                          <User className="h-6 w-6 text-primary" />
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground truncate">
+                          {result.client.name}
+                        </p>
+                        {result.vehicle ? (
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <Badge variant="outline" className="font-mono">
+                              {formatPlate(result.vehicle.plate)}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {result.vehicle.brand} {result.vehicle.model} {result.vehicle.year && `(${result.vehicle.year})`}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            {result.client.phone || result.client.email}
+                            <span className="text-amber-600 ml-2">(sem veículo cadastrado)</span>
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Arrow */}
+                      {isCreating ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      ) : (
+                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State - when no search */}
+      {!search.trim() && (
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <Car className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+            <h3 className="text-lg font-medium mb-2">Comece a digitar para buscar</h3>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+              Busque pelo nome do cliente, placa do veículo ou modelo do carro
+            </p>
+            {clients.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-4">
+                {clients.length} clientes • {vehicles.length} veículos cadastrados
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Register Dialog */}
       <Dialog open={showQuickRegister} onOpenChange={setShowQuickRegister}>
@@ -491,22 +501,23 @@ export default function NovaOS() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <Label htmlFor="year">Ano</Label>
-                    <Input
-                      id="year"
-                      placeholder="2024"
-                      value={newClient.vehicleYear}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, vehicleYear: e.target.value }))}
-                    />
-                  </div>
-                  <div>
                     <Label htmlFor="plate">Placa *</Label>
                     <Input
                       id="plate"
                       placeholder="ABC-1234"
                       value={newClient.vehiclePlate}
                       onChange={(e) => setNewClient(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
-                      className="font-mono"
+                      maxLength={8}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="year">Ano</Label>
+                    <Input
+                      id="year"
+                      type="number"
+                      placeholder="2024"
+                      value={newClient.vehicleYear}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, vehicleYear: e.target.value }))}
                     />
                   </div>
                   <div>
@@ -527,21 +538,17 @@ export default function NovaOS() {
             <Button variant="outline" onClick={() => setShowQuickRegister(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleQuickRegister}
-              disabled={!newClient.name || !newClient.phone || !newClient.vehicleBrand || !newClient.vehicleModel || !newClient.vehiclePlate || isCreating}
-              className="gap-2"
-            >
+            <Button onClick={handleQuickRegister} disabled={isCreating} className="gap-2">
               {isCreating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <ArrowRight className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
               )}
-              Criar e Abrir OS
+              Criar Cliente e OS
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </div>
   )
 }
