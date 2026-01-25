@@ -43,7 +43,7 @@ const mockVeiculosNaoAlocados: VeiculoNaoAlocado[] = [
 
 export default function MonitoramentoPatio() {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'kanban' | 'mapa'>('mapa');
+  const [viewMode, setViewMode] = useState<'kanban' | 'mapa'>('kanban');
   const [veiculosNaoAlocados, setVeiculosNaoAlocados] = useState<VeiculoNaoAlocado[]>(mockVeiculosNaoAlocados);
   const [draggedVeiculo, setDraggedVeiculo] = useState<VeiculoNaoAlocado | null>(null);
   const [showGrid, setShowGrid] = useState(true);
@@ -372,13 +372,13 @@ export default function MonitoramentoPatio() {
         {/* Tabs de visualização */}
         <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'kanban' | 'mapa')}>
           <TabsList>
-            <TabsTrigger value="mapa" className="gap-2">
-              <Map className="w-4 h-4" />
-              Mapa
-            </TabsTrigger>
             <TabsTrigger value="kanban" className="gap-2">
               <LayoutGrid className="w-4 h-4" />
               Kanban
+            </TabsTrigger>
+            <TabsTrigger value="mapa" className="gap-2">
+              <Map className="w-4 h-4" />
+              Mapa
             </TabsTrigger>
           </TabsList>
           
