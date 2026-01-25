@@ -26,25 +26,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-
-type ThemeMode = "light" | "dark" | "system";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function Configuracoes() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [instagramHandle, setInstagramHandle] = useState("");
   const [instagramLinked, setInstagramLinked] = useState(false);
 
   useEffect(() => {
-    // Load saved preferences
-    const savedTheme = localStorage.getItem("theme") as ThemeMode;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      applyTheme(savedTheme);
-    }
-
     const savedNotifications = localStorage.getItem("notifications");
     if (savedNotifications !== null) {
       setNotifications(savedNotifications === "true");
@@ -57,21 +49,8 @@ export default function Configuracoes() {
     }
   }, []);
 
-  const applyTheme = (mode: ThemeMode) => {
-    const root = document.documentElement;
-    
-    if (mode === "system") {
-      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      root.classList.toggle("dark", systemDark);
-    } else {
-      root.classList.toggle("dark", mode === "dark");
-    }
-  };
-
-  const handleThemeChange = (newTheme: ThemeMode) => {
+  const handleThemeChange = (newTheme: 'light' | 'dark') => {
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
     toast.success("Tema atualizado!");
   };
 
@@ -105,17 +84,17 @@ export default function Configuracoes() {
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 pt-6">
+      <div className="bg-primary p-4 pt-6">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-white hover:bg-white/20"
+            className="text-primary-foreground hover:bg-primary-foreground/20"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-semibold text-white">Configurações</h1>
+          <h1 className="text-xl font-semibold text-primary-foreground">Configurações</h1>
         </div>
       </div>
 
@@ -124,14 +103,14 @@ export default function Configuracoes() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Palette className="h-5 w-5 text-red-500" />
+              <Palette className="h-5 w-5 text-primary" />
               Aparência
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <Label htmlFor="theme">Tema</Label>
-              <Select value={theme} onValueChange={(v) => handleThemeChange(v as ThemeMode)}>
+              <Select value={theme} onValueChange={(v) => handleThemeChange(v as 'light' | 'dark')}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -148,12 +127,6 @@ export default function Configuracoes() {
                       Escuro
                     </div>
                   </SelectItem>
-                  <SelectItem value="system">
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" />
-                      Sistema
-                    </div>
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -164,7 +137,7 @@ export default function Configuracoes() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Bell className="h-5 w-5 text-red-500" />
+              <Bell className="h-5 w-5 text-primary" />
               Notificações
             </CardTitle>
           </CardHeader>
@@ -187,7 +160,7 @@ export default function Configuracoes() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Instagram className="h-5 w-5 text-pink-500" />
+              <Instagram className="h-5 w-5 text-primary" />
               Instagram
             </CardTitle>
             <CardDescription>
