@@ -8,13 +8,27 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useUserRole } from '@/hooks/useUserRole';
-import { Settings, Calendar, Target, Car, Save, Loader2, Lock } from 'lucide-react';
+import { Settings, Calendar, Target, Car, Save, Loader2, Lock, Clock, TrendingUp, Eye } from 'lucide-react';
+
+interface HorarioFuncionamento {
+  seg_sex: { inicio: string; fim: string };
+  sab: { inicio: string; fim: string };
+}
+
+interface Meta {
+  nome: string;
+  valor: string;
+  tipo: 'financeira' | 'crescimento' | 'nps' | 'produto' | 'operacional';
+  ativo: boolean;
+}
 
 interface SystemConfig {
   periodo_vigente: { mes: number; ano: number };
+  horario_funcionamento: HorarioFuncionamento;
   dias_trabalho: {
     seg: boolean;
     ter: boolean;
@@ -25,7 +39,8 @@ interface SystemConfig {
     dom: boolean;
     feriados: string[];
   };
-  meta_mensal: { valor: number; dias_uteis: number };
+  metas: Meta[];
+  exibir_metas_sidebar: boolean;
   patio_capacidade: { maxima: number };
 }
 
@@ -44,14 +59,35 @@ const diasSemana = [
   { key: 'dom', label: 'Domingo' },
 ];
 
+const tiposMeta = [
+  { value: 'financeira', label: 'Meta Financeira', icon: '💰' },
+  { value: 'crescimento', label: 'Meta de Crescimento', icon: '📈' },
+  { value: 'nps', label: 'NPS / Satisfação', icon: '⭐' },
+  { value: 'produto', label: 'Produto Vendido', icon: '🛒' },
+  { value: 'operacional', label: 'Meta Operacional', icon: '⚙️' },
+];
+
+const defaultMetas: Meta[] = [
+  { nome: 'Faturamento Mensal', valor: '', tipo: 'financeira', ativo: true },
+  { nome: 'Crescimento de Clientes', valor: '', tipo: 'crescimento', ativo: false },
+  { nome: 'NPS (Satisfação)', valor: '', tipo: 'nps', ativo: false },
+  { nome: 'Produtos Vendidos', valor: '', tipo: 'produto', ativo: false },
+  { nome: 'OSs Entregues', valor: '', tipo: 'operacional', ativo: false },
+];
+
 export default function AdminParametros() {
   const { role, isLoading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<SystemConfig>({
     periodo_vigente: { mes: new Date().getMonth() + 1, ano: new Date().getFullYear() },
+    horario_funcionamento: {
+      seg_sex: { inicio: '08:15', fim: '17:30' },
+      sab: { inicio: '08:00', fim: '12:00' },
+    },
     dias_trabalho: { seg: true, ter: true, qua: true, qui: true, sex: true, sab: true, dom: false, feriados: [] },
-    meta_mensal: { valor: 100000, dias_uteis: 22 },
+    metas: defaultMetas,
+    exibir_metas_sidebar: false,
     patio_capacidade: { maxima: 20 },
   });
 
@@ -75,8 +111,10 @@ export default function AdminParametros() {
 
         setConfig(prev => ({
           periodo_vigente: (configMap.periodo_vigente as SystemConfig['periodo_vigente']) || prev.periodo_vigente,
+          horario_funcionamento: (configMap.horario_funcionamento as SystemConfig['horario_funcionamento']) || prev.horario_funcionamento,
           dias_trabalho: (configMap.dias_trabalho as SystemConfig['dias_trabalho']) || prev.dias_trabalho,
-          meta_mensal: (configMap.meta_mensal as SystemConfig['meta_mensal']) || prev.meta_mensal,
+          metas: (configMap.metas as SystemConfig['metas']) || prev.metas,
+          exibir_metas_sidebar: (configMap.exibir_metas_sidebar as boolean) ?? prev.exibir_metas_sidebar,
           patio_capacidade: (configMap.patio_capacidade as SystemConfig['patio_capacidade']) || prev.patio_capacidade,
         }));
       } catch (error) {
@@ -93,7 +131,6 @@ export default function AdminParametros() {
   // Save config
   const saveConfig = async (key: string, value: unknown) => {
     try {
-      // First check if it exists
       const { data: existing } = await supabase
         .from('system_config')
         .select('id')
@@ -128,8 +165,10 @@ export default function AdminParametros() {
     try {
       await Promise.all([
         saveConfig('periodo_vigente', config.periodo_vigente),
+        saveConfig('horario_funcionamento', config.horario_funcionamento),
         saveConfig('dias_trabalho', config.dias_trabalho),
-        saveConfig('meta_mensal', config.meta_mensal),
+        saveConfig('metas', config.metas),
+        saveConfig('exibir_metas_sidebar', config.exibir_metas_sidebar),
         saveConfig('patio_capacidade', config.patio_capacidade),
       ]);
       toast.success('Configurações salvas com sucesso!');
@@ -164,12 +203,12 @@ export default function AdminParametros() {
     return Math.max(0, diasUteis);
   };
 
-  const handleUpdateDiasUteis = () => {
-    const diasUteis = calcularDiasUteis();
-    setConfig(prev => ({
-      ...prev,
-      meta_mensal: { ...prev.meta_mensal, dias_uteis: diasUteis }
-    }));
+  const updateMeta = (index: number, field: keyof Meta, value: string | boolean) => {
+    setConfig(prev => {
+      const newMetas = [...prev.metas];
+      newMetas[index] = { ...newMetas[index], [field]: value };
+      return { ...prev, metas: newMetas };
+    });
   };
 
   if (loading || roleLoading) {
@@ -265,6 +304,94 @@ export default function AdminParametros() {
           </CardContent>
         </Card>
 
+        {/* Horário de Funcionamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Horário de Funcionamento
+            </CardTitle>
+            <CardDescription>
+              Configure os horários de abertura e fechamento da oficina
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <div className="p-4 border rounded-lg space-y-3">
+                <Label className="font-medium">Segunda a Sexta-feira</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Abertura</Label>
+                    <Input
+                      type="time"
+                      value={config.horario_funcionamento.seg_sex.inicio}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horario_funcionamento: {
+                          ...prev.horario_funcionamento,
+                          seg_sex: { ...prev.horario_funcionamento.seg_sex, inicio: e.target.value }
+                        }
+                      }))}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Fechamento</Label>
+                    <Input
+                      type="time"
+                      value={config.horario_funcionamento.seg_sex.fim}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horario_funcionamento: {
+                          ...prev.horario_funcionamento,
+                          seg_sex: { ...prev.horario_funcionamento.seg_sex, fim: e.target.value }
+                        }
+                      }))}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 border rounded-lg space-y-3">
+                <Label className="font-medium">Sábado</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Abertura</Label>
+                    <Input
+                      type="time"
+                      value={config.horario_funcionamento.sab.inicio}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horario_funcionamento: {
+                          ...prev.horario_funcionamento,
+                          sab: { ...prev.horario_funcionamento.sab, inicio: e.target.value }
+                        }
+                      }))}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Fechamento</Label>
+                    <Input
+                      type="time"
+                      value={config.horario_funcionamento.sab.fim}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horario_funcionamento: {
+                          ...prev.horario_funcionamento,
+                          sab: { ...prev.horario_funcionamento.sab, fim: e.target.value }
+                        }
+                      }))}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Dias de Trabalho */}
         <Card>
           <CardHeader>
@@ -303,16 +430,9 @@ export default function AdminParametros() {
                   Para {meses[config.periodo_vigente.mes - 1]} de {config.periodo_vigente.ano}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-lg px-3 py-1">
-                  {calcularDiasUteis()} dias
-                </Badge>
-                {canEdit && (
-                  <Button variant="outline" size="sm" onClick={handleUpdateDiasUteis}>
-                    Aplicar
-                  </Button>
-                )}
-              </div>
+              <Badge variant="outline" className="text-lg px-3 py-1">
+                {calcularDiasUteis()} dias
+              </Badge>
             </div>
 
             <div className="space-y-2">
@@ -336,53 +456,125 @@ export default function AdminParametros() {
           </CardContent>
         </Card>
 
-        {/* Meta Mensal */}
+        {/* Metas */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5" />
-              Meta Mensal
+              Metas do Período
             </CardTitle>
             <CardDescription>
-              Configure a meta de faturamento e dias úteis do mês
+              Configure as metas financeiras, de crescimento, NPS e operacionais
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Meta de Faturamento (R$)</Label>
-                <Input
-                  type="number"
-                  value={config.meta_mensal.valor}
-                  onChange={(e) => setConfig(prev => ({
-                    ...prev,
-                    meta_mensal: { ...prev.meta_mensal, valor: parseFloat(e.target.value) || 0 }
-                  }))}
-                  disabled={!canEdit}
-                />
+            {/* Exibir no sidebar */}
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Eye className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <Label className="font-medium">Exibir Metas no Menu Lateral</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Adiciona um atalho para visualização das metas no sidebar
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Dias Úteis</Label>
-                <Input
-                  type="number"
-                  value={config.meta_mensal.dias_uteis}
-                  onChange={(e) => setConfig(prev => ({
-                    ...prev,
-                    meta_mensal: { ...prev.meta_mensal, dias_uteis: parseInt(e.target.value) || 0 }
-                  }))}
-                  disabled={!canEdit}
-                />
-              </div>
+              <Switch
+                checked={config.exibir_metas_sidebar}
+                onCheckedChange={(checked) => setConfig(prev => ({
+                  ...prev,
+                  exibir_metas_sidebar: checked
+                }))}
+                disabled={!canEdit}
+              />
             </div>
 
+            <Separator />
+
+            {/* Lista de Metas */}
+            <div className="space-y-4">
+              {config.metas.map((meta, index) => (
+                <div
+                  key={index}
+                  className={`p-4 border rounded-lg space-y-3 transition-opacity ${!meta.ativo ? 'opacity-50' : ''}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{tiposMeta.find(t => t.value === meta.tipo)?.icon}</span>
+                      <Label className="font-medium">{meta.nome}</Label>
+                    </div>
+                    <Switch
+                      checked={meta.ativo}
+                      onCheckedChange={(checked) => updateMeta(index, 'ativo', checked)}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  
+                  {meta.ativo && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Nome da Meta</Label>
+                        <Input
+                          value={meta.nome}
+                          onChange={(e) => updateMeta(index, 'nome', e.target.value)}
+                          placeholder="Ex: Faturamento Mensal"
+                          disabled={!canEdit}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Valor/Objetivo</Label>
+                        <Input
+                          value={meta.valor}
+                          onChange={(e) => updateMeta(index, 'valor', e.target.value)}
+                          placeholder="Ex: R$ 100.000 ou 50 clientes ou 9.0"
+                          disabled={!canEdit}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label className="text-sm text-muted-foreground">Tipo de Meta</Label>
+                        <Select
+                          value={meta.tipo}
+                          onValueChange={(v) => updateMeta(index, 'tipo', v)}
+                          disabled={!canEdit}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tiposMeta.map((tipo) => (
+                              <SelectItem key={tipo.value} value={tipo.value}>
+                                <span className="flex items-center gap-2">
+                                  <span>{tipo.icon}</span>
+                                  {tipo.label}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Resumo de Metas Ativas */}
             <div className="p-4 rounded-lg bg-muted/50">
-              <p className="text-sm text-muted-foreground">Meta diária calculada:</p>
-              <p className="text-2xl font-bold text-primary">
-                R$ {config.meta_mensal.dias_uteis > 0 
-                  ? (config.meta_mensal.valor / config.meta_mensal.dias_uteis).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                  : '0,00'
-                }
-              </p>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <p className="font-medium">Resumo de Metas Ativas</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {config.metas.filter(m => m.ativo).map((meta, idx) => (
+                  <Badge key={idx} variant="secondary">
+                    {tiposMeta.find(t => t.value === meta.tipo)?.icon} {meta.nome}
+                    {meta.valor && `: ${meta.valor}`}
+                  </Badge>
+                ))}
+                {config.metas.filter(m => m.ativo).length === 0 && (
+                  <p className="text-sm text-muted-foreground">Nenhuma meta ativa</p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
