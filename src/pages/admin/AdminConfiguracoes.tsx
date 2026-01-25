@@ -45,6 +45,8 @@ interface SystemConfig {
   notificacoesAtivas: boolean;
   periodoVigente: { mes: number; ano: number };
   diasUteis: number;
+  metaFaturamento: number;
+  metaMecanico: number;
   metas: Meta[];
   exibirMetasSidebar: boolean;
 }
@@ -80,6 +82,8 @@ export default function AdminConfiguracoes() {
     notificacoesAtivas: true,
     periodoVigente: { mes: new Date().getMonth() + 1, ano: new Date().getFullYear() },
     diasUteis: 22,
+    metaFaturamento: 300000,
+    metaMecanico: 60000,
     metas: defaultMetas,
     exibirMetasSidebar: false,
   });
@@ -110,7 +114,9 @@ export default function AdminConfiguracoes() {
           },
           notificacoesAtivas: configMap.notificacoes?.ativas ?? true,
           periodoVigente: configMap.periodo_vigente || { mes: new Date().getMonth() + 1, ano: new Date().getFullYear() },
-          diasUteis: configMap.dias_trabalho?.dias_uteis || configMap.meta_mensal?.dias_uteis || 22,
+          diasUteis: configMap.meta_mensal?.dias_uteis || 22,
+          metaFaturamento: configMap.meta_mensal?.valor || 300000,
+          metaMecanico: configMap.meta_mensal?.meta_mecanico || 60000,
           metas: configMap.metas || defaultMetas,
           exibirMetasSidebar: configMap.exibir_metas_sidebar ?? false,
         });
@@ -130,7 +136,7 @@ export default function AdminConfiguracoes() {
         { key: "horario_funcionamento", value: config.horarioFuncionamento },
         { key: "notificacoes", value: { ativas: config.notificacoesAtivas } },
         { key: "periodo_vigente", value: config.periodoVigente },
-        { key: "meta_mensal", value: { dias_uteis: config.diasUteis } },
+        { key: "meta_mensal", value: { valor: config.metaFaturamento, dias_uteis: config.diasUteis, meta_mecanico: config.metaMecanico } },
         { key: "metas", value: config.metas },
         { key: "exibir_metas_sidebar", value: config.exibirMetasSidebar },
       ];
@@ -280,6 +286,47 @@ export default function AdminConfiguracoes() {
                     diasUteis: parseInt(e.target.value) || 22
                   }))}
                 />
+              </div>
+            </div>
+
+            {/* Metas principais */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="p-4 border rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                  <Label className="font-medium">Meta de Faturamento</Label>
+                </div>
+                <Input
+                  type="number"
+                  value={config.metaFaturamento}
+                  onChange={(e) => setConfig(prev => ({
+                    ...prev,
+                    metaFaturamento: parseFloat(e.target.value) || 0
+                  }))}
+                  placeholder="R$ 300.000"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Meta mensal de faturamento (usado nos dashboards)
+                </p>
+              </div>
+
+              <div className="p-4 border rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-orange-500" />
+                  <Label className="font-medium">Meta por Mecânico</Label>
+                </div>
+                <Input
+                  type="number"
+                  value={config.metaMecanico}
+                  onChange={(e) => setConfig(prev => ({
+                    ...prev,
+                    metaMecanico: parseFloat(e.target.value) || 0
+                  }))}
+                  placeholder="R$ 60.000"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Meta individual de produtividade por mecânico
+                </p>
               </div>
             </div>
           </CardContent>

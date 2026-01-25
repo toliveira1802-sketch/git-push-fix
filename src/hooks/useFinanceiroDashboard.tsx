@@ -215,17 +215,29 @@ export function useFinanceiroDashboard() {
 
   const saveMetaConfig = async (newMeta: number, newDiasUteis: number) => {
     try {
-      const { error } = await supabase
+      // Check if exists
+      const { data: existing } = await supabase
         .from('system_config')
-        .upsert({
-          key: 'meta_mensal',
-          value: {
-            valor: newMeta,
-            dias_uteis: newDiasUteis,
-          },
-        });
+        .select('id, value')
+        .eq('key', 'meta_mensal')
+        .maybeSingle();
 
-      if (error) throw error;
+      const newValue = {
+        valor: newMeta,
+        dias_uteis: newDiasUteis,
+        meta_mecanico: (existing?.value as any)?.meta_mecanico || 60000,
+      };
+
+      if (existing) {
+        await supabase
+          .from('system_config')
+          .update({ value: newValue, updated_at: new Date().toISOString() })
+          .eq('key', 'meta_mensal');
+      } else {
+        await supabase
+          .from('system_config')
+          .insert({ key: 'meta_mensal', value: newValue });
+      }
       
       setMetaConfig({ metaMensal: newMeta, diasUteis: newDiasUteis });
       await fetchData();
