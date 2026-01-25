@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Bot, Play, Pause, Settings, TrendingUp, Zap, 
-  Wrench, MessageSquare, Calculator, Send, Loader2
+  Wrench, MessageSquare, Calculator, Send, Loader2,
+  ExternalLink
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +71,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function AdminIAs() {
+  const navigate = useNavigate();
   const [ias, setIas] = useState<IA[]>(IAS_OFICINA);
   const [activeTab, setActiveTab] = useState("painel");
   const [selectedIA, setSelectedIA] = useState<IA | null>(null);
@@ -186,6 +189,14 @@ export default function AdminIAs() {
             </h1>
             <p className="text-muted-foreground text-sm">Gerencie os assistentes inteligentes da oficina</p>
           </div>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/admin/monitoramento-kommo')}
+            className="gap-2"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Monitoramento Kommo
+          </Button>
         </div>
 
         {/* Summary Cards */}
