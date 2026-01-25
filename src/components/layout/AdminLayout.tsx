@@ -10,9 +10,7 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
-  Plus,
-  Bot,
-  BarChart3
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -29,7 +27,6 @@ const menuItems = [
   { icon: Users, label: 'Clientes', path: '/admin/clientes' },
   { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
-  { icon: BarChart3, label: 'Gestão', path: '/gestao' },
   { icon: Settings, label: 'Configurações', path: '/admin/configuracoes' },
 ];
 

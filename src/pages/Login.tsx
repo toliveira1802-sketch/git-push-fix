@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, Car } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff, Car, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole, getHomeRouteForRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
+  const { role, isLoading: isRoleLoading } = useUserRole();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +22,14 @@ const Login: React.FC = () => {
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = password.length >= 6;
   const isFormValid = isValidEmail && isValidPassword;
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (user && !isRoleLoading && role) {
+      const redirectTo = getHomeRouteForRole(role);
+      navigate(redirectTo);
+    }
+  }, [user, role, isRoleLoading, navigate]);
 
   const handleLogin = async () => {
     if (!isFormValid) {
@@ -46,16 +56,7 @@ const Login: React.FC = () => {
     }
 
     toast.success('Login realizado com sucesso!');
-    
-    // MASTER REDIRECT: If master email, go to admin dashboard
-    const MASTER_EMAILS = ["toliveira1802@gmail.com", "sophia.duarte1@hotmail.com"];
-    if (MASTER_EMAILS.includes(email.toLowerCase())) {
-      navigate('/admin');
-    } else {
-      const redirectTo = localStorage.getItem('drprime_redirect') || '/';
-      localStorage.removeItem('drprime_redirect');
-      navigate(redirectTo);
-    }
+    // O redirecionamento será feito pelo useEffect quando a role carregar
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -71,11 +72,21 @@ const Login: React.FC = () => {
     if (error) {
       toast.error('Erro ao fazer login com Google');
       setIsLoading(false);
-    } else {
-      toast.success('Login com Google realizado!');
-      navigate('/');
     }
+    // Redirecionamento será feito pelo OAuth callback
   };
+
+  // Mostrar loading enquanto verifica autenticação
+  if (user && isRoleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
@@ -206,7 +217,10 @@ const Login: React.FC = () => {
             className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-6 text-lg group"
           >
             {isLoading ? (
-              'Entrando...'
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Entrando...
+              </>
             ) : (
               <>
                 Entrar

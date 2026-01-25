@@ -1,13 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-// MOCK AUTH CONTEXT - Para teste sem Supabase
-interface User {
-  id: string;
-  email: string;
-}
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string, phone: string) => Promise<{ error: Error | null }>;
@@ -19,58 +16,72 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check localStorage for mock session
-    const savedUser = localStorage.getItem('mock_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Mock login - aceita qualquer email/senha válidos
-    if (email && password.length >= 6) {
-      const mockUser = { id: crypto.randomUUID(), email };
-      setUser(mockUser);
-      localStorage.setItem('mock_user', JSON.stringify(mockUser));
-      localStorage.setItem('mock_profile', JSON.stringify({ full_name: email.split('@')[0] }));
-      return { error: null };
-    }
-    return { error: new Error('Invalid login credentials') };
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string, name: string, phone: string) => {
-    // Mock signup
-    if (email && password.length >= 6 && name) {
-      const mockUser = { id: crypto.randomUUID(), email };
-      setUser(mockUser);
-      localStorage.setItem('mock_user', JSON.stringify(mockUser));
-      localStorage.setItem('mock_profile', JSON.stringify({ full_name: name, phone }));
-      return { error: null };
-    }
-    return { error: new Error('Invalid signup data') };
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: name,
+          phone: phone,
+        },
+      },
+    });
+    return { error: error as Error | null };
   };
 
   const signInWithGoogle = async () => {
-    // Mock Google login
-    const mockUser = { id: crypto.randomUUID(), email: 'user@gmail.com' };
-    setUser(mockUser);
-    localStorage.setItem('mock_user', JSON.stringify(mockUser));
-    localStorage.setItem('mock_profile', JSON.stringify({ full_name: 'Google User' }));
-    return { error: null };
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+    return { error: error as Error | null };
   };
 
   const signOut = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('mock_user');
-    localStorage.removeItem('mock_profile');
+    setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
