@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,13 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Car,
   User,
   Wrench,
@@ -22,9 +29,7 @@ import {
   ExternalLink,
   FileText,
   MapPin,
-  Gauge,
   Palette,
-  Hash,
 } from "lucide-react";
 import { type VeiculoKanban } from "@/hooks/usePatioKanban";
 import { cn } from "@/lib/utils";
@@ -37,6 +42,25 @@ interface KanbanCardDetailsProps {
   onOpenChange: (open: boolean) => void;
   onUpdate?: () => void;
 }
+
+interface Mechanic {
+  id: string;
+  name: string;
+}
+
+// Recursos fixos do pátio
+const RECURSOS_PATIO = [
+  { id: 'box-a', nome: 'Box A' },
+  { id: 'box-b', nome: 'Box B' },
+  { id: 'box-c', nome: 'Box C' },
+  { id: 'box-d', nome: 'Box D' },
+  { id: 'box-e', nome: 'Box E' },
+  { id: 'elevador-1', nome: 'Elevador 1' },
+  { id: 'elevador-2', nome: 'Elevador 2' },
+  { id: 'elevador-3', nome: 'Elevador 3' },
+  { id: 'recepcao', nome: 'Recepção' },
+  { id: 'externo', nome: 'Área Externa' },
+];
 
 // Cores para categorias
 const categoriaCores: Record<string, string> = {
@@ -53,6 +77,31 @@ const categoriaCores: Record<string, string> = {
 
 export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: KanbanCardDetailsProps) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
+  const [selectedMechanic, setSelectedMechanic] = useState<string | null>(null);
+  const [selectedRecurso, setSelectedRecurso] = useState<string | null>(null);
+
+  // Carregar mecânicos
+  useEffect(() => {
+    const fetchMechanics = async () => {
+      const { data } = await supabase
+        .from('mechanics')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (data) setMechanics(data);
+    };
+    fetchMechanics();
+  }, []);
+
+  // Sincronizar valores quando veiculo mudar
+  useEffect(() => {
+    if (veiculo) {
+      setSelectedMechanic(veiculo.mecanicoId || null);
+      setSelectedRecurso(veiculo.recurso || null);
+    }
+  }, [veiculo]);
 
   if (!veiculo) return null;
 
@@ -73,6 +122,50 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
     } catch (error) {
       console.error('Erro ao atualizar:', error);
       toast.error('Erro ao atualizar status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleMechanicChange = async (mechanicId: string) => {
+    setIsUpdating(true);
+    try {
+      const newMechanicId = mechanicId === 'none' ? null : mechanicId;
+      const { error } = await supabase
+        .from('service_orders')
+        .update({ mechanic_id: newMechanicId })
+        .eq('id', veiculo.id);
+
+      if (error) throw error;
+
+      setSelectedMechanic(newMechanicId);
+      toast.success('Mecânico atualizado');
+      onUpdate?.();
+    } catch (error) {
+      console.error('Erro ao atualizar mecânico:', error);
+      toast.error('Erro ao atualizar mecânico');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleRecursoChange = async (recurso: string) => {
+    setIsUpdating(true);
+    try {
+      const newRecurso = recurso === 'none' ? null : recurso;
+      const { error } = await supabase
+        .from('service_orders')
+        .update({ recurso: newRecurso })
+        .eq('id', veiculo.id);
+
+      if (error) throw error;
+
+      setSelectedRecurso(newRecurso);
+      toast.success('Local atualizado');
+      onUpdate?.();
+    } catch (error) {
+      console.error('Erro ao atualizar recurso:', error);
+      toast.error('Erro ao atualizar local');
     } finally {
       setIsUpdating(false);
     }
@@ -116,6 +209,57 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
               onCheckedChange={handleToggleTerceiros}
               disabled={isUpdating}
             />
+          </div>
+
+          {/* Mecânico e Recurso Selection */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Wrench className="w-3.5 h-3.5" />
+                Mecânico
+              </Label>
+              <Select
+                value={selectedMechanic || 'none'}
+                onValueChange={handleMechanicChange}
+                disabled={isUpdating}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Selecionar mecânico" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="none">Sem mecânico</SelectItem>
+                  {mechanics.map((mec) => (
+                    <SelectItem key={mec.id} value={mec.id}>
+                      {mec.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
+                Local / Recurso
+              </Label>
+              <Select
+                value={selectedRecurso || 'none'}
+                onValueChange={handleRecursoChange}
+                disabled={isUpdating}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Selecionar local" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="none">Sem local</SelectItem>
+                  {RECURSOS_PATIO.map((rec) => (
+                    <SelectItem key={rec.id} value={rec.nome}>
+                      {rec.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Veículo Info */}
@@ -182,17 +326,6 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
             <p className="text-sm">{veiculo.servico}</p>
           </div>
 
-          {/* Mecânico */}
-          {veiculo.mecanico && (
-            <div className="flex items-center gap-3 p-3 rounded-lg border">
-              <Wrench className="w-4 h-4 text-muted-foreground" />
-              <div>
-                <span className="text-xs text-muted-foreground">Mecânico Responsável</span>
-                <p className="text-sm font-medium">{veiculo.mecanico}</p>
-              </div>
-            </div>
-          )}
-
           <Separator />
 
           {/* Datas e Tempo */}
@@ -212,7 +345,7 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
               </div>
               <p className={cn(
                 "text-sm font-bold",
-                diasNoPatio > 7 ? "text-red-500" : diasNoPatio > 3 ? "text-amber-500" : "text-emerald-500"
+                diasNoPatio > 7 ? "text-destructive" : diasNoPatio > 3 ? "text-warning" : "text-emerald-500"
               )}>
                 {diasNoPatio} {diasNoPatio === 1 ? 'dia' : 'dias'}
               </p>
