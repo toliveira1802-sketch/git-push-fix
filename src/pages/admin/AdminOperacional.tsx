@@ -258,63 +258,86 @@ export default function AdminOperacional() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
         {/* Header with Status Badges */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white p-6 rounded-xl">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-6 rounded-xl">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold">{currentCompany?.name || 'Oficina'}</h1>
-              <p className="text-slate-300 text-sm">Gestão de Pátio em Tempo Real</p>
+              <h1 className="text-2xl font-bold">{currentCompany?.name || 'Oficina Doctor Auto'}</h1>
+              <p className="text-slate-400 text-sm">Gestão de Pátio em Tempo Real</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               {/* Capacidade */}
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2">
-                <CheckCircle className={cn("w-4 h-4", capacityStatus.ok ? "text-emerald-400" : "text-destructive")} />
+              <div className={cn(
+                "flex items-center gap-3 rounded-full px-5 py-2.5 border-2",
+                capacityStatus.ok 
+                  ? "bg-emerald-500/10 border-emerald-500/30" 
+                  : "bg-destructive/10 border-destructive/30"
+              )}>
+                <CheckCircle className={cn("w-5 h-5", capacityStatus.ok ? "text-emerald-400" : "text-destructive")} />
                 <div className="text-sm">
-                  <span className={cn("font-semibold", capacityStatus.ok ? "text-emerald-400" : "text-destructive")}>
+                  <span className={cn("font-bold", capacityStatus.ok ? "text-emerald-400" : "text-destructive")}>
                     {capacityStatus.label}
                   </span>
-                  <p className="text-xs text-slate-300">
+                  <p className="text-xs text-slate-400">
                     Capacidade: {capacidade.atual}/{capacidade.maxima} ({Math.round((capacidade.atual / capacidade.maxima) * 100)}%)
                   </p>
+                  <p className="text-xs text-slate-500">Clique para ver placas</p>
                 </div>
               </div>
 
               {/* Fluxo */}
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-3 bg-emerald-500/10 border-2 border-emerald-500/30 rounded-full px-5 py-2.5">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
                 <div className="text-sm">
-                  <span className="font-semibold text-emerald-400">FLUXO OK</span>
-                  <p className="text-xs text-slate-300">Em Execução: {fluxoCount}</p>
+                  <span className="font-bold text-emerald-400">FLUXO OK</span>
+                  <p className="text-xs text-slate-400">🔧 Em Execução: {fluxoCount}</p>
+                  <p className="text-xs text-slate-500">Clique para ver placas</p>
                 </div>
               </div>
 
               {/* Retorno */}
-              {retornoCount > 0 && (
-                <div className="flex items-center gap-2 bg-destructive/20 backdrop-blur rounded-full px-4 py-2">
-                  <div className="w-6 h-6 rounded-full bg-destructive flex items-center justify-center text-xs font-bold">
-                    {retornoCount}
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-semibold text-destructive">RETORNO</span>
-                    <p className="text-xs text-slate-300">Na oficina</p>
-                  </div>
+              <div className={cn(
+                "flex items-center gap-3 rounded-full px-5 py-2.5 border-2",
+                retornoCount > 0 
+                  ? "bg-destructive/10 border-destructive/30" 
+                  : "bg-slate-700/50 border-slate-600"
+              )}>
+                <div className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold",
+                  retornoCount > 0 ? "bg-destructive text-white" : "bg-slate-600 text-slate-300"
+                )}>
+                  {retornoCount}
                 </div>
-              )}
+                <div className="text-sm">
+                  <span className={cn("font-bold", retornoCount > 0 ? "text-destructive" : "text-slate-400")}>
+                    RETORNO
+                  </span>
+                  <p className="text-xs text-slate-400">Na oficina</p>
+                </div>
+              </div>
 
-              {/* Terceiros */}
-              {terceiroCount > 0 && (
-                <div className="flex items-center gap-2 bg-purple-500/20 backdrop-blur rounded-full px-4 py-2">
-                  <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-xs font-bold">
-                    {terceiroCount}
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-semibold text-purple-400">FORA DA LOJA</span>
-                    <p className="text-xs text-slate-300">Externos</p>
-                  </div>
+              {/* Terceiros/Fora da Loja */}
+              <div className={cn(
+                "flex items-center gap-3 rounded-full px-5 py-2.5 border-2",
+                terceiroCount > 0 
+                  ? "bg-purple-500/10 border-purple-500/30" 
+                  : "bg-slate-700/50 border-slate-600"
+              )}>
+                <div className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold",
+                  terceiroCount > 0 ? "bg-purple-500 text-white" : "bg-slate-600 text-slate-300"
+                )}>
+                  {terceiroCount}
                 </div>
-              )}
+                <div className="text-sm">
+                  <span className={cn("font-bold", terceiroCount > 0 ? "text-purple-400" : "text-slate-400")}>
+                    FORA DA LOJA
+                  </span>
+                  <p className="text-xs text-slate-400">Externos</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
