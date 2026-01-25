@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,6 +56,57 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if user has admin/gestao/dev role (only these roles can access AI assistants)
+    const { data: hasAdmin } = await supabase.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    const { data: hasGestao } = await supabase.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'gestao'
+    });
+
+    const { data: hasDev } = await supabase.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'dev'
+    });
+
+    if (!hasAdmin && !hasGestao && !hasDev) {
+      console.log(`User ${user.id} denied access to ai-oficina`);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - Insufficient permissions' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[AI-Oficina] Authenticated user: ${user.id}`);
+
     const { type, messages = [], context } = (await req.json()) as AIRequest;
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
