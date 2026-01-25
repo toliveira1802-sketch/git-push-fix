@@ -201,18 +201,18 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Agenda */}
+          {/* Agenda Mecânicos */}
           <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-orange-500/10 to-orange-600/5"
-            onClick={() => navigate('/admin/agendamentos')}
+            onClick={() => navigate('/admin/agenda-mecanicos')}
           >
             <CardContent className="p-6">
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="w-16 h-16 rounded-xl bg-orange-500/20 flex items-center justify-center">
                   <span className="text-3xl">📅</span>
                 </div>
-                <span className="text-lg font-semibold text-foreground">Agenda</span>
-                <span className="text-xs text-muted-foreground">Mecânicos, Feedback</span>
+                <span className="text-lg font-semibold text-foreground">Agenda Mecânicos</span>
+                <span className="text-xs text-muted-foreground">Alocação, Feedback</span>
               </div>
             </CardContent>
           </Card>
