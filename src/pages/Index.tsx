@@ -19,10 +19,11 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [userName, setUserName] = useState("...");
   const [activeTab, setActiveTab] = useState("cliente");
 
@@ -40,12 +41,20 @@ const Index = () => {
     }
   }, [user]);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (after loading completes)
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate('/login');
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleSocialClick = (platform: string) => {
     const urls: Record<string, string> = {
