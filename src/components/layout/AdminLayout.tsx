@@ -22,12 +22,14 @@ import {
   CalendarDays,
   Star,
   Lightbulb,
-  Bot
+  Bot,
+  Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useCompany, Company } from '@/contexts/CompanyContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   Collapsible,
   CollapsibleContent,
@@ -41,6 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface MenuItem {
   icon: any;
@@ -103,7 +106,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [companyOpen, setCompanyOpen] = useState(true);
   const [systemOpen, setSystemOpen] = useState(false);
   
-  const { companies, currentCompany, setCurrentCompany } = useCompany();
+  const { companies, currentCompany, setCurrentCompany, canSelectCompany, isConsolidated, setConsolidated } = useCompany();
+  const { isDev } = useUserRole();
 
   const handleLogout = () => {
     navigate('/login');
@@ -200,24 +204,50 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </Button>
         </div>
 
-        {/* Company Selector */}
+        {/* Company Selector - Only for dev/master */}
         {!collapsed && (
-          <div className="p-2 border-b border-sidebar-border">
-            <Select value={currentCompany.id} onValueChange={handleCompanyChange}>
-              <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  <SelectValue placeholder="Selecione a empresa" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    {company.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="p-2 border-b border-sidebar-border space-y-2">
+            {canSelectCompany ? (
+              <>
+                <Select value={isConsolidated ? "all" : currentCompany.id} onValueChange={(value) => {
+                  if (value === "all") {
+                    setConsolidated(true);
+                  } else {
+                    handleCompanyChange(value);
+                  }
+                }}>
+                  <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
+                    <div className="flex items-center gap-2">
+                      {isConsolidated ? <Layers className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+                      <SelectValue placeholder="Selecione a empresa" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-4 w-4" />
+                        <span>CONSOLIDADO</span>
+                      </div>
+                    </SelectItem>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isDev && (
+                  <Badge variant="outline" className="w-full justify-center text-xs bg-primary/10 text-primary border-primary/20">
+                    Master
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sidebar-accent text-sidebar-foreground">
+                <Building2 className="h-4 w-4" />
+                <span className="font-medium">{currentCompany.name}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -314,23 +344,42 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Mobile Menu */}
         {mobileOpen && (
           <nav className="p-2 space-y-1 border-t border-sidebar-border bg-sidebar max-h-[70vh] overflow-y-auto">
-            {/* Company Selector Mobile */}
+            {/* Company Selector Mobile - Only for dev/master */}
             <div className="pb-2 mb-2 border-b border-sidebar-border">
-              <Select value={currentCompany.id} onValueChange={handleCompanyChange}>
-                <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    <SelectValue placeholder="Selecione a empresa" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
+              {canSelectCompany ? (
+                <Select value={isConsolidated ? "all" : currentCompany.id} onValueChange={(value) => {
+                  if (value === "all") {
+                    setConsolidated(true);
+                  } else {
+                    handleCompanyChange(value);
+                  }
+                }}>
+                  <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
+                    <div className="flex items-center gap-2">
+                      {isConsolidated ? <Layers className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+                      <SelectValue placeholder="Selecione a empresa" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-4 w-4" />
+                        <span>CONSOLIDADO</span>
+                      </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sidebar-accent text-sidebar-foreground">
+                  <Building2 className="h-4 w-4" />
+                  <span className="font-medium">{currentCompany.name}</span>
+                </div>
+              )}
             </div>
 
             {/* Company Menu Items */}
