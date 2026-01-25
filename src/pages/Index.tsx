@@ -20,7 +20,7 @@ import {
   TrendingUp,
   Instagram,
   Youtube,
-  Music,
+  
   BookOpen,
   User,
   LogOut,
@@ -31,6 +31,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Loader2 } from "lucide-react";
+import TikTokIcon from "@/components/icons/TikTokIcon";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -325,7 +326,7 @@ const Index = () => {
             onClick={() => handleSocialClick("tiktok")}
             className="relative bg-gradient-to-br from-cyan-500 to-pink-500 rounded-2xl p-4 aspect-square flex items-center justify-center hover:scale-105 transition-transform"
           >
-            <Music className="w-8 h-8" />
+            <TikTokIcon size={32} />
             <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full" />
           </button>
 
