@@ -24,7 +24,7 @@ import NotFound from "./pages/NotFound";
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import OrdensServico from "./pages/admin/OrdensServico";
-
+import NovaOS from "./pages/admin/NovaOS";
 import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
@@ -46,6 +46,7 @@ import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
 import AdminPatioDetalhes from "./pages/admin/AdminPatioDetalhes";
 import Cadastros from "./pages/admin/Cadastros";
 import AdminMetas from "./pages/admin/AdminMetas";
+import AdminMonitoramentoKommo from "./pages/admin/AdminMonitoramentoKommo";
 
 // Gestão pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -86,7 +87,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/pendencias" element={<Pendencias />} />
                 <Route path="/admin/ordens-servico" element={<OrdensServico />} />
-                <Route path="/admin/os/nova" element={<AdminOSDetalhes />} />
+                <Route path="/admin/nova-os" element={<NovaOS />} />
                 <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} />
                 <Route path="/admin/clientes" element={<Clientes />} />
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
@@ -107,6 +108,7 @@ const App = () => (
                 <Route path="/admin/parametros" element={<AdminParametros />} />
                 <Route path="/admin/metas" element={<AdminMetas />} />
                 <Route path="/admin/cadastros" element={<Cadastros />} />
+                <Route path="/admin/monitoramento-kommo" element={<AdminMonitoramentoKommo />} />
                 
                 {/* Gestão Routes */}
                 <Route path="/gestao" element={<GestaoDashboards />} />
