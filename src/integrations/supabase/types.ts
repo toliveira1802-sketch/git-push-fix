@@ -637,40 +637,61 @@ export type Database = {
       }
       service_order_items: {
         Row: {
+          budget_tier: string | null
+          cost_price: number | null
           created_at: string
           description: string
+          discount_justification: string | null
+          estimated_return_date: string | null
           id: string
+          margin_percent: number | null
           notes: string | null
           priority: string | null
           quantity: number | null
+          refusal_reason: string | null
           service_order_id: string
           status: string | null
+          suggested_price: number | null
           total_price: number
           type: string
           unit_price: number
         }
         Insert: {
+          budget_tier?: string | null
+          cost_price?: number | null
           created_at?: string
           description: string
+          discount_justification?: string | null
+          estimated_return_date?: string | null
           id?: string
+          margin_percent?: number | null
           notes?: string | null
           priority?: string | null
           quantity?: number | null
+          refusal_reason?: string | null
           service_order_id: string
           status?: string | null
+          suggested_price?: number | null
           total_price: number
           type: string
           unit_price: number
         }
         Update: {
+          budget_tier?: string | null
+          cost_price?: number | null
           created_at?: string
           description?: string
+          discount_justification?: string | null
+          estimated_return_date?: string | null
           id?: string
+          margin_percent?: number | null
           notes?: string | null
           priority?: string | null
           quantity?: number | null
+          refusal_reason?: string | null
           service_order_id?: string
           status?: string | null
+          suggested_price?: number | null
           total_price?: number
           type?: string
           unit_price?: number
@@ -694,6 +715,9 @@ export type Database = {
       }
       service_orders: {
         Row: {
+          approved_total: number | null
+          budget_approved_at: string | null
+          budget_sent_at: string | null
           client_id: string
           completed_at: string | null
           created_at: string
@@ -720,6 +744,9 @@ export type Database = {
           vehicle_id: string
         }
         Insert: {
+          approved_total?: number | null
+          budget_approved_at?: string | null
+          budget_sent_at?: string | null
           client_id: string
           completed_at?: string | null
           created_at?: string
@@ -746,6 +773,9 @@ export type Database = {
           vehicle_id: string
         }
         Update: {
+          approved_total?: number | null
+          budget_approved_at?: string | null
+          budget_sent_at?: string | null
           client_id?: string
           completed_at?: string | null
           created_at?: string
