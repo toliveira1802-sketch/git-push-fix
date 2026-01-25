@@ -62,6 +62,14 @@ export function useOSDetails(osId: string | undefined) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Reset state when osId changes
+  useEffect(() => {
+    if (osId) {
+      setOS(null);
+      setIsLoading(true);
+    }
+  }, [osId]);
+
   // Fetch OS data
   const fetchOS = useCallback(async () => {
     if (!osId) {
