@@ -1,14 +1,15 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { mockUsers, mockVehicles, MockUser, MockVehicle } from '@/lib/mock-data'
 import { formatPlate } from '@/lib/utils'
 import { AdminLayout } from '@/components/layout/AdminLayout'
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 import {
   Search,
   Plus,
@@ -16,19 +17,43 @@ import {
   User,
   Phone,
   Mail,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react'
+
+interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+}
+
+interface Vehicle {
+  id: string;
+  client_id: string;
+  plate: string;
+  brand: string;
+  model: string;
+  year: number | null;
+  color: string | null;
+}
 
 interface SearchResult {
   type: 'client' | 'vehicle';
-  client: MockUser;
-  vehicle?: MockVehicle;
+  client: Client;
+  vehicle?: Vehicle;
 }
 
 export default function NovaOS() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [showQuickRegister, setShowQuickRegister] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  
+  // Data from Supabase
+  const [clients, setClients] = useState<Client[]>([])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
   
   // Quick register form
   const [newClient, setNewClient] = useState({
@@ -42,8 +67,31 @@ export default function NovaOS() {
     vehicleColor: ''
   })
 
-  // Get all clients
-  const clients = mockUsers.filter((u) => u.role === 'user')
+  // Fetch clients and vehicles
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true)
+      try {
+        const [clientsRes, vehiclesRes] = await Promise.all([
+          supabase.from('clients').select('id, name, phone, email').eq('status', 'active'),
+          supabase.from('vehicles').select('id, client_id, plate, brand, model, year, color').eq('is_active', true)
+        ])
+        
+        if (clientsRes.error) throw clientsRes.error
+        if (vehiclesRes.error) throw vehiclesRes.error
+        
+        setClients(clientsRes.data || [])
+        setVehicles(vehiclesRes.data || [])
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+        toast.error('Erro ao carregar clientes e veículos')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
 
   // Unified search - searches by client name, vehicle plate, vehicle model
   const searchResults = useMemo(() => {
@@ -53,14 +101,14 @@ export default function NovaOS() {
     const results: SearchResult[] = []
     
     // Search through vehicles (includes plate, model, brand)
-    mockVehicles.forEach(vehicle => {
-      const client = clients.find(c => c.id === vehicle.user_id)
+    vehicles.forEach(vehicle => {
+      const client = clients.find(c => c.id === vehicle.client_id)
       if (!client) return
       
       const matchesPlate = vehicle.plate.toLowerCase().includes(searchLower)
       const matchesModel = vehicle.model.toLowerCase().includes(searchLower)
       const matchesBrand = vehicle.brand.toLowerCase().includes(searchLower)
-      const matchesClientName = client.full_name?.toLowerCase().includes(searchLower)
+      const matchesClientName = client.name?.toLowerCase().includes(searchLower)
       
       if (matchesPlate || matchesModel || matchesBrand || matchesClientName) {
         results.push({
@@ -73,12 +121,13 @@ export default function NovaOS() {
     
     // Add clients without matching vehicles (if they match by name)
     clients.forEach(client => {
-      const matchesName = client.full_name?.toLowerCase().includes(searchLower)
+      const matchesName = client.name?.toLowerCase().includes(searchLower)
+      const matchesPhone = client.phone?.includes(search)
       const alreadyInResults = results.some(r => r.client.id === client.id)
       
-      if (matchesName && !alreadyInResults) {
+      if ((matchesName || matchesPhone) && !alreadyInResults) {
         // Get first vehicle of this client if any
-        const clientVehicle = mockVehicles.find(v => v.user_id === client.id)
+        const clientVehicle = vehicles.find(v => v.client_id === client.id)
         results.push({
           type: 'client',
           client,
@@ -87,25 +136,134 @@ export default function NovaOS() {
       }
     })
     
-    return results
-  }, [search, clients])
+    return results.slice(0, 20) // Limit results
+  }, [search, clients, vehicles])
 
-  const handleSelectResult = (result: SearchResult) => {
-    // Navigate to OS details page directly with client and vehicle data
-    const osId = 'os-' + Date.now()
-    navigate(`/admin/os/${osId}?new=true&clientId=${result.client.id}${result.vehicle ? `&vehicleId=${result.vehicle.id}` : ''}`)
+  // Generate order number
+  const generateOrderNumber = async (): Promise<string> => {
+    const year = new Date().getFullYear()
+    
+    // Get the latest order number for this year
+    const { data, error } = await supabase
+      .from('service_orders')
+      .select('order_number')
+      .like('order_number', `${year}-%`)
+      .order('order_number', { ascending: false })
+      .limit(1)
+    
+    if (error) throw error
+    
+    let nextNumber = 1
+    if (data && data.length > 0) {
+      const lastNumber = data[0].order_number
+      const parts = lastNumber.split('-')
+      if (parts.length === 2) {
+        nextNumber = parseInt(parts[1], 10) + 1
+      }
+    }
+    
+    return `${year}-${nextNumber.toString().padStart(5, '0')}`
   }
 
-  const handleQuickRegister = () => {
-    // In real app, would save to database
-    const newClientId = 'client-' + Date.now()
-    const newVehicleId = 'vehicle-' + Date.now()
+  const handleSelectResult = async (result: SearchResult) => {
+    if (!result.vehicle) {
+      toast.error('Selecione um veículo para criar a OS')
+      return
+    }
     
-    // Simulate creation and navigate
-    const osId = 'os-' + Date.now()
-    navigate(`/admin/os/${osId}?new=true`)
+    setIsCreating(true)
+    try {
+      const orderNumber = await generateOrderNumber()
+      
+      // Create the service order
+      const { data, error } = await supabase
+        .from('service_orders')
+        .insert({
+          order_number: orderNumber,
+          client_id: result.client.id,
+          vehicle_id: result.vehicle.id,
+          status: 'orcamento',
+          entry_km: result.vehicle.year ? null : null, // Will be filled later
+        })
+        .select('id')
+        .single()
+      
+      if (error) throw error
+      
+      toast.success(`OS ${orderNumber} criada!`)
+      navigate(`/admin/os/${data.id}?new=true`)
+    } catch (error) {
+      console.error('Erro ao criar OS:', error)
+      toast.error('Erro ao criar ordem de serviço')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const handleQuickRegister = async () => {
+    if (!newClient.name || !newClient.phone || !newClient.vehiclePlate || !newClient.vehicleBrand || !newClient.vehicleModel) {
+      toast.error('Preencha todos os campos obrigatórios')
+      return
+    }
     
-    setShowQuickRegister(false)
+    setIsCreating(true)
+    try {
+      // 1. Create client
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .insert({
+          name: newClient.name,
+          phone: newClient.phone,
+          email: newClient.email || null,
+          status: 'active',
+          registration_source: 'admin'
+        })
+        .select('id')
+        .single()
+      
+      if (clientError) throw clientError
+      
+      // 2. Create vehicle
+      const { data: vehicleData, error: vehicleError } = await supabase
+        .from('vehicles')
+        .insert({
+          client_id: clientData.id,
+          plate: newClient.vehiclePlate.toUpperCase(),
+          brand: newClient.vehicleBrand,
+          model: newClient.vehicleModel,
+          year: newClient.vehicleYear ? parseInt(newClient.vehicleYear) : null,
+          color: newClient.vehicleColor || null,
+          is_active: true
+        })
+        .select('id')
+        .single()
+      
+      if (vehicleError) throw vehicleError
+      
+      // 3. Create service order
+      const orderNumber = await generateOrderNumber()
+      const { data: osData, error: osError } = await supabase
+        .from('service_orders')
+        .insert({
+          order_number: orderNumber,
+          client_id: clientData.id,
+          vehicle_id: vehicleData.id,
+          status: 'orcamento'
+        })
+        .select('id')
+        .single()
+      
+      if (osError) throw osError
+      
+      toast.success(`Cliente, veículo e OS ${orderNumber} criados!`)
+      setShowQuickRegister(false)
+      navigate(`/admin/os/${osData.id}?new=true`)
+    } catch (error) {
+      console.error('Erro ao criar:', error)
+      toast.error('Erro ao criar cliente/veículo')
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   return (
@@ -131,6 +289,9 @@ export default function NovaOS() {
                 className="pl-12 h-14 text-lg"
                 autoFocus
               />
+              {isLoading && (
+                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+              )}
             </div>
 
             {/* Quick Register Button */}
@@ -189,26 +350,31 @@ export default function NovaOS() {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-foreground truncate">
-                            {result.client.full_name}
+                            {result.client.name}
                           </p>
                           {result.vehicle ? (
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                               <Badge variant="outline" className="font-mono">
                                 {formatPlate(result.vehicle.plate)}
                               </Badge>
                               <span className="text-sm text-muted-foreground">
-                                {result.vehicle.brand} {result.vehicle.model} ({result.vehicle.year})
+                                {result.vehicle.brand} {result.vehicle.model} {result.vehicle.year && `(${result.vehicle.year})`}
                               </span>
                             </div>
                           ) : (
                             <p className="text-sm text-muted-foreground">
                               {result.client.phone || result.client.email}
+                              <span className="text-amber-600 ml-2">(sem veículo cadastrado)</span>
                             </p>
                           )}
                         </div>
 
                         {/* Arrow */}
-                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        {isCreating ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        ) : (
+                          <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -227,6 +393,11 @@ export default function NovaOS() {
               <p className="text-muted-foreground text-sm max-w-sm mx-auto">
                 Busque pelo nome do cliente, placa do veículo ou modelo do carro
               </p>
+              {clients.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-4">
+                  {clients.length} clientes • {vehicles.length} veículos cadastrados
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -358,10 +529,14 @@ export default function NovaOS() {
             </Button>
             <Button 
               onClick={handleQuickRegister}
-              disabled={!newClient.name || !newClient.phone || !newClient.vehicleBrand || !newClient.vehicleModel || !newClient.vehiclePlate}
+              disabled={!newClient.name || !newClient.phone || !newClient.vehicleBrand || !newClient.vehicleModel || !newClient.vehiclePlate || isCreating}
               className="gap-2"
             >
-              <ArrowRight className="h-4 w-4" />
+              {isCreating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowRight className="h-4 w-4" />
+              )}
               Criar e Abrir OS
             </Button>
           </DialogFooter>
