@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -8,9 +8,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   CalendarIcon, Plus, RefreshCw, Check, 
-  ChevronLeft, ChevronRight, Car, CalendarCheck, Save, Star
+  ChevronLeft, ChevronRight, Car, CalendarCheck, Save, Star, Search
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -48,6 +50,17 @@ interface DaySchedule {
   };
 }
 
+interface PatioVehicle {
+  id: string;
+  plate: string;
+  model: string;
+  brand: string;
+  clientName: string;
+  osNumber: string;
+  status: string;
+  servico: string;
+}
+
 // Horários conforme screenshot
 const HORARIOS_PADRAO = ['08h00', '09h00', '10h00', '11h00'];
 const ALMOCO = 'ALMOÇO';
@@ -62,6 +75,9 @@ export default function AdminAgendaMecanicos() {
   const [editingCell, setEditingCell] = useState<{ mechanicId: string; hora: string } | null>(null);
   const [inputValue, setInputValue] = useState("");
   
+  // Veículos no pátio
+  const [patioVehicles, setPatioVehicles] = useState<PatioVehicle[]>([]);
+  
   // Modal state
   const [selectedSlot, setSelectedSlot] = useState<SlotDetail | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -71,6 +87,17 @@ export default function AdminAgendaMecanicos() {
   const [feedbackSlot, setFeedbackSlot] = useState<SlotDetail | null>(null);
   const [feedbackScores, setFeedbackScores] = useState({ quality: 5, punctuality: 5, performance: 5 });
   const [feedbackNotes, setFeedbackNotes] = useState("");
+
+  // Filtrar veículos do pátio baseado no input
+  const filteredPatioVehicles = useMemo(() => {
+    if (!inputValue.trim()) return [];
+    const search = inputValue.toLowerCase();
+    return patioVehicles.filter(v => 
+      v.plate.toLowerCase().includes(search) ||
+      v.model.toLowerCase().includes(search) ||
+      v.clientName.toLowerCase().includes(search)
+    ).slice(0, 5);
+  }, [inputValue, patioVehicles]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -91,7 +118,7 @@ export default function AdminAgendaMecanicos() {
         .select('id, mechanic_id, hora_inicio, tipo, status, vehicle_id')
         .eq('data', dateStr);
 
-      // Fetch OSs ativas (veículos no pátio) com mecânico atribuído
+      // Fetch OSs ativas (veículos no pátio)
       const { data: ossAtivas } = await supabase
         .from('service_orders')
         .select(`
@@ -101,11 +128,24 @@ export default function AdminAgendaMecanicos() {
           problem_description,
           status,
           estimated_completion,
-          vehicles(plate, model, brand),
+          vehicles(id, plate, model, brand),
           clients(name)
         `)
         .neq('status', 'entregue')
-        .not('mechanic_id', 'is', null);
+        .order('created_at', { ascending: true });
+
+      // Salvar lista de veículos no pátio
+      const patio: PatioVehicle[] = (ossAtivas || []).map(os => ({
+        id: os.id,
+        plate: os.vehicles?.plate || '',
+        model: os.vehicles?.model || '',
+        brand: os.vehicles?.brand || '',
+        clientName: os.clients?.name || '',
+        osNumber: os.order_number,
+        status: os.status,
+        servico: os.problem_description || 'Serviço',
+      }));
+      setPatioVehicles(patio);
 
       // Fetch agendamentos confirmados para a data
       const { data: agendamentosConfirmados } = await supabase
@@ -145,11 +185,10 @@ export default function AdminAgendaMecanicos() {
         }
       });
 
-      // Distribuir OSs do pátio nos slots disponíveis
-      ossAtivas?.forEach(os => {
+      // Distribuir OSs do pátio com mecânico nos slots disponíveis
+      ossAtivas?.filter(os => os.mechanic_id).forEach(os => {
         if (!os.mechanic_id || !scheduleMap[os.mechanic_id]) return;
         
-        // Encontrar primeiro slot disponível para este mecânico
         const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
         for (const hora of allHoras) {
           if (!scheduleMap[os.mechanic_id][hora]) {
@@ -174,7 +213,6 @@ export default function AdminAgendaMecanicos() {
 
       // Adicionar agendamentos confirmados nos slots disponíveis
       agendamentosConfirmados?.forEach(ag => {
-        // Distribuir para primeiro mecânico com slot disponível
         for (const m of mechanicsData || []) {
           const hora = ag.scheduled_time?.slice(0, 5)?.replace(':', 'h') + '0' || '08h00';
           const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
@@ -211,23 +249,10 @@ export default function AdminAgendaMecanicos() {
   useEffect(() => {
     fetchData();
     
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('agenda-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'agenda_mecanicos' },
-        () => {
-          fetchData();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'service_orders' },
-        () => {
-          fetchData();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_mecanicos' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'service_orders' }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -239,7 +264,6 @@ export default function AdminAgendaMecanicos() {
     const slot = schedule[mechanicId]?.[hora];
     
     if (slot) {
-      // Abrir modal com detalhes
       const mechanic = mechanics.find(m => m.id === mechanicId);
       setSelectedSlot({
         ...slot,
@@ -247,10 +271,52 @@ export default function AdminAgendaMecanicos() {
       });
       setModalOpen(true);
     } else if (hora !== ALMOCO) {
-      // Abrir edição para novo slot
       setEditingCell({ mechanicId, hora });
       setInputValue("");
     }
+  };
+
+  const selectVehicleFromPatio = (vehicle: PatioVehicle) => {
+    if (!editingCell) return;
+    
+    setSchedule(prev => ({
+      ...prev,
+      [editingCell.mechanicId]: {
+        ...prev[editingCell.mechanicId],
+        [editingCell.hora]: {
+          mechanic_id: editingCell.mechanicId,
+          hora: editingCell.hora,
+          vehicle_plate: vehicle.plate,
+          vehicle_model: vehicle.model,
+          vehicle_brand: vehicle.brand,
+          cliente: vehicle.clientName,
+          servico: vehicle.servico,
+          osNumber: vehicle.osNumber,
+          serviceOrderId: vehicle.id,
+          origem: 'patio',
+          tipo: editingCell.hora.startsWith('EXTRA') ? 'encaixe' : 'normal',
+          status: 'agendado',
+          isNew: true,
+        },
+      },
+    }));
+
+    // Atualizar a OS para vincular ao mecânico
+    const mechanic = mechanics.find(m => m.id === editingCell.mechanicId);
+    supabase
+      .from('service_orders')
+      .update({ mechanic_id: editingCell.mechanicId })
+      .eq('id', vehicle.id)
+      .then(({ error }) => {
+        if (error) {
+          toast.error("Erro ao vincular mecânico");
+        } else {
+          toast.success(`${vehicle.plate} atribuído a ${mechanic?.name}!`);
+        }
+      });
+
+    setEditingCell(null);
+    setInputValue("");
   };
 
   const handleInputSubmit = async () => {
@@ -278,7 +344,6 @@ export default function AdminAgendaMecanicos() {
       },
     }));
 
-    // Save to database
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     const horaDb = editingCell.hora.replace('h', ':').replace('EXTRA ', '17:0');
     
@@ -293,7 +358,6 @@ export default function AdminAgendaMecanicos() {
       });
 
     if (error) {
-      console.error('Error saving:', error);
       toast.error("Erro ao salvar");
     } else {
       toast.success("Agendamento salvo!");
@@ -304,24 +368,20 @@ export default function AdminAgendaMecanicos() {
   };
 
   const handleRemoveSlot = async (slot: SlotDetail) => {
-    const mechanicId = slot.mechanic_id;
-    const hora = slot.hora;
-    
     if (slot.id) {
       await supabase.from('agenda_mecanicos').delete().eq('id', slot.id);
     }
     
     setSchedule(prev => {
       const newSchedule = { ...prev };
-      if (newSchedule[mechanicId]) {
-        delete newSchedule[mechanicId][hora];
+      if (newSchedule[slot.mechanic_id]) {
+        delete newSchedule[slot.mechanic_id][slot.hora];
       }
       return newSchedule;
     });
     toast.success("Removido!");
   };
 
-  // Handler: Marcar como Pronto
   const handlePronto = async (slot: SlotDetail) => {
     if (slot.serviceOrderId) {
       const { error } = await supabase
@@ -329,18 +389,13 @@ export default function AdminAgendaMecanicos() {
         .update({ status: 'pronto' })
         .eq('id', slot.serviceOrderId);
       
-      if (error) {
-        toast.error("Erro ao atualizar status");
-      } else {
+      if (!error) {
         toast.success(`${slot.vehicle_plate} marcado como Pronto!`);
         fetchData();
       }
-    } else {
-      toast.info("Sem OS vinculada para atualizar");
     }
   };
 
-  // Handler: Marcar como Em Teste
   const handleEmTeste = async (slot: SlotDetail) => {
     if (slot.serviceOrderId) {
       const { error } = await supabase
@@ -348,25 +403,20 @@ export default function AdminAgendaMecanicos() {
         .update({ status: 'em_teste' })
         .eq('id', slot.serviceOrderId);
       
-      if (error) {
-        toast.error("Erro ao atualizar status");
-      } else {
+      if (!error) {
         toast.success(`${slot.vehicle_plate} em Teste!`);
         fetchData();
       }
-    } else {
-      toast.info("Sem OS vinculada para atualizar");
     }
   };
 
-  // Handler: B.O em Peça -> cria pendência automática
   const handleBOPeca = async (slot: SlotDetail) => {
     const { error } = await supabase
       .from('pendencias')
       .insert({
         tipo: 'bo_peca',
         titulo: `B.O em Peça - ${slot.vehicle_plate}`,
-        descricao: `Problema com peça no veículo ${slot.vehicle_plate} (${slot.vehicle_brand} ${slot.vehicle_model}). Mecânico: ${slot.mechanicName}`,
+        descricao: `Problema com peça no veículo ${slot.vehicle_plate}. Mecânico: ${slot.mechanicName}`,
         service_order_id: slot.serviceOrderId || null,
         vehicle_plate: slot.vehicle_plate,
         mechanic_id: slot.mechanic_id,
@@ -374,15 +424,11 @@ export default function AdminAgendaMecanicos() {
         prioridade: 'alta',
       });
 
-    if (error) {
-      console.error('Erro ao criar pendência:', error);
-      toast.error("Erro ao registrar B.O");
-    } else {
+    if (!error) {
       toast.success("B.O em Peça registrado em Pendências!");
     }
   };
 
-  // Handler: Abrir modal de feedback
   const handleFeedback = (slot: SlotDetail) => {
     setFeedbackSlot(slot);
     setFeedbackScores({ quality: 5, punctuality: 5, performance: 5 });
@@ -390,7 +436,6 @@ export default function AdminAgendaMecanicos() {
     setFeedbackOpen(true);
   };
 
-  // Salvar feedback
   const saveFeedback = async () => {
     if (!feedbackSlot) return;
 
@@ -405,53 +450,35 @@ export default function AdminAgendaMecanicos() {
         notes: feedbackNotes || null,
       });
 
-    if (error) {
-      console.error('Erro ao salvar feedback:', error);
-      toast.error("Erro ao salvar feedback");
-    } else {
+    if (!error) {
       toast.success("Feedback salvo!");
       setFeedbackOpen(false);
     }
   };
 
-  // Salvar snapshot da agenda
   const saveSnapshot = async () => {
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
-    // Construir snapshot
     const snapshot = {
       mechanics: mechanics.map(m => ({
         id: m.id,
         name: m.name,
-        slots: Object.entries(schedule[m.id] || {}).map(([hora, slot]) => ({
-          hora,
-          ...slot,
-        })),
+        slots: Object.entries(schedule[m.id] || {}).map(([hora, slot]) => ({ hora, ...slot })),
       })),
       savedAt: new Date().toISOString(),
     };
 
     const { error } = await supabase
       .from('agenda_snapshots')
-      .insert({
-        data_agenda: dateStr,
-        snapshot: snapshot,
-      });
+      .insert({ data_agenda: dateStr, snapshot });
 
-    if (error) {
-      console.error('Erro ao salvar snapshot:', error);
-      toast.error("Erro ao salvar retrato da agenda");
-    } else {
+    if (!error) {
       toast.success("Retrato da agenda salvo!");
     }
   };
 
   const allHorarios = [...HORARIOS_PADRAO, ALMOCO, ...HORARIOS_TARDE, ...HORARIOS_EXTRA];
 
-  // Corrigir nome Tadeiu -> Tadeu
-  const fixMechanicName = (name: string) => {
-    return name.replace(/Tadeiu/gi, 'Tadeu');
-  };
+  const fixMechanicName = (name: string) => name.replace(/Tadeiu/gi, 'Tadeu');
 
   if (loading) {
     return (
@@ -473,16 +500,12 @@ export default function AdminAgendaMecanicos() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Agenda dos Mecânicos</h1>
               <p className="text-sm text-muted-foreground">
-                Clique nas células para ver detalhes ou adicionar
+                Clique nas células para ver detalhes • Digite placa para buscar no pátio
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSelectedDate(prev => subDays(prev, 1))}
-            >
+            <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => subDays(prev, 1))}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
 
@@ -503,11 +526,7 @@ export default function AdminAgendaMecanicos() {
               </PopoverContent>
             </Popover>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSelectedDate(prev => addDays(prev, 1))}
-            >
+            <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))}>
               <ChevronRight className="w-4 h-4" />
             </Button>
 
@@ -523,7 +542,7 @@ export default function AdminAgendaMecanicos() {
           </div>
         </div>
 
-        {/* Schedule Table - COMPACTA */}
+        {/* Schedule Table */}
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             {mechanics.length === 0 ? (
@@ -573,23 +592,40 @@ export default function AdminAgendaMecanicos() {
                         }
 
                         return (
-                          <td key={hora} className="p-0.5 border-r">
+                          <td key={hora} className="p-0.5 border-r relative">
                             {isEditing ? (
-                              <div className="flex items-center gap-0.5">
-                                <Input
-                                  value={inputValue}
-                                  onChange={(e) => setInputValue(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleInputSubmit();
-                                    if (e.key === 'Escape') setEditingCell(null);
-                                  }}
-                                  placeholder="Placa"
-                                  className="h-7 text-[10px] w-16 px-1"
-                                  autoFocus
-                                />
-                                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleInputSubmit}>
-                                  <Check className="w-2.5 h-2.5" />
-                                </Button>
+                              <div className="relative">
+                                <div className="flex items-center gap-0.5">
+                                  <Input
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleInputSubmit();
+                                      if (e.key === 'Escape') setEditingCell(null);
+                                    }}
+                                    placeholder="Placa"
+                                    className="h-7 text-[10px] w-16 px-1"
+                                    autoFocus
+                                  />
+                                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleInputSubmit}>
+                                    <Check className="w-2.5 h-2.5" />
+                                  </Button>
+                                </div>
+                                {/* Autocomplete dropdown */}
+                                {filteredPatioVehicles.length > 0 && (
+                                  <div className="absolute z-50 top-full left-0 mt-1 w-48 bg-popover border rounded-md shadow-lg">
+                                    {filteredPatioVehicles.map(v => (
+                                      <div
+                                        key={v.id}
+                                        className="px-2 py-1.5 hover:bg-muted cursor-pointer text-xs"
+                                        onClick={() => selectVehicleFromPatio(v)}
+                                      >
+                                        <p className="font-mono font-bold">{v.plate}</p>
+                                        <p className="text-muted-foreground truncate">{v.brand} {v.model} - {v.clientName}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ) : slot ? (
                               <div 
@@ -652,9 +688,63 @@ export default function AdminAgendaMecanicos() {
           </div>
         </div>
 
+        {/* Veículos no Pátio */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Car className="w-5 h-5 text-primary" />
+              Veículos no Pátio ({patioVehicles.length})
+              <span className="text-xs text-muted-foreground font-normal ml-2">
+                Clique para atribuir a um slot
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[200px]">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+                {patioVehicles.map(v => (
+                  <div
+                    key={v.id}
+                    className="p-2 rounded-lg border bg-card hover:border-primary hover:shadow-sm transition-all cursor-pointer"
+                    onClick={() => {
+                      // Encontrar primeiro slot vazio do primeiro mecânico
+                      if (mechanics.length > 0) {
+                        const m = mechanics[0];
+                        const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
+                        const horaVazia = allHoras.find(h => !schedule[m.id]?.[h]);
+                        if (horaVazia) {
+                          setEditingCell({ mechanicId: m.id, hora: horaVazia });
+                          setInputValue(v.plate);
+                        }
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Car className="w-4 h-4 text-primary shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-mono font-bold text-xs">{v.plate}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{v.brand} {v.model}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{v.clientName}</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-[9px] mt-1">
+                      {v.status}
+                    </Badge>
+                  </div>
+                ))}
+                {patioVehicles.length === 0 && (
+                  <p className="text-sm text-muted-foreground col-span-full text-center py-4">
+                    Nenhum veículo no pátio
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
         {/* Info */}
         <p className="text-center text-xs text-muted-foreground">
-          Horários: 8h-16h30 • Almoço: 12h15-13h30 • 3 slots extras para encaixes • Atualizações em tempo real
+          Horários: 8h-16h30 • Almoço: 12h15-13h30 • 3 slots extras • Atualizações em tempo real
         </p>
       </div>
 
