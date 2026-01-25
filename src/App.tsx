@@ -27,6 +27,7 @@ import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
+import AdminIAs from "./pages/admin/AdminIAs";
 import NovaPromocao from "./pages/admin/NovaPromocao";
 import Pendencias from "./pages/admin/Pendencias";
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/admin/clientes" element={<Clientes />} />
             <Route path="/admin/veiculos" element={<AdminVeiculos />} />
             <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
+            <Route path="/admin/ias" element={<AdminIAs />} />
             <Route path="/admin/nova-promocao" element={<NovaPromocao />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
