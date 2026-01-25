@@ -16,7 +16,13 @@ import {
   MapPin,
   Home,
   BarChart3,
-  Building2
+  Building2,
+  Activity,
+  DollarSign,
+  CalendarDays,
+  Star,
+  Lightbulb,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -36,23 +42,57 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
+interface MenuItem {
+  icon: any;
+  label: string;
+  path: string;
+  highlight?: boolean;
+  subItems?: MenuItem[];
+}
+
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-const companyMenuItems = [
-  { icon: Home, label: 'Home', path: '/admin' },
+const companyMenuItems: MenuItem[] = [
+  { 
+    icon: Home, 
+    label: 'Home', 
+    path: '/admin',
+    subItems: [
+      { icon: Activity, label: 'Operacional', path: '/admin/operacional' },
+      { icon: DollarSign, label: 'Financeiro', path: '/admin/financeiro' },
+      { icon: BarChart3, label: 'Produtividade', path: '/admin/produtividade' },
+      { 
+        icon: CalendarDays, 
+        label: 'Agenda Mecânicos', 
+        path: '/admin/agenda-mecanicos',
+        subItems: [
+          { icon: Star, label: 'Feedback', path: '/admin/feedback-mecanicos' },
+        ]
+      },
+    ]
+  },
   { icon: BarChart3, label: 'Visão Geral', path: '/admin/visao-geral' },
-  { icon: Plus, label: 'Nova OS', path: '/admin/nova-os' },
+  { icon: Plus, label: 'Nova OS', path: '/admin/nova-os', highlight: true },
   { icon: Users, label: 'Clientes', path: '/admin/clientes' },
   { icon: ClipboardList, label: 'Ordens de Serviço', path: '/admin/ordens-servico' },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
 ];
 
-const systemMenuItems = [
+const systemMenuItems: MenuItem[] = [
   { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
-  { icon: Settings, label: 'Configurações', path: '/admin/configuracoes' },
+  { icon: Bot, label: 'IAs', path: '/admin/ias' },
+  { 
+    icon: Settings, 
+    label: 'Configurações', 
+    path: '/admin/configuracoes',
+    subItems: [
+      { icon: Lightbulb, label: 'Melhorias', path: '/admin/melhorias' },
+    ]
+  },
+  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics-mecanicos' },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
@@ -76,30 +116,56 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
-  const renderMenuItem = (item: { icon: any; label: string; path: string; highlight?: boolean }, onClick?: () => void) => {
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
+    '/admin': true,
+    '/admin/agenda-mecanicos': false,
+    '/admin/configuracoes': false,
+  });
+
+  const toggleExpanded = (path: string) => {
+    setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));
+  };
+
+  const renderMenuItem = (item: MenuItem, onClick?: () => void, level = 0) => {
     const Icon = item.icon;
     const isActive = location.pathname === item.path || 
       (item.path !== '/admin' && location.pathname.startsWith(item.path));
-    const isHighlight = 'highlight' in item && item.highlight;
+    const isHighlight = item.highlight;
+    const hasSubItems = item.subItems && item.subItems.length > 0;
+    const isExpanded = expandedItems[item.path];
     
     return (
-      <Button
-        key={item.path}
-        variant={isHighlight ? "default" : isActive ? "secondary" : "ghost"}
-        className={cn(
-          "w-full justify-start gap-3",
-          collapsed && "justify-center px-2",
-          isHighlight && "bg-primary text-primary-foreground hover:bg-primary/90",
-          isActive && "bg-secondary"
+      <div key={item.path}>
+        <Button
+          variant={isHighlight ? "default" : isActive ? "secondary" : "ghost"}
+          className={cn(
+            "w-full justify-start gap-3",
+            collapsed && "justify-center px-2",
+            isHighlight && "bg-primary text-primary-foreground hover:bg-primary/90",
+            isActive && !isHighlight && "bg-secondary",
+            level > 0 && "ml-4 w-[calc(100%-1rem)]",
+            level > 1 && "ml-8 w-[calc(100%-2rem)]"
+          )}
+          onClick={() => {
+            if (hasSubItems && !collapsed) {
+              toggleExpanded(item.path);
+            }
+            navigate(item.path);
+            onClick?.();
+          }}
+        >
+          <Icon className="h-5 w-5 shrink-0" />
+          {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+          {!collapsed && hasSubItems && (
+            isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+          )}
+        </Button>
+        {!collapsed && hasSubItems && isExpanded && (
+          <div className="mt-1 space-y-1">
+            {item.subItems!.map((subItem) => renderMenuItem(subItem, onClick, level + 1))}
+          </div>
         )}
-        onClick={() => {
-          navigate(item.path);
-          onClick?.();
-        }}
-      >
-        <Icon className="h-5 w-5 shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
-      </Button>
+      </div>
     );
   };
 
