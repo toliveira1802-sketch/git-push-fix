@@ -18,6 +18,7 @@ export interface VeiculoKanban {
   entradaData: Date;
   previsaoEntrega: string | null;
   total: number;
+  valorAprovado: number;
   emTerceiros: boolean;
   mecanico: string | null;
   mecanicoId: string | null;
@@ -80,7 +81,7 @@ export function usePatioKanban() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Buscar todas as OSs com veículos, clientes e mecânicos
+      // Buscar todas as OSs com veículos, clientes, mecânicos e itens
       const { data: oss, error } = await supabase
         .from('service_orders')
         .select(`
@@ -98,7 +99,8 @@ export function usePatioKanban() {
           recurso,
           vehicles!inner(plate, model, brand, year, color),
           clients!inner(name, phone),
-          mechanics(name)
+          mechanics(name),
+          service_order_items(total_price, status)
         `)
         .order('created_at', { ascending: false });
 
@@ -139,6 +141,14 @@ export function usePatioKanban() {
         
         if (etapaIndex >= 0) {
           const createdAt = new Date(os.created_at);
+          
+          // Calcular valor aprovado (soma dos itens com status 'aprovado')
+          const valorAprovado = (os.service_order_items || [])
+            .filter((item: { status: string | null; total_price: number }) => 
+              item.status?.toLowerCase() === 'aprovado'
+            )
+            .reduce((sum: number, item: { total_price: number }) => sum + (item.total_price || 0), 0);
+
           const veiculo: VeiculoKanban = {
             id: os.id,
             orderNumber: os.order_number,
@@ -162,6 +172,7 @@ export function usePatioKanban() {
               ? new Date(os.estimated_completion).toLocaleDateString('pt-BR')
               : null,
             total: os.total || 0,
+            valorAprovado: valorAprovado,
             emTerceiros: os.em_terceiros || false,
             mecanico: os.mechanics?.name || null,
             mecanicoId: os.mechanic_id || null,

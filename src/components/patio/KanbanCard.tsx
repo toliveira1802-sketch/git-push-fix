@@ -158,13 +158,16 @@ export function KanbanCard({ veiculo, isDragging, onDragStart, onDragEnd, onUpda
           )}
         </div>
 
-        {/* Valor */}
-        {veiculo.total > 0 && (
-          <div className="flex items-center justify-end gap-1 pt-2 border-t">
-            <DollarSign className="w-3 h-3 text-emerald-600" />
-            <span className="text-sm font-semibold text-emerald-600">
-              R$ {veiculo.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
+        {/* Valor Aprovado */}
+        {veiculo.valorAprovado > 0 && (
+          <div className="flex items-center justify-between pt-2 border-t">
+            <span className="text-[10px] text-muted-foreground">Aprovado:</span>
+            <div className="flex items-center gap-1">
+              <DollarSign className="w-3 h-3 text-emerald-600" />
+              <span className="text-sm font-semibold text-emerald-600">
+                R$ {veiculo.valorAprovado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
           </div>
         )}
       </div>
