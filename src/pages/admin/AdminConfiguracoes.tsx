@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Settings, 
   Car, 
@@ -13,32 +15,76 @@ import {
   Bell, 
   Save, 
   Loader2,
-  Users,
-  Wrench
+  Target,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  Star,
+  ShoppingCart,
+  Wrench,
+  Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+interface Meta {
+  nome: string;
+  valor: string;
+  tipo: 'financeira' | 'crescimento' | 'nps' | 'produto' | 'operacional';
+  ativo: boolean;
+}
+
+interface HorarioFuncionamento {
+  seg_sex: { inicio: string; fim: string };
+  sab: { inicio: string; fim: string };
+}
 
 interface SystemConfig {
   capacidadeMaxima: number;
-  horaAbertura: string;
-  horaFechamento: string;
+  horarioFuncionamento: HorarioFuncionamento;
   notificacoesAtivas: boolean;
+  periodoVigente: { mes: number; ano: number };
+  diasUteis: number;
+  metas: Meta[];
+  exibirMetasSidebar: boolean;
 }
+
+const meses = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
+const tiposMeta = [
+  { value: 'financeira', label: 'Meta Financeira', icon: DollarSign },
+  { value: 'crescimento', label: 'Meta de Crescimento', icon: TrendingUp },
+  { value: 'nps', label: 'NPS / Satisfação', icon: Star },
+  { value: 'produto', label: 'Produto Vendido', icon: ShoppingCart },
+  { value: 'operacional', label: 'Meta Operacional', icon: Wrench },
+];
+
+const defaultMetas: Meta[] = [
+  { nome: 'Faturamento Mensal', valor: '', tipo: 'financeira', ativo: true },
+  { nome: 'Crescimento de Clientes', valor: '', tipo: 'crescimento', ativo: false },
+  { nome: 'NPS (Satisfação)', valor: '', tipo: 'nps', ativo: false },
+  { nome: 'Produtos Vendidos', valor: '', tipo: 'produto', ativo: false },
+  { nome: 'OSs Entregues', valor: '', tipo: 'operacional', ativo: false },
+];
 
 export default function AdminConfiguracoes() {
   const [config, setConfig] = useState<SystemConfig>({
     capacidadeMaxima: 20,
-    horaAbertura: "08:00",
-    horaFechamento: "18:00",
+    horarioFuncionamento: {
+      seg_sex: { inicio: '08:15', fim: '17:30' },
+      sab: { inicio: '08:00', fim: '12:00' },
+    },
     notificacoesAtivas: true,
+    periodoVigente: { mes: new Date().getMonth() + 1, ano: new Date().getFullYear() },
+    diasUteis: 22,
+    metas: defaultMetas,
+    exibirMetasSidebar: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showAddMechanic, setShowAddMechanic] = useState(false);
-  const [newMechanic, setNewMechanic] = useState({ name: "", specialty: "", phone: "" });
-  const [mechanics, setMechanics] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -46,7 +92,6 @@ export default function AdminConfiguracoes() {
 
   const fetchData = async () => {
     try {
-      // Fetch config
       const { data: configData } = await supabase
         .from("system_config")
         .select("key, value");
@@ -59,19 +104,17 @@ export default function AdminConfiguracoes() {
 
         setConfig({
           capacidadeMaxima: configMap.patio_capacidade?.maxima || 20,
-          horaAbertura: configMap.horario?.abertura || "08:00",
-          horaFechamento: configMap.horario?.fechamento || "18:00",
+          horarioFuncionamento: configMap.horario_funcionamento || {
+            seg_sex: { inicio: '08:15', fim: '17:30' },
+            sab: { inicio: '08:00', fim: '12:00' },
+          },
           notificacoesAtivas: configMap.notificacoes?.ativas ?? true,
+          periodoVigente: configMap.periodo_vigente || { mes: new Date().getMonth() + 1, ano: new Date().getFullYear() },
+          diasUteis: configMap.dias_trabalho?.dias_uteis || configMap.meta_mensal?.dias_uteis || 22,
+          metas: configMap.metas || defaultMetas,
+          exibirMetasSidebar: configMap.exibir_metas_sidebar ?? false,
         });
       }
-
-      // Fetch mechanics
-      const { data: mechanicsData } = await supabase
-        .from("mechanics")
-        .select("*")
-        .order("name");
-
-      setMechanics(mechanicsData || []);
     } catch (error) {
       console.error("Error fetching config:", error);
     } finally {
@@ -83,24 +126,33 @@ export default function AdminConfiguracoes() {
     setSaving(true);
     try {
       const updates = [
-        {
-          key: "patio_capacidade",
-          value: { maxima: config.capacidadeMaxima },
-        },
-        {
-          key: "horario",
-          value: { abertura: config.horaAbertura, fechamento: config.horaFechamento },
-        },
-        {
-          key: "notificacoes",
-          value: { ativas: config.notificacoesAtivas },
-        },
+        { key: "patio_capacidade", value: { maxima: config.capacidadeMaxima } },
+        { key: "horario_funcionamento", value: config.horarioFuncionamento },
+        { key: "notificacoes", value: { ativas: config.notificacoesAtivas } },
+        { key: "periodo_vigente", value: config.periodoVigente },
+        { key: "meta_mensal", value: { dias_uteis: config.diasUteis } },
+        { key: "metas", value: config.metas },
+        { key: "exibir_metas_sidebar", value: config.exibirMetasSidebar },
       ];
 
       for (const update of updates) {
-        await supabase
+        // Check if exists
+        const { data: existing } = await supabase
           .from("system_config")
-          .upsert({ key: update.key, value: update.value });
+          .select("id")
+          .eq("key", update.key)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from("system_config")
+            .update({ value: JSON.parse(JSON.stringify(update.value)), updated_at: new Date().toISOString() })
+            .eq("key", update.key);
+        } else {
+          await supabase
+            .from("system_config")
+            .insert({ key: update.key, value: JSON.parse(JSON.stringify(update.value)) });
+        }
       }
 
       toast.success("Configurações salvas!");
@@ -112,44 +164,21 @@ export default function AdminConfiguracoes() {
     }
   };
 
-  const handleAddMechanic = async () => {
-    if (!newMechanic.name.trim()) {
-      toast.error("Nome é obrigatório");
-      return;
-    }
-
-    try {
-      const { error } = await supabase.from("mechanics").insert({
-        name: newMechanic.name,
-        specialty: newMechanic.specialty || null,
-        phone: newMechanic.phone || null,
-      });
-
-      if (error) throw error;
-
-      toast.success("Mecânico adicionado!");
-      setNewMechanic({ name: "", specialty: "", phone: "" });
-      setShowAddMechanic(false);
-      fetchData();
-    } catch (error) {
-      console.error("Error adding mechanic:", error);
-      toast.error("Erro ao adicionar mecânico");
-    }
+  const updateMeta = (index: number, field: keyof Meta, value: string | boolean) => {
+    setConfig(prev => {
+      const newMetas = [...prev.metas];
+      newMetas[index] = { ...newMetas[index], [field]: value };
+      return { ...prev, metas: newMetas };
+    });
   };
 
-  const handleToggleMechanic = async (id: string, isActive: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("mechanics")
-        .update({ is_active: isActive })
-        .eq("id", id);
-
-      if (error) throw error;
-      fetchData();
-    } catch (error) {
-      console.error("Error updating mechanic:", error);
-      toast.error("Erro ao atualizar mecânico");
+  const getMetaIcon = (tipo: string) => {
+    const meta = tiposMeta.find(t => t.value === tipo);
+    if (meta) {
+      const Icon = meta.icon;
+      return <Icon className="w-4 h-4" />;
     }
+    return <Target className="w-4 h-4" />;
   };
 
   if (loading) {
@@ -164,13 +193,16 @@ export default function AdminConfiguracoes() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-w-4xl">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Settings className="w-6 h-6" />
+              Configurações
+            </h1>
             <p className="text-muted-foreground">
-              Configurações gerais do sistema
+              Configurações gerais e metas do sistema
             </p>
           </div>
           <Button onClick={handleSave} disabled={saving}>
@@ -183,184 +215,325 @@ export default function AdminConfiguracoes() {
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Configurações Gerais */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Configurações Gerais
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        {/* Período Vigente */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Período Vigente
+            </CardTitle>
+            <CardDescription>
+              Define o mês e ano para cálculo das metas e relatórios
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Car className="w-4 h-4" />
-                  Capacidade Máxima do Pátio
-                </Label>
+                <Label>Mês</Label>
+                <Select
+                  value={config.periodoVigente.mes.toString()}
+                  onValueChange={(v) => setConfig(prev => ({
+                    ...prev,
+                    periodoVigente: { ...prev.periodoVigente, mes: parseInt(v) }
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {meses.map((mes, idx) => (
+                      <SelectItem key={idx} value={(idx + 1).toString()}>
+                        {mes}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Ano</Label>
+                <Select
+                  value={config.periodoVigente.ano.toString()}
+                  onValueChange={(v) => setConfig(prev => ({
+                    ...prev,
+                    periodoVigente: { ...prev.periodoVigente, ano: parseInt(v) }
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2024, 2025, 2026, 2027].map((ano) => (
+                      <SelectItem key={ano} value={ano.toString()}>
+                        {ano}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Dias Úteis</Label>
                 <Input
                   type="number"
-                  value={config.capacidadeMaxima}
-                  onChange={(e) =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      capacidadeMaxima: parseInt(e.target.value) || 0,
-                    }))
-                  }
+                  value={config.diasUteis}
+                  onChange={(e) => setConfig(prev => ({
+                    ...prev,
+                    diasUteis: parseInt(e.target.value) || 22
+                  }))}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Número máximo de veículos no pátio
-                </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <Separator />
+        {/* Metas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Metas do Período
+            </CardTitle>
+            <CardDescription>
+              Configure as metas financeiras, de crescimento, NPS e operacionais
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Exibir no sidebar */}
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Eye className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <Label className="font-medium">Exibir Metas no Menu Lateral</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Adiciona atalho para o dashboard de metas no sidebar
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={config.exibirMetasSidebar}
+                onCheckedChange={(checked) => setConfig(prev => ({
+                  ...prev,
+                  exibirMetasSidebar: checked
+                }))}
+              />
+            </div>
 
-              <div className="space-y-4">
-                <Label className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Horário de Funcionamento
-                </Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+            <Separator />
+
+            {/* Lista de Metas */}
+            <div className="space-y-3">
+              {config.metas.map((meta, index) => (
+                <div
+                  key={index}
+                  className={`p-4 border rounded-lg transition-opacity ${!meta.ativo ? 'opacity-50' : ''}`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        {getMetaIcon(meta.tipo)}
+                      </div>
+                      <span className="font-medium">{meta.nome || 'Nova Meta'}</span>
+                    </div>
+                    <Switch
+                      checked={meta.ativo}
+                      onCheckedChange={(checked) => updateMeta(index, 'ativo', checked)}
+                    />
+                  </div>
+                  
+                  {meta.ativo && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Nome</Label>
+                        <Input
+                          value={meta.nome}
+                          onChange={(e) => updateMeta(index, 'nome', e.target.value)}
+                          placeholder="Nome da meta"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Valor/Objetivo</Label>
+                        <Input
+                          value={meta.valor}
+                          onChange={(e) => updateMeta(index, 'valor', e.target.value)}
+                          placeholder="R$ 100.000 ou 50"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Tipo</Label>
+                        <Select
+                          value={meta.tipo}
+                          onValueChange={(v) => updateMeta(index, 'tipo', v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tiposMeta.map((tipo) => (
+                              <SelectItem key={tipo.value} value={tipo.value}>
+                                {tipo.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Resumo */}
+            <div className="p-4 rounded-lg bg-muted/50">
+              <p className="text-sm font-medium mb-2">Metas Ativas:</p>
+              <div className="flex flex-wrap gap-2">
+                {config.metas.filter(m => m.ativo).map((meta, idx) => (
+                  <Badge key={idx} variant="secondary" className="gap-1">
+                    {getMetaIcon(meta.tipo)}
+                    {meta.nome}
+                    {meta.valor && `: ${meta.valor}`}
+                  </Badge>
+                ))}
+                {config.metas.filter(m => m.ativo).length === 0 && (
+                  <span className="text-sm text-muted-foreground">Nenhuma meta ativa</span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Horário de Funcionamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Horário de Funcionamento
+            </CardTitle>
+            <CardDescription>
+              Configure os horários de abertura e fechamento
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 border rounded-lg space-y-3">
+                <Label className="font-medium">Segunda a Sexta</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Abertura</Label>
                     <Input
                       type="time"
-                      value={config.horaAbertura}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          horaAbertura: e.target.value,
-                        }))
-                      }
+                      value={config.horarioFuncionamento.seg_sex.inicio}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horarioFuncionamento: {
+                          ...prev.horarioFuncionamento,
+                          seg_sex: { ...prev.horarioFuncionamento.seg_sex, inicio: e.target.value }
+                        }
+                      }))}
                     />
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Fechamento</Label>
                     <Input
                       type="time"
-                      value={config.horaFechamento}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          horaFechamento: e.target.value,
-                        }))
-                      }
+                      value={config.horarioFuncionamento.seg_sex.fim}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horarioFuncionamento: {
+                          ...prev.horarioFuncionamento,
+                          seg_sex: { ...prev.horarioFuncionamento.seg_sex, fim: e.target.value }
+                        }
+                      }))}
                     />
                   </div>
                 </div>
               </div>
 
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Bell className="w-4 h-4" />
-                  Notificações Ativas
-                </Label>
-                <Switch
-                  checked={config.notificacoesAtivas}
-                  onCheckedChange={(checked) =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      notificacoesAtivas: checked,
-                    }))
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Mecânicos */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Mecânicos
-                </CardTitle>
-                <Dialog open={showAddMechanic} onOpenChange={setShowAddMechanic}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">Adicionar</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Novo Mecânico</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div>
-                        <Label>Nome *</Label>
-                        <Input
-                          value={newMechanic.name}
-                          onChange={(e) =>
-                            setNewMechanic((prev) => ({ ...prev, name: e.target.value }))
-                          }
-                          placeholder="Nome completo"
-                        />
-                      </div>
-                      <div>
-                        <Label>Especialidade</Label>
-                        <Input
-                          value={newMechanic.specialty}
-                          onChange={(e) =>
-                            setNewMechanic((prev) => ({ ...prev, specialty: e.target.value }))
-                          }
-                          placeholder="Ex: Motor, Elétrica, Suspensão"
-                        />
-                      </div>
-                      <div>
-                        <Label>Telefone</Label>
-                        <Input
-                          value={newMechanic.phone}
-                          onChange={(e) =>
-                            setNewMechanic((prev) => ({ ...prev, phone: e.target.value }))
-                          }
-                          placeholder="(11) 99999-9999"
-                        />
-                      </div>
-                      <Button className="w-full" onClick={handleAddMechanic}>
-                        Adicionar Mecânico
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {mechanics.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  Nenhum mecânico cadastrado
-                </p>
-              ) : (
-                mechanics.map((mechanic) => (
-                  <div
-                    key={mechanic.id}
-                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Wrench className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{mechanic.name}</p>
-                        {mechanic.specialty && (
-                          <p className="text-xs text-muted-foreground">
-                            {mechanic.specialty}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Switch
-                      checked={mechanic.is_active}
-                      onCheckedChange={(checked) =>
-                        handleToggleMechanic(mechanic.id, checked)
-                      }
+              <div className="p-4 border rounded-lg space-y-3">
+                <Label className="font-medium">Sábado</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Abertura</Label>
+                    <Input
+                      type="time"
+                      value={config.horarioFuncionamento.sab.inicio}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horarioFuncionamento: {
+                          ...prev.horarioFuncionamento,
+                          sab: { ...prev.horarioFuncionamento.sab, inicio: e.target.value }
+                        }
+                      }))}
                     />
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Fechamento</Label>
+                    <Input
+                      type="time"
+                      value={config.horarioFuncionamento.sab.fim}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        horarioFuncionamento: {
+                          ...prev.horarioFuncionamento,
+                          sab: { ...prev.horarioFuncionamento.sab, fim: e.target.value }
+                        }
+                      }))}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Outras Configurações */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Outras Configurações
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <Car className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <Label className="font-medium">Capacidade do Pátio</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Número máximo de veículos
+                  </p>
+                </div>
+              </div>
+              <Input
+                type="number"
+                className="w-24"
+                value={config.capacidadeMaxima}
+                onChange={(e) => setConfig(prev => ({
+                  ...prev,
+                  capacidadeMaxima: parseInt(e.target.value) || 0
+                }))}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <Label className="font-medium">Notificações Ativas</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receber alertas do sistema
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={config.notificacoesAtivas}
+                onCheckedChange={(checked) => setConfig(prev => ({
+                  ...prev,
+                  notificacoesAtivas: checked
+                }))}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
