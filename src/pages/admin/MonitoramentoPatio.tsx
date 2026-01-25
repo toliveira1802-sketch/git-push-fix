@@ -34,11 +34,53 @@ interface VeiculoNaoAlocado {
   previsaoSaida: string;
 }
 
+interface VeiculoKanban {
+  placa: string;
+  modelo: string;
+  cliente: string;
+  servico: string;
+  entrada: string;
+  emTerceiros: boolean;
+}
+
+interface EtapaWorkflow {
+  id: string;
+  titulo: string;
+  color: string;
+  veiculos: VeiculoKanban[];
+}
+
 // Mock veículos não alocados
 const mockVeiculosNaoAlocados: VeiculoNaoAlocado[] = [
   { id: 'v1', placa: 'MNO-7890', modelo: 'Fiat Argo 2023', cliente: 'Roberto Lima', servico: 'Troca de pastilhas', entrada: '11:30', previsaoSaida: '14:00' },
   { id: 'v2', placa: 'PQR-1234', modelo: 'VW Polo 2022', cliente: 'Fernanda Costa', servico: 'Revisão 20.000km', entrada: '12:00', previsaoSaida: '17:00' },
   { id: 'v3', placa: 'STU-5678', modelo: 'Hyundai Creta 2024', cliente: 'Lucas Mendes', servico: 'Diagnóstico', entrada: '13:00', previsaoSaida: '15:00' },
+];
+
+// Mock inicial das etapas do workflow
+const initialEtapasWorkflow: EtapaWorkflow[] = [
+  { id: 'diagnostico', titulo: 'Diagnóstico', color: 'bg-purple-500/10 border-purple-500/30', veiculos: [
+    { placa: 'ABC-1234', modelo: 'Gol 2020', cliente: 'João Silva', servico: 'Verificar barulho', entrada: '08:30', emTerceiros: false },
+  ]},
+  { id: 'orcamento', titulo: 'Orçamento', color: 'bg-blue-500/10 border-blue-500/30', veiculos: [
+    { placa: 'XYZ-5678', modelo: 'Civic 2019', cliente: 'Maria Santos', servico: 'Revisão completa', entrada: '09:15', emTerceiros: false },
+  ]},
+  { id: 'aguardando-apv', titulo: 'Aguardando Aprovação', color: 'bg-amber-500/10 border-amber-500/30', veiculos: [
+    { placa: 'DEF-9012', modelo: 'Corolla 2021', cliente: 'Pedro Costa', servico: 'Suspensão', entrada: '10:00', emTerceiros: false },
+    { placa: 'MNO-7890', modelo: 'Fiat Argo', cliente: 'Roberto Lima', servico: 'Freios', entrada: '11:30', emTerceiros: false },
+  ]},
+  { id: 'aguardando-peca', titulo: 'Aguardando Peça', color: 'bg-orange-500/10 border-orange-500/30', veiculos: [
+    { placa: 'GHI-3456', modelo: 'HB20 2022', cliente: 'Ana Lima', servico: 'Embreagem', entrada: '07:00', emTerceiros: true },
+  ]},
+  { id: 'execucao', titulo: 'Em Execução', color: 'bg-cyan-500/10 border-cyan-500/30', veiculos: [
+    { placa: 'PQR-1234', modelo: 'VW Polo', cliente: 'Fernanda Costa', servico: 'Motor', entrada: '12:00', emTerceiros: false },
+    { placa: 'STU-5678', modelo: 'Hyundai Creta', cliente: 'Lucas Mendes', servico: 'Injeção', entrada: '13:00', emTerceiros: false },
+  ]},
+  { id: 'teste', titulo: 'Em Teste', color: 'bg-indigo-500/10 border-indigo-500/30', veiculos: [] },
+  { id: 'pronto', titulo: 'Pronto', color: 'bg-emerald-500/10 border-emerald-500/30', veiculos: [
+    { placa: 'JKL-0000', modelo: 'Onix 2023', cliente: 'Carlos Oliveira', servico: 'Revisão', entrada: '06:00', emTerceiros: false },
+  ]},
+  { id: 'entregue', titulo: 'Entregue', color: 'bg-muted border-muted-foreground/20', veiculos: [] },
 ];
 
 export default function MonitoramentoPatio() {
@@ -97,6 +139,9 @@ export default function MonitoramentoPatio() {
   ]);
   
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [etapasWorkflow, setEtapasWorkflow] = useState<EtapaWorkflow[]>(initialEtapasWorkflow);
+  const [draggedVeiculoKanban, setDraggedVeiculoKanban] = useState<{ veiculo: VeiculoKanban; fromEtapaId: string } | null>(null);
+  const [dragOverEtapa, setDragOverEtapa] = useState<string | null>(null);
   
   useEffect(() => {
     if (!autoRefresh) return;
@@ -107,32 +152,6 @@ export default function MonitoramentoPatio() {
   }, [autoRefresh]);
   
   const veiculosEmAtendimento = areas.filter(a => a.veiculo);
-  
-  // Dados do workflow (mock) - veículos em cada etapa
-  const etapasWorkflow = [
-    { id: 'diagnostico', titulo: 'Diagnóstico', color: 'bg-purple-500/10 border-purple-500/30', veiculos: [
-      { placa: 'ABC-1234', modelo: 'Gol 2020', cliente: 'João Silva', servico: 'Verificar barulho', entrada: '08:30', emTerceiros: false },
-    ]},
-    { id: 'orcamento', titulo: 'Orçamento', color: 'bg-blue-500/10 border-blue-500/30', veiculos: [
-      { placa: 'XYZ-5678', modelo: 'Civic 2019', cliente: 'Maria Santos', servico: 'Revisão completa', entrada: '09:15', emTerceiros: false },
-    ]},
-    { id: 'aguardando-apv', titulo: 'Aguardando Aprovação', color: 'bg-amber-500/10 border-amber-500/30', veiculos: [
-      { placa: 'DEF-9012', modelo: 'Corolla 2021', cliente: 'Pedro Costa', servico: 'Suspensão', entrada: '10:00', emTerceiros: false },
-      { placa: 'MNO-7890', modelo: 'Fiat Argo', cliente: 'Roberto Lima', servico: 'Freios', entrada: '11:30', emTerceiros: false },
-    ]},
-    { id: 'aguardando-peca', titulo: 'Aguardando Peça', color: 'bg-orange-500/10 border-orange-500/30', veiculos: [
-      { placa: 'GHI-3456', modelo: 'HB20 2022', cliente: 'Ana Lima', servico: 'Embreagem', entrada: '07:00', emTerceiros: true }, // Em terceiros
-    ]},
-    { id: 'execucao', titulo: 'Em Execução', color: 'bg-cyan-500/10 border-cyan-500/30', veiculos: [
-      { placa: 'PQR-1234', modelo: 'VW Polo', cliente: 'Fernanda Costa', servico: 'Motor', entrada: '12:00', emTerceiros: false },
-      { placa: 'STU-5678', modelo: 'Hyundai Creta', cliente: 'Lucas Mendes', servico: 'Injeção', entrada: '13:00', emTerceiros: false },
-    ]},
-    { id: 'teste', titulo: 'Em Teste', color: 'bg-indigo-500/10 border-indigo-500/30', veiculos: [] },
-    { id: 'pronto', titulo: 'Pronto', color: 'bg-emerald-500/10 border-emerald-500/30', veiculos: [
-      { placa: 'JKL-0000', modelo: 'Onix 2023', cliente: 'Carlos Oliveira', servico: 'Revisão', entrada: '06:00', emTerceiros: false },
-    ]},
-    { id: 'entregue', titulo: 'Entregue', color: 'bg-muted border-muted-foreground/20', veiculos: [] },
-  ];
   
   // Total de veículos no pátio = todos no workflow EXCETO os que estão "em terceiros" e "entregue"
   const todosVeiculos = etapasWorkflow.flatMap(e => e.veiculos);
@@ -151,13 +170,66 @@ export default function MonitoramentoPatio() {
     }
   };
 
-  // Componente Kanban
+  // Handlers para drag and drop do Kanban
+  const handleDragStart = (veiculo: VeiculoKanban, fromEtapaId: string) => {
+    setDraggedVeiculoKanban({ veiculo, fromEtapaId });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedVeiculoKanban(null);
+    setDragOverEtapa(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, etapaId: string) => {
+    e.preventDefault();
+    setDragOverEtapa(etapaId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverEtapa(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, toEtapaId: string) => {
+    e.preventDefault();
+    if (!draggedVeiculoKanban) return;
+    
+    const { veiculo, fromEtapaId } = draggedVeiculoKanban;
+    
+    if (fromEtapaId === toEtapaId) {
+      setDraggedVeiculoKanban(null);
+      setDragOverEtapa(null);
+      return;
+    }
+    
+    setEtapasWorkflow(prev => prev.map(etapa => {
+      if (etapa.id === fromEtapaId) {
+        return { ...etapa, veiculos: etapa.veiculos.filter(v => v.placa !== veiculo.placa) };
+      }
+      if (etapa.id === toEtapaId) {
+        return { ...etapa, veiculos: [...etapa.veiculos, veiculo] };
+      }
+      return etapa;
+    }));
+    
+    setDraggedVeiculoKanban(null);
+    setDragOverEtapa(null);
+  };
+
+  // Componente Kanban com Drag and Drop
   const KanbanView = () => {
     return (
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-3 min-w-max">
           {etapasWorkflow.map((etapa) => (
-            <Card key={etapa.id} className={`w-56 shrink-0 border ${etapa.color}`}>
+            <Card 
+              key={etapa.id} 
+              className={`w-56 shrink-0 border transition-all ${etapa.color} ${
+                dragOverEtapa === etapa.id ? 'ring-2 ring-primary ring-offset-2' : ''
+              }`}
+              onDragOver={(e) => handleDragOver(e, etapa.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, etapa.id)}
+            >
               <CardHeader className="pb-2 px-3 pt-3">
                 <CardTitle className="text-xs flex items-center justify-between">
                   {etapa.titulo}
@@ -168,16 +240,22 @@ export default function MonitoramentoPatio() {
                 <ScrollArea className="h-[450px]">
                   <div className="space-y-2 pr-1">
                     {etapa.veiculos.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-6">
-                        Vazio
-                      </p>
+                      <div className="text-xs text-muted-foreground text-center py-6 border-2 border-dashed border-muted rounded-lg">
+                        {dragOverEtapa === etapa.id ? 'Solte aqui' : 'Vazio'}
+                      </div>
                     ) : (
                       etapa.veiculos.map((veiculo, idx) => (
                         <div
                           key={veiculo.placa + idx}
-                          className="p-2 rounded-lg border bg-card hover:shadow-md transition-shadow cursor-pointer"
+                          draggable
+                          onDragStart={() => handleDragStart(veiculo, etapa.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`p-2 rounded-lg border bg-card hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${
+                            draggedVeiculoKanban?.veiculo.placa === veiculo.placa ? 'opacity-50 scale-95' : ''
+                          }`}
                         >
                           <div className="flex items-center gap-1.5 mb-1">
+                            <GripVertical className="w-3 h-3 text-muted-foreground" />
                             <Car className="w-3 h-3 text-primary" />
                             <span className="font-mono font-bold text-xs">{veiculo.placa}</span>
                           </div>
