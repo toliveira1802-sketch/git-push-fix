@@ -1,139 +1,45 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { 
-  ArrowLeft, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  Wrench, 
-  Users, 
-  Target,
-  BarChart3,
-  RefreshCw,
-  Award,
-  Zap,
-  LineChart as LineChartIcon
-} from "lucide-react";
-import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-
-interface MechanicProductivity {
-  id: string;
-  name: string;
-  osCompleted: number;
-  avgTime: number;
-  efficiency: number;
-  trend: "up" | "down" | "stable";
-}
-
-interface DailyData {
-  date: string;
-  osTotal: number;
-  avgTime: number;
-}
-
-type PeriodFilter = "hoje" | "semana" | "mes";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RefreshCw, TrendingUp } from "lucide-react";
+import { useProdutividadeDashboard } from "@/hooks/useProdutividadeDashboard";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function AdminProdutividade() {
-  const navigate = useNavigate();
-  const [period, setPeriod] = useState<PeriodFilter>("semana");
-  const [loading, setLoading] = useState(true);
-  const [mechanics, setMechanics] = useState<MechanicProductivity[]>([]);
-  const [dailyData, setDailyData] = useState<DailyData[]>([]);
+  const [semana, setSemana] = useState(1);
+  const [filtroMecanico, setFiltroMecanico] = useState("todos");
+  const [filtroCategoria, setFiltroCategoria] = useState("todas");
+  const { metrics, mechanics, loading, lastUpdate, refetch } = useProdutividadeDashboard(semana);
 
-  // Mock data for demonstration
-  const mockMechanics: MechanicProductivity[] = [
-    { id: "1", name: "Carlos Silva", osCompleted: 28, avgTime: 2.5, efficiency: 92, trend: "up" },
-    { id: "2", name: "João Santos", osCompleted: 24, avgTime: 3.1, efficiency: 85, trend: "stable" },
-    { id: "3", name: "Pedro Oliveira", osCompleted: 22, avgTime: 2.8, efficiency: 88, trend: "up" },
-    { id: "4", name: "Lucas Ferreira", osCompleted: 19, avgTime: 3.5, efficiency: 78, trend: "down" },
-    { id: "5", name: "Marcos Lima", osCompleted: 26, avgTime: 2.3, efficiency: 95, trend: "up" },
-  ];
-
-  const mockDailyData: DailyData[] = [
-    { date: "Seg", osTotal: 18, avgTime: 2.8 },
-    { date: "Ter", osTotal: 22, avgTime: 2.5 },
-    { date: "Qua", osTotal: 20, avgTime: 2.7 },
-    { date: "Qui", osTotal: 25, avgTime: 2.4 },
-    { date: "Sex", osTotal: 28, avgTime: 2.2 },
-    { date: "Sáb", osTotal: 15, avgTime: 3.0 },
-  ];
-
-  useEffect(() => {
-    fetchData();
-  }, [period]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch real mechanics from database
-      const { data: mechanicsData } = await supabase
-        .from("mechanics")
-        .select("*")
-        .eq("is_active", true);
-
-      if (mechanicsData && mechanicsData.length > 0) {
-        // Map real mechanics with mock productivity data
-        const mappedMechanics = mechanicsData.map((m, index) => ({
-          id: m.id,
-          name: m.name,
-          osCompleted: mockMechanics[index % mockMechanics.length].osCompleted,
-          avgTime: mockMechanics[index % mockMechanics.length].avgTime,
-          efficiency: mockMechanics[index % mockMechanics.length].efficiency,
-          trend: mockMechanics[index % mockMechanics.length].trend,
-        }));
-        setMechanics(mappedMechanics);
-      } else {
-        setMechanics(mockMechanics);
-      }
-
-      setDailyData(mockDailyData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setMechanics(mockMechanics);
-      setDailyData(mockDailyData);
-    } finally {
-      setLoading(false);
-    }
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+    }).format(value);
   };
 
-  // Calculate summary stats
-  const totalOS = mechanics.reduce((acc, m) => acc + m.osCompleted, 0);
-  const avgEfficiency = mechanics.length > 0 
-    ? Math.round(mechanics.reduce((acc, m) => acc + m.efficiency, 0) / mechanics.length)
-    : 0;
-  const avgTimeGlobal = mechanics.length > 0
-    ? (mechanics.reduce((acc, m) => acc + m.avgTime, 0) / mechanics.length).toFixed(1)
-    : "0";
-  const topPerformer = mechanics.reduce((prev, current) => 
-    (prev.efficiency > current.efficiency) ? prev : current, mechanics[0]);
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case "up": return <TrendingUp className="h-4 w-4 text-green-500" />;
-      case "down": return <TrendingDown className="h-4 w-4 text-red-500" />;
-      default: return <span className="h-4 w-4 text-muted-foreground">—</span>;
-    }
+  const getProgressColor = (percentual: number) => {
+    if (percentual >= 80) return 'bg-emerald-500';
+    if (percentual >= 50) return 'bg-amber-500';
+    return 'bg-destructive';
   };
 
-  const getEfficiencyColor = (efficiency: number) => {
-    if (efficiency >= 90) return "text-green-500";
-    if (efficiency >= 75) return "text-yellow-500";
-    return "text-red-500";
-  };
+  const filteredMechanics = mechanics.filter(m => {
+    if (filtroMecanico !== "todos" && m.id !== filtroMecanico) return false;
+    return true;
+  });
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-96">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       </AdminLayout>
     );
@@ -141,220 +47,164 @@ export default function AdminProdutividade() {
 
   return (
     <AdminLayout>
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
-              <ArrowLeft className="h-5 w-5" />
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard de Produtividade</h1>
+            <p className="text-sm text-muted-foreground">
+              Métricas individuais e por recurso
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              Última atualização: {format(lastUpdate, "HH:mm:ss", { locale: ptBR })}
+            </p>
+            <Button variant="outline" onClick={refetch} className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Atualizar
             </Button>
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <BarChart3 className="h-6 w-6 text-primary" />
-                  Produtividade
-                </h1>
-                <p className="text-muted-foreground">
-                  Análise de performance da equipe
-                </p>
-              </div>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={() => navigate("/admin/analytics-mecanicos")}
-                  >
-                    <LineChartIcon className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Analytics Detalhado</p>
-                </TooltipContent>
-              </UITooltip>
+          </div>
+        </div>
+
+        {/* Termômetro de Meta Mensal */}
+        <Card className="bg-card border">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <span className="font-semibold text-primary">Termômetro de Meta Mensal</span>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodFilter)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hoje">Hoje</SelectItem>
-                <SelectItem value="semana">Semana</SelectItem>
-                <SelectItem value="mes">Mês</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon" onClick={fetchData}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Wrench className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{totalOS}</p>
-                  <p className="text-sm text-muted-foreground">OS Concluídas</p>
-                </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Progresso</span>
+              <span className="text-lg font-bold">{metrics.percentualMeta.toFixed(1)}%</span>
+            </div>
+
+            <Progress value={Math.min(metrics.percentualMeta, 100)} className="h-4 mb-6" />
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="p-3 border rounded-lg">
+                <p className="text-xs text-muted-foreground">Meta</p>
+                <p className="text-lg font-bold">{formatCurrency(metrics.meta)}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <Target className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{avgEfficiency}%</p>
-                  <p className="text-sm text-muted-foreground">Eficiência Média</p>
-                </div>
+              <div className="p-3 border rounded-lg">
+                <p className="text-xs text-muted-foreground">Realizado</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(metrics.realizado)}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <Clock className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{avgTimeGlobal}h</p>
-                  <p className="text-sm text-muted-foreground">Tempo Médio/OS</p>
-                </div>
+              <div className="p-3 border rounded-lg">
+                <p className="text-xs text-muted-foreground">Projeção</p>
+                <p className="text-lg font-bold text-emerald-500">{formatCurrency(metrics.projecao)}</p>
+                <p className="text-xs text-muted-foreground">{((metrics.projecao / metrics.meta) * 100).toFixed(1)}% da meta</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10">
-                  <Award className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold truncate max-w-[120px]">{topPerformer?.name?.split(" ")[0]}</p>
-                  <p className="text-sm text-muted-foreground">Top Performer</p>
-                </div>
+              <div className="p-3 border rounded-lg">
+                <p className="text-xs text-muted-foreground">Faltam</p>
+                <p className="text-lg font-bold text-destructive">{formatCurrency(metrics.faltam)}</p>
+                <p className="text-xs text-muted-foreground">{metrics.diasRestantes} dias restantes</p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                OS por Dia
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="osTotal" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Tempo Médio por Dia
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="avgTime" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Mechanics Ranking */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Ranking de Mecânicos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mechanics
-                .sort((a, b) => b.efficiency - a.efficiency)
-                .map((mechanic, index) => (
-                  <div key={mechanic.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">{mechanic.name}</p>
-                        {getTrendIcon(mechanic.trend)}
-                      </div>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          {mechanic.osCompleted} OS
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          ~{mechanic.avgTime}h/OS
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-24">
-                        <Progress value={mechanic.efficiency} className="h-2" />
-                      </div>
-                      <Badge variant="outline" className={getEfficiencyColor(mechanic.efficiency)}>
-                        {mechanic.efficiency}%
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
             </div>
           </CardContent>
         </Card>
+
+        {/* Filtros */}
+        <div className="flex flex-wrap gap-4">
+          <Select value={filtroMecanico} onValueChange={setFiltroMecanico}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Todos Mecânicos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos Mecânicos</SelectItem>
+              {mechanics.map(m => (
+                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Todas Categorias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas Categorias</SelectItem>
+              <SelectItem value="mecanica">Mecânica</SelectItem>
+              <SelectItem value="eletrica">Elétrica</SelectItem>
+              <SelectItem value="funilaria">Funilaria</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Tabs value={semana.toString()} onValueChange={(v) => setSemana(parseInt(v))}>
+            <TabsList>
+              <TabsTrigger value="1">Semana 1</TabsTrigger>
+              <TabsTrigger value="2">Semana 2</TabsTrigger>
+              <TabsTrigger value="3">Semana 3</TabsTrigger>
+              <TabsTrigger value="4">Semana 4</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Ranking de Mecânicos */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            🏆 Ranking de Mecânicos
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredMechanics.map((mechanic) => (
+              <Card 
+                key={mechanic.id} 
+                className={`border-2 ${
+                  mechanic.ranking === 1 ? 'border-amber-400' :
+                  mechanic.ranking === 2 ? 'border-slate-400' :
+                  mechanic.ranking === 3 ? 'border-amber-600' : 'border-border'
+                }`}
+              >
+                <CardContent className="pt-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{mechanic.emoji}</span>
+                      <span className="font-semibold">{mechanic.name.split(' ')[0]}</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">#{mechanic.ranking}</span>
+                  </div>
+
+                  {/* Métricas */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">$ Valor Produzido</span>
+                      <span className="font-bold text-primary">{formatCurrency(mechanic.valorProduzido)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">🚗 Carros Atendidos</span>
+                      <span className="font-bold">{mechanic.carrosAtendidos}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">$ Ticket Médio</span>
+                      <span className="font-bold">{formatCurrency(mechanic.ticketMedio)}</span>
+                    </div>
+                  </div>
+
+                  {/* Progress */}
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">Meta Mensal</span>
+                      <span className="font-medium">{mechanic.percentualMeta.toFixed(1)}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all ${getProgressColor(mechanic.percentualMeta)}`}
+                        style={{ width: `${Math.min(mechanic.percentualMeta, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs mt-1 text-muted-foreground">
+                      <span>{formatCurrency(mechanic.valorProduzido)}</span>
+                      <span>Meta: {formatCurrency(mechanic.metaMensal)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
