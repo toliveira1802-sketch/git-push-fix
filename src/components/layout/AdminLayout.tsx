@@ -1,7 +1,6 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
   ClipboardList, 
   Users, 
   Car, 
@@ -15,21 +14,16 @@ import {
   Plus,
   MapPin,
   Home,
-  BarChart3,
   Building2,
-  Activity,
-  DollarSign,
-  CalendarDays,
-  Star,
-  Lightbulb,
-  Bot,
-  Layers
+  Layers,
+  FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Collapsible,
   CollapsibleContent,
@@ -58,44 +52,28 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { 
-    icon: Home, 
-    label: 'Home', 
-    path: '/admin',
-    subItems: [
-      { icon: Activity, label: 'Operacional', path: '/admin/operacional' },
-      { icon: DollarSign, label: 'Financeiro', path: '/admin/financeiro' },
-      { icon: BarChart3, label: 'Produtividade', path: '/admin/produtividade' },
-      { 
-        icon: CalendarDays, 
-        label: 'Agenda Mecânicos', 
-        path: '/admin/agenda-mecanicos',
-        subItems: [
-          { icon: Star, label: 'Feedback', path: '/admin/feedback-mecanicos' },
-        ]
-      },
-    ]
-  },
-  { icon: BarChart3, label: 'Visão Geral', path: '/admin/visao-geral' },
+  { icon: Home, label: 'Visão Geral', path: '/admin' },
   { icon: Plus, label: 'Nova OS', path: '/admin/nova-os', highlight: true },
-  { icon: Users, label: 'Clientes', path: '/admin/clientes' },
-  { icon: ClipboardList, label: 'Ordens de Serviço', path: '/admin/ordens-servico' },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
+  { 
+    icon: FolderOpen, 
+    label: 'Cadastros', 
+    path: '/admin/cadastros',
+    subItems: [
+      { icon: Users, label: 'Clientes', path: '/admin/clientes' },
+      { icon: ClipboardList, label: 'Ordens de Serviço', path: '/admin/ordens-servico' },
+      { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
+    ]
+  },
 ];
 
 const systemMenuItems: MenuItem[] = [
-  { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
-  { icon: Bot, label: 'IAs', path: '/admin/ias' },
   { 
     icon: Settings, 
     label: 'Configurações', 
     path: '/admin/configuracoes',
-    subItems: [
-      { icon: Lightbulb, label: 'Melhorias', path: '/admin/melhorias' },
-    ]
   },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics-mecanicos' },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
@@ -105,11 +83,46 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(true);
   const [systemOpen, setSystemOpen] = useState(false);
+  const [userName, setUserName] = useState<string>('');
   
   const { companies, currentCompany, setCurrentCompany, canSelectCompany, isConsolidated, setConsolidated } = useCompany();
   const { isDev } = useUserRole();
 
-  const handleLogout = () => {
+  // Buscar nome do usuário logado
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Tentar buscar do profile primeiro
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (profile?.full_name) {
+          setUserName(profile.full_name);
+        } else if (user.user_metadata?.full_name) {
+          setUserName(user.user_metadata.full_name);
+        } else if (user.email) {
+          setUserName(user.email.split('@')[0]);
+        }
+      }
+    };
+    fetchUserName();
+  }, []);
+
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/login');
   };
 
@@ -121,8 +134,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    '/admin': true,
-    '/admin/agenda-mecanicos': false,
+    '/admin/cadastros': false,
     '/admin/configuracoes': false,
   });
 
@@ -186,12 +198,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-4 border-b border-sidebar-border flex items-center gap-3">
           <Avatar className="h-10 w-10 shrink-0">
             <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
-              AD
+              {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-sidebar-foreground truncate">Admin</span>
+              <span className="font-semibold text-sidebar-foreground truncate">{userName || 'Usuário'}</span>
             </div>
           )}
           <Button
@@ -331,10 +343,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-sm">
-                AD
+                {getInitials(userName)}
               </AvatarFallback>
             </Avatar>
-            <span className="font-bold text-sidebar-foreground">{currentCompany.name}</span>
+            <span className="font-bold text-sidebar-foreground">{userName || currentCompany.name}</span>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)} className="text-sidebar-foreground">
             <Menu className="h-5 w-5" />
