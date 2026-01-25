@@ -54,7 +54,7 @@ const modules = [
   {
     title: "Melhorias",
     description: "Sugestões e ideias para evolução do sistema",
-    url: "/gestao/melhorias",
+    url: "/admin/melhorias",
     icon: Lightbulb,
     color: "from-cyan-500 to-cyan-600"
   },
