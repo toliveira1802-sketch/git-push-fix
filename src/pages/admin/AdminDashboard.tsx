@@ -132,7 +132,7 @@ const AdminDashboard = () => {
         {/* Pendências do dia - Botão com quantidade */}
         <Card
           className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-primary/5 to-primary/10"
-          onClick={() => setShowPendencias(true)}
+          onClick={() => navigate('/admin/pendencias')}
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
