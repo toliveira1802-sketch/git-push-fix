@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Car, 
@@ -12,12 +13,14 @@ import {
 } from "lucide-react";
 import { type VeiculoKanban } from "@/hooks/usePatioKanban";
 import { cn } from "@/lib/utils";
+import { KanbanCardDetails } from "./KanbanCardDetails";
 
 interface KanbanCardProps {
   veiculo: VeiculoKanban;
   isDragging?: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onUpdate?: () => void;
 }
 
 // Cores para categorias
@@ -33,105 +36,127 @@ const categoriaCores: Record<string, string> = {
   'Geral': 'bg-muted text-muted-foreground border-muted-foreground/30',
 };
 
-export function KanbanCard({ veiculo, isDragging, onDragStart, onDragEnd }: KanbanCardProps) {
+export function KanbanCard({ veiculo, isDragging, onDragStart, onDragEnd, onUpdate }: KanbanCardProps) {
+  const [showDetails, setShowDetails] = useState(false);
   const categoriaClasse = categoriaCores[veiculo.categoria] || categoriaCores['Geral'];
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Não abrir modal se estiver arrastando
+    if (isDragging) return;
+    // Evitar abrir se clicou no grip
+    if ((e.target as HTMLElement).closest('.drag-handle')) return;
+    setShowDetails(true);
+  };
+
   return (
-    <div
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      className={cn(
-        "p-3 rounded-lg border bg-card hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative",
-        isDragging && "opacity-50 scale-95",
-        veiculo.emTerceiros && "border-amber-500/50 bg-amber-500/5"
-      )}
-    >
-      {/* Indicador Em Terceiros */}
-      {veiculo.emTerceiros && (
-        <div className="absolute -top-2 -right-2 z-10">
-          <Badge className="bg-amber-500 text-white text-[9px] gap-1 px-1.5 py-0.5 shadow-md">
-            <ExternalLink className="w-2.5 h-2.5" />
-            Em Terceiros
+    <>
+      <div
+        draggable
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onClick={handleClick}
+        className={cn(
+          "p-3 rounded-lg border bg-card hover:shadow-md transition-all cursor-pointer relative",
+          isDragging && "opacity-50 scale-95 cursor-grabbing",
+          veiculo.emTerceiros && "border-amber-500/50 bg-amber-500/5"
+        )}
+      >
+        {/* Indicador Em Terceiros */}
+        {veiculo.emTerceiros && (
+          <div className="absolute -top-2 -right-2 z-10">
+            <Badge className="bg-amber-500 text-white text-[9px] gap-1 px-1.5 py-0.5 shadow-md">
+              <ExternalLink className="w-2.5 h-2.5" />
+              Em Terceiros
+            </Badge>
+          </div>
+        )}
+        {/* Header: Placa + OS */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="drag-handle cursor-grab active:cursor-grabbing">
+              <GripVertical className="w-3 h-3 text-muted-foreground" />
+            </div>
+            <Car className="w-4 h-4 text-primary" />
+            <span className="font-mono font-bold text-sm">{veiculo.placa}</span>
+          </div>
+          <Badge variant="outline" className="text-[9px] font-mono px-1.5">
+            {veiculo.orderNumber}
           </Badge>
         </div>
-      )}
-      {/* Header: Placa + OS */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <GripVertical className="w-3 h-3 text-muted-foreground" />
-          <Car className="w-4 h-4 text-primary" />
-          <span className="font-mono font-bold text-sm">{veiculo.placa}</span>
-        </div>
-        <Badge variant="outline" className="text-[9px] font-mono px-1.5">
-          {veiculo.orderNumber}
-        </Badge>
-      </div>
 
-      {/* Veículo info */}
-      <div className="mb-2">
-        <p className="text-xs font-medium truncate">
-          {veiculo.marca} {veiculo.modelo}
-          {veiculo.ano && <span className="text-muted-foreground"> • {veiculo.ano}</span>}
+        {/* Veículo info */}
+        <div className="mb-2">
+          <p className="text-xs font-medium truncate">
+            {veiculo.marca} {veiculo.modelo}
+            {veiculo.ano && <span className="text-muted-foreground"> • {veiculo.ano}</span>}
+          </p>
+          {veiculo.cor && (
+            <p className="text-[10px] text-muted-foreground">Cor: {veiculo.cor}</p>
+          )}
+        </div>
+
+        {/* Descrição do serviço */}
+        <p className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-[32px]">
+          {veiculo.servico}
         </p>
-        {veiculo.cor && (
-          <p className="text-[10px] text-muted-foreground">Cor: {veiculo.cor}</p>
-        )}
-      </div>
 
-      {/* Descrição do serviço */}
-      <p className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-[32px]">
-        {veiculo.servico}
-      </p>
+        {/* Categoria */}
+        <div className="mb-2">
+          <Badge 
+            variant="outline" 
+            className={cn("text-[10px] gap-1", categoriaClasse)}
+          >
+            <Tag className="w-2.5 h-2.5" />
+            {veiculo.categoria}
+          </Badge>
+        </div>
 
-      {/* Categoria */}
-      <div className="mb-2">
-        <Badge 
-          variant="outline" 
-          className={cn("text-[10px] gap-1", categoriaClasse)}
-        >
-          <Tag className="w-2.5 h-2.5" />
-          {veiculo.categoria}
-        </Badge>
-      </div>
-
-      {/* Cliente */}
-      <div className="flex items-center gap-1.5 mb-2">
-        <User className="w-3 h-3 text-muted-foreground" />
-        <span className="text-xs truncate">{veiculo.cliente}</span>
-      </div>
-
-      {/* Mecânico */}
-      {veiculo.mecanico && (
+        {/* Cliente */}
         <div className="flex items-center gap-1.5 mb-2">
-          <Wrench className="w-3 h-3 text-muted-foreground" />
-          <span className="text-xs truncate text-muted-foreground">{veiculo.mecanico}</span>
+          <User className="w-3 h-3 text-muted-foreground" />
+          <span className="text-xs truncate">{veiculo.cliente}</span>
         </div>
-      )}
 
-      {/* Datas */}
-      <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-2">
-        <div className="flex items-center gap-1">
-          <Calendar className="w-3 h-3" />
-          <span>{veiculo.entrada}</span>
-        </div>
-        {veiculo.previsaoEntrega && (
+        {/* Mecânico */}
+        {veiculo.mecanico && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <Wrench className="w-3 h-3 text-muted-foreground" />
+            <span className="text-xs truncate text-muted-foreground">{veiculo.mecanico}</span>
+          </div>
+        )}
+
+        {/* Datas */}
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-2">
           <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>→ {veiculo.previsaoEntrega}</span>
+            <Calendar className="w-3 h-3" />
+            <span>{veiculo.entrada}</span>
+          </div>
+          {veiculo.previsaoEntrega && (
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>→ {veiculo.previsaoEntrega}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Valor */}
+        {veiculo.total > 0 && (
+          <div className="flex items-center justify-end gap-1 pt-2 border-t">
+            <DollarSign className="w-3 h-3 text-emerald-600" />
+            <span className="text-sm font-semibold text-emerald-600">
+              R$ {veiculo.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Valor */}
-      {veiculo.total > 0 && (
-        <div className="flex items-center justify-end gap-1 pt-2 border-t">
-          <DollarSign className="w-3 h-3 text-emerald-600" />
-          <span className="text-sm font-semibold text-emerald-600">
-            R$ {veiculo.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-      )}
-    </div>
+      {/* Modal de Detalhes */}
+      <KanbanCardDetails
+        veiculo={veiculo}
+        open={showDetails}
+        onOpenChange={setShowDetails}
+        onUpdate={onUpdate}
+      />
+    </>
   );
 }

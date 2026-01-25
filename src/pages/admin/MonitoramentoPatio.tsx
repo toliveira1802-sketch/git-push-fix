@@ -231,6 +231,7 @@ export default function MonitoramentoPatio() {
                           isDragging={draggedVeiculoKanban?.veiculo.id === veiculo.id}
                           onDragStart={() => handleDragStart(veiculo, etapa.id)}
                           onDragEnd={handleDragEnd}
+                          onUpdate={refetch}
                         />
                       ))
                     )}
