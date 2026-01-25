@@ -35,6 +35,7 @@ import { OSTotalsCards } from "@/components/os/OSTotalsCards";
 import { OSItemCard } from "@/components/os/OSItemCard";
 import { ItemFormDialog } from "@/components/os/ItemFormDialog";
 import { RefuseItemDialog } from "@/components/os/RefuseItemDialog";
+import { OSSearchCreate } from "@/components/os/OSSearchCreate";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   diagnostico: { label: "Diagnóstico", color: "bg-orange-500/10 text-orange-500 border-orange-500/20", icon: Wrench },
@@ -62,10 +63,11 @@ const checklistItems = [
 export default function AdminOSDetalhes() {
   const { osId } = useParams<{ osId: string }>();
   const [searchParams] = useSearchParams();
+  const [currentOsId, setCurrentOsId] = useState<string | undefined>(osId);
   const isNewOS = searchParams.get("new") === "true";
   const navigate = useNavigate();
 
-  // Hooks for data
+  // Hooks for data - MUST be called before any conditional returns
   const { 
     os, 
     history, 
@@ -75,7 +77,7 @@ export default function AdminOSDetalhes() {
     updateStatus,
     updateChecklist,
     markBudgetSent,
-  } = useOSDetails(osId);
+  } = useOSDetails(currentOsId);
 
   const {
     items,
@@ -94,7 +96,7 @@ export default function AdminOSDetalhes() {
     itensPendentes,
     itensRecusados,
     DEFAULT_MARGIN,
-  } = useOSItems(osId);
+  } = useOSItems(currentOsId);
 
   // UI State
   const [isEditing, setIsEditing] = useState(false);
@@ -128,6 +130,20 @@ export default function AdminOSDetalhes() {
       setChecklistEntrada(os.entry_checklist || {});
     }
   }, [os]);
+
+  // Se não tem osId, mostrar tela de busca/criação
+  if (!currentOsId) {
+    return (
+      <AdminLayout>
+        <OSSearchCreate 
+          onOSCreated={(newOsId) => {
+            setCurrentOsId(newOsId);
+            navigate(`/admin/os/${newOsId}?new=true`, { replace: true });
+          }} 
+        />
+      </AdminLayout>
+    );
+  }
 
   // Handlers
   const handleSave = async () => {
