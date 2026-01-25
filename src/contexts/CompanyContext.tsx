@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 export interface Company {
   id: string;
@@ -27,11 +27,26 @@ const defaultCompanies: Company[] = [
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const [currentCompany, setCurrentCompany] = useState<Company>(defaultCompanies[0]);
   const [userCompany, setUserCompany] = useState<Company | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isConsolidated, setConsolidated] = useState(false);
+
+  // Escutar mudanças de auth diretamente do Supabase
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Buscar role e empresa do usuário
   useEffect(() => {
