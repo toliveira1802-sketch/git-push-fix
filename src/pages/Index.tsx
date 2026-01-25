@@ -140,7 +140,7 @@ const Index = () => {
         {/* Meus Veículos */}
         <Card
           className="bg-[#111] border-gray-800 p-4 mb-4 cursor-pointer hover:bg-[#151515] transition-colors"
-          onClick={() => navigate("/agenda")}
+          onClick={() => navigate("/veiculos")}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
