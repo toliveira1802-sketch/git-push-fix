@@ -309,18 +309,57 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Credenciais do Supabase não configuradas');
+    }
+
+    // === AUTHENTICATION CHECK ===
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Não autorizado - Token de autenticação não fornecido' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's auth token to validate
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Não autorizado - Token inválido' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if user has admin, gestao, or dev role
+    const { data: hasAdmin } = await supabaseAuth.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+    const { data: hasGestao } = await supabaseAuth.rpc('has_role', { _user_id: user.id, _role: 'gestao' });
+    const { data: hasDev } = await supabaseAuth.rpc('has_role', { _user_id: user.id, _role: 'dev' });
+
+    if (!hasAdmin && !hasGestao && !hasDev) {
+      return new Response(
+        JSON.stringify({ error: 'Acesso negado - Requer permissão de admin/gestão' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Sync Trello iniciado por usuário: ${user.email}`);
+    // === END AUTHENTICATION CHECK ===
+
     const TRELLO_API_KEY = Deno.env.get('TRELLO_API_KEY');
     const TRELLO_API_TOKEN = Deno.env.get('TRELLO_API_TOKEN');
     const TRELLO_BOARD_ID = Deno.env.get('TRELLO_BOARD_ID');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_ID) {
       throw new Error('Credenciais do Trello não configuradas');
-    }
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Credenciais do Supabase não configuradas');
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
