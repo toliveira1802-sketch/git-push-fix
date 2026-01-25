@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 // Types for client data
 export interface ClientVehicle {
@@ -63,7 +64,7 @@ export function useClientData() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch client profile
-  const fetchClientProfile = async () => {
+  const fetchClientProfile = useCallback(async () => {
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -78,10 +79,10 @@ export function useClientData() {
     }
 
     return data;
-  };
+  }, [user]);
 
   // Fetch vehicles
-  const fetchVehicles = async (clientId: string) => {
+  const fetchVehicles = useCallback(async (clientId: string) => {
     const { data, error } = await supabase
       .from('vehicles')
       .select('id, brand, model, plate, year, color, km, is_active')
@@ -95,10 +96,10 @@ export function useClientData() {
     }
 
     return data || [];
-  };
+  }, []);
 
   // Fetch service history from the VIEW
-  const fetchServiceHistory = async () => {
+  const fetchServiceHistory = useCallback(async () => {
     if (!user) return [];
 
     const { data, error } = await supabase
@@ -134,18 +135,18 @@ export function useClientData() {
       vehicle_color: row.vehicle_color,
       items: Array.isArray(row.items) ? (row.items as unknown as ServiceHistoryItem[]) : [],
     }));
-  };
+  }, [user]);
 
   // Check if a vehicle has an active service order
-  const getActiveServiceOrder = (vehiclePlate: string) => {
+  const getActiveServiceOrder = useCallback((vehiclePlate: string) => {
     return serviceHistory.find(
       order => order.vehicle_plate === vehiclePlate && 
       !['fechada', 'cancelada', 'entregue'].includes(order.order_status.toLowerCase())
     );
-  };
+  }, [serviceHistory]);
 
   // Refresh all data
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -171,11 +172,64 @@ export function useClientData() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, fetchClientProfile, fetchVehicles, fetchServiceHistory]);
 
+  // Initial fetch
   useEffect(() => {
     refresh();
-  }, [user]);
+  }, [refresh]);
+
+  // Realtime subscription for service_orders changes
+  useEffect(() => {
+    if (!user) return;
+
+    let channel: RealtimeChannel | null = null;
+
+    const setupRealtime = async () => {
+      // Subscribe to service_orders changes
+      channel = supabase
+        .channel('client-service-orders')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'service_orders',
+          },
+          (payload) => {
+            console.log('Realtime: service_orders changed', payload);
+            // Refresh data when any service order changes
+            refresh();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'service_order_items',
+          },
+          (payload) => {
+            console.log('Realtime: service_order_items changed', payload);
+            // Refresh data when items change
+            refresh();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
+    };
+
+    setupRealtime();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (channel) {
+        console.log('Unsubscribing from realtime channel');
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [user, refresh]);
 
   return {
     clientProfile,
