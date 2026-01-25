@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { DiagnosticoIA } from "@/components/os/DiagnosticoIA";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -885,6 +886,25 @@ export default function AdminOSDetalhes() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Dr. Auto - Sugestão de Diagnóstico por IA */}
+            <DiagnosticoIA
+              descricaoProblema={os.descricao_problema || ""}
+              veiculo={os.vehicle}
+              kmAtual={os.km_atual}
+              onSugestaoClick={(sugestao) => {
+                // Adicionar sugestão ao diagnóstico
+                const novosDados = {
+                  ...editedOS,
+                  diagnostico: editedOS.diagnostico 
+                    ? `${editedOS.diagnostico}\n• ${sugestao}` 
+                    : `• ${sugestao}`
+                };
+                setEditedOS(novosDados);
+                setOS({ ...os, ...novosDados });
+                toast.success(`"${sugestao}" adicionado ao diagnóstico`);
+              }}
+            />
 
             {/* Status */}
             <Card>
