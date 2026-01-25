@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Wrench, CheckCircle2, XCircle, Clock, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronUp, Wrench, CheckCircle2, XCircle, Clock, Loader2, Home } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { useClientData } from "@/hooks/useClientData";
 
 export default function Historico() {
+  const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { serviceHistory, loading } = useClientData();
 
@@ -48,9 +51,19 @@ export default function Historico() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 p-6 pt-12 pb-8">
-        <h1 className="text-2xl font-bold text-primary-foreground">Histórico</h1>
-        <p className="text-primary-foreground/80 mt-1">Seus serviços realizados</p>
+      <div className="bg-gradient-to-r from-primary to-primary/80 p-6 pt-6 pb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+            onClick={() => navigate("/")}
+          >
+            <Home className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold text-primary-foreground">Histórico</h1>
+        </div>
+        <p className="text-primary-foreground/80">Seus serviços realizados</p>
         
         {/* Cashback Card */}
         <div className="mt-6 bg-white/10 backdrop-blur-sm rounded-xl p-4">
