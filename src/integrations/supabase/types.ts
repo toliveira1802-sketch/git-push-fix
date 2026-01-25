@@ -135,10 +135,15 @@ export type Database = {
           last_service_date: string | null
           name: string
           notes: string | null
+          pending_review: boolean
           phone: string
+          registration_source: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           total_spent: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -150,10 +155,15 @@ export type Database = {
           last_service_date?: string | null
           name: string
           notes?: string | null
+          pending_review?: boolean
           phone: string
+          registration_source?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           total_spent?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -165,10 +175,15 @@ export type Database = {
           last_service_date?: string | null
           name?: string
           notes?: string | null
+          pending_review?: boolean
           phone?: string
+          registration_source?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           total_spent?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -291,27 +306,36 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          birthday: string | null
           created_at: string
           full_name: string | null
           id: string
+          loyalty_level: string
+          loyalty_points: number
           phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          loyalty_level?: string
+          loyalty_points?: number
           phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          loyalty_level?: string
+          loyalty_points?: number
           phone?: string | null
           updated_at?: string
           user_id?: string
