@@ -147,7 +147,9 @@ const AdminMechanicFeedback = () => {
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
+      const mechanicName = mechanics.find(m => m.id === form.mechanicId)?.name || 'Mecânico';
       
+      // Salvar feedback
       const { error } = await supabase
         .from("mechanic_daily_feedback")
         .insert({
@@ -161,6 +163,33 @@ const AdminMechanicFeedback = () => {
         });
 
       if (error) throw error;
+
+      // Calcular média geral
+      const mediaGeral = ((form.performanceScore + form.punctualityScore + form.qualityScore) / 3).toFixed(1);
+      
+      // Criar alerta para gestão RH se score baixo (média < 3)
+      const avgScore = (form.performanceScore + form.punctualityScore + form.qualityScore) / 3;
+      
+      // Sempre criar registro no histórico de alertas para gestão acompanhar
+      await supabase
+        .from("gestao_alerts")
+        .insert({
+          tipo: avgScore < 3 ? 'feedback_critico' : 'feedback_mecanico',
+          titulo: avgScore < 3 
+            ? `⚠️ Feedback crítico: ${mechanicName}` 
+            : `Feedback registrado: ${mechanicName}`,
+          descricao: `Avaliação de ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}: Performance ${form.performanceScore}/5, Pontualidade ${form.punctualityScore}/5, Qualidade ${form.qualityScore}/5. Média: ${mediaGeral}`,
+          metadata: {
+            mechanic_id: form.mechanicId,
+            mechanic_name: mechanicName,
+            performance_score: form.performanceScore,
+            punctuality_score: form.punctualityScore,
+            quality_score: form.qualityScore,
+            average_score: avgScore,
+            notes: form.notes,
+            feedback_date: today,
+          },
+        });
 
       toast.success("Feedback registrado com sucesso!");
       

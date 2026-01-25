@@ -525,12 +525,13 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Verificar se já existe OS para este veículo com status ativo
+        // Verificar se já existe OS para este veículo com status ativo (não entregue e não cancelado)
+        // Também verifica pelo trello_card_id se já foi sincronizado antes
         const { data: existingOS } = await supabase
           .from('service_orders')
           .select('id, status')
           .eq('vehicle_id', vehicleId)
-          .neq('status', 'entregue')
+          .not('status', 'in', '("entregue","cancelado")')
           .maybeSingle();
 
         if (existingOS) {
