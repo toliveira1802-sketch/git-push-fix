@@ -27,6 +27,7 @@ import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
 import NovaPromocao from "./pages/admin/NovaPromocao";
+import Pendencias from "./pages/admin/Pendencias";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/pendencias" element={<Pendencias />} />
             <Route path="/admin/ordens-servico" element={<OrdensServico />} />
             <Route path="/admin/nova-os" element={<NovaOS />} />
             <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} />

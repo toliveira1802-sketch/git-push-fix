@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Plus, Bird } from "lucide-react";
+import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 
 interface DashboardStats {
   appointmentsToday: number;
@@ -16,19 +14,6 @@ interface DashboardStats {
   valueTodayDelivery: number;
   returnsMonth: number;
   cancelledMonth: number;
-}
-
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
-}
-
-interface TeamMember {
-  id: string;
-  name: string;
-  symbol: 'corinthians' | 'pombo';
-  tasks: Task[];
 }
 
 // Mock data for frontend-only mode
@@ -69,12 +54,19 @@ const mockCancelledAppointments = [
   { id: '2', client_name: 'Fernanda Costa', phone: '11977665544', vehicle: 'Renault Sandero', cancelled_at: '16/01/2024' },
 ];
 
-// Corinthians SVG Symbol
-const CorinthiansIcon = () => (
-  <svg viewBox="0 0 100 100" className="w-6 h-6">
-    <circle cx="50" cy="50" r="45" fill="#000" stroke="#fff" strokeWidth="2"/>
-    <text x="50" y="62" textAnchor="middle" fill="#fff" fontSize="32" fontWeight="bold">C</text>
-    <text x="50" y="78" textAnchor="middle" fill="#fff" fontSize="12">SCCP</text>
+// Pending tasks count (mock)
+const pendingTasksCount = 5;
+
+// Corinthians SVG Symbol - Timão
+const CorinthiansIcon = ({ size = 40 }: { size?: number }) => (
+  <svg viewBox="0 0 100 100" style={{ width: size, height: size }}>
+    <circle cx="50" cy="50" r="48" fill="#000000" />
+    <circle cx="50" cy="50" r="42" fill="none" stroke="#FFFFFF" strokeWidth="3" />
+    <path
+      d="M50 15 L55 35 L75 35 L60 48 L67 68 L50 55 L33 68 L40 48 L25 35 L45 35 Z"
+      fill="#FFFFFF"
+    />
+    <text x="50" y="88" textAnchor="middle" fill="#FFFFFF" fontSize="14" fontWeight="bold">SCCP</text>
   </svg>
 );
 
@@ -82,23 +74,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [stats] = useState<DashboardStats>(mockStats);
   const [loading] = useState(false);
-
-  // Team members with tasks
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    { id: '1', name: 'THALES', symbol: 'corinthians', tasks: [
-      { id: 't1', text: 'Verificar OS #2024-001', completed: false },
-      { id: 't2', text: 'Ligar para cliente João', completed: true },
-    ]},
-    { id: '2', name: 'PEDRO', symbol: 'pombo', tasks: [
-      { id: 'p1', text: 'Finalizar diagnóstico BMW', completed: false },
-    ]},
-    { id: '3', name: 'JOAO', symbol: 'pombo', tasks: [
-      { id: 'j1', text: 'Trocar óleo do Golf', completed: false },
-      { id: 'j2', text: 'Balanceamento Corolla', completed: false },
-    ]},
-  ]);
-
-  const [newTaskInputs, setNewTaskInputs] = useState<Record<string, string>>({});
 
   // Modal states
   const [showAppointments, setShowAppointments] = useState(false);
@@ -117,36 +92,6 @@ const AdminDashboard = () => {
     pronto_retirada: "Pronto",
   };
 
-  const toggleTask = (memberId: string, taskId: string) => {
-    setTeamMembers(prev => prev.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          tasks: member.tasks.map(task => 
-            task.id === taskId ? { ...task, completed: !task.completed } : task
-          )
-        };
-      }
-      return member;
-    }));
-  };
-
-  const addTask = (memberId: string) => {
-    const taskText = newTaskInputs[memberId]?.trim();
-    if (!taskText) return;
-
-    setTeamMembers(prev => prev.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          tasks: [...member.tasks, { id: `${memberId}-${Date.now()}`, text: taskText, completed: false }]
-        };
-      }
-      return member;
-    }));
-    setNewTaskInputs(prev => ({ ...prev, [memberId]: '' }));
-  };
-
   if (loading) {
     return (
       <AdminLayout>
@@ -160,62 +105,24 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
-        {/* Pendências do dia - Lista de tarefas por membro */}
-        <Card className="border bg-gradient-to-br from-primary/5 to-primary/10">
+        {/* Pendências do dia - Botão com quantidade */}
+        <Card
+          className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-primary/5 to-primary/10"
+          onClick={() => navigate('/admin/pendencias')}
+        >
           <CardContent className="p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">📋</span>
-              <span className="text-lg font-semibold text-foreground">Pendências do dia</span>
-            </div>
-            
-            <div className="space-y-4">
-              {teamMembers.map((member) => (
-                <div key={member.id} className="bg-background/60 rounded-lg p-3">
-                  {/* Member header */}
-                  <div className="flex items-center gap-2 mb-2">
-                    {member.symbol === 'corinthians' ? (
-                      <CorinthiansIcon />
-                    ) : (
-                      <Bird className="w-6 h-6 text-muted-foreground" />
-                    )}
-                    <span className="font-bold text-foreground">{member.name}</span>
-                  </div>
-                  
-                  {/* Tasks list */}
-                  <div className="space-y-2 ml-8">
-                    {member.tasks.map((task) => (
-                      <div key={task.id} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={task.completed}
-                          onCheckedChange={() => toggleTask(member.id, task.id)}
-                        />
-                        <span className={task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}>
-                          {task.text}
-                        </span>
-                      </div>
-                    ))}
-                    
-                    {/* Add new task */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <Input
-                        placeholder="Nova tarefa..."
-                        value={newTaskInputs[member.id] || ''}
-                        onChange={(e) => setNewTaskInputs(prev => ({ ...prev, [member.id]: e.target.value }))}
-                        onKeyDown={(e) => e.key === 'Enter' && addTask(member.id)}
-                        className="h-8 text-sm flex-1"
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => addTask(member.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <CorinthiansIcon size={48} />
+                <div>
+                  <span className="text-xl font-semibold text-foreground">Pendências do dia</span>
+                  <p className="text-sm text-muted-foreground">Tarefas da equipe</p>
                 </div>
-              ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold text-primary">{pendingTasksCount}</span>
+                <span className="text-sm text-muted-foreground">pendentes</span>
+              </div>
             </div>
           </CardContent>
         </Card>
