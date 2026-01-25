@@ -22,7 +22,8 @@ import {
   DollarSign,
   Loader2,
   CloudDownload,
-  Search
+  Search,
+  ClipboardCheck
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { LayoutPatio, type Area as LayoutArea } from "@/components/patio/LayoutPatio";
@@ -335,6 +336,10 @@ export default function MonitoramentoPatio() {
               <Switch id="auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
               <Label htmlFor="auto-refresh" className="text-sm">Auto-refresh</Label>
             </div>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/admin/checklist')}>
+              <ClipboardCheck className="h-4 w-4" />
+              Checklist
+            </Button>
             <Button variant="outline" size="sm" className="gap-2" onClick={syncTrello} disabled={syncingTrello}>
               <CloudDownload className={`h-4 w-4 ${syncingTrello ? 'animate-pulse' : ''}`} />
               {syncingTrello ? 'Sincronizando...' : 'Sync Trello'}

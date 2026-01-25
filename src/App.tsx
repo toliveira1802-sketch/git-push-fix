@@ -48,8 +48,7 @@ import AdminPatioDetalhes from "./pages/admin/AdminPatioDetalhes";
 import Cadastros from "./pages/admin/Cadastros";
 import AdminMetas from "./pages/admin/AdminMetas";
 import AdminMonitoramentoKommo from "./pages/admin/AdminMonitoramentoKommo";
-
-// Gestão pages
+import AdminChecklist from "./pages/admin/AdminChecklist";
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
 import GestaoRH from "./pages/gestao/GestaoRH";
 import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
@@ -110,6 +109,7 @@ const App = () => (
                 <Route path="/admin/cadastros" element={<Cadastros />} />
                 <Route path="/admin/monitoramento-kommo" element={<AdminMonitoramentoKommo />} />
                 <Route path="/admin/orcamentos" element={<AdminDashboardOrcamentos />} />
+                <Route path="/admin/checklist" element={<AdminChecklist />} />
                 
                 {/* Gestão Routes */}
                 <Route path="/gestao" element={<GestaoDashboards />} />
