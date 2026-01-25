@@ -1,81 +1,11 @@
 import { useState } from "react";
 import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface DashboardStats {
-  appointmentsToday: number;
-  newClientsMonth: number;
-  monthlyRevenue: number;
-  valueTodayDelivery: number;
-  returnsMonth: number;
-  cancelledMonth: number;
-  vehiclesInYard: number;
-  awaitingApproval: number;
-}
-
-// Mock data for frontend-only mode
-const mockStats: DashboardStats = {
-  appointmentsToday: 8,
-  newClientsMonth: 12,
-  monthlyRevenue: 45680,
-  valueTodayDelivery: 8500,
-  returnsMonth: 3,
-  cancelledMonth: 2,
-  vehiclesInYard: 14,
-  awaitingApproval: 5,
-};
-
-const mockTodayAppointments = [
-  { id: '1', time: '08:00', client_name: 'João Silva', vehicle: 'VW Golf GTI - ABC-1234', status: 'confirmado' },
-  { id: '2', time: '09:30', client_name: 'Maria Santos', vehicle: 'Toyota Corolla - GHI-9012', status: 'pendente' },
-  { id: '3', time: '11:00', client_name: 'Carlos Oliveira', vehicle: 'BMW 320i - JKL-3456', status: 'confirmado' },
-  { id: '4', time: '14:00', client_name: 'Ana Costa', vehicle: 'Honda Civic - DEF-5678', status: 'em_execucao' },
-];
-
-const mockNewClients = [
-  { id: '1', full_name: 'Carlos Oliveira', phone: '11977665544', created_at: '22/01/2024' },
-  { id: '2', full_name: 'Ana Costa', phone: '11944332211', created_at: '20/01/2024' },
-  { id: '3', full_name: 'Pedro Almeida', phone: '11933221100', created_at: '18/01/2024' },
-];
-
-const mockReadyToDeliver = [
-  { id: '1', numero_os: 'OS-2024-003', vehicle: 'Honda Civic', client_name: 'João Silva', valor_final: 2500 },
-  { id: '2', numero_os: 'OS-2024-005', vehicle: 'VW Polo', client_name: 'Maria Santos', valor_final: 1800 },
-];
-
-const mockReturnVehicles = [
-  { id: '1', plate: 'ABC-1234', vehicle: 'VW Golf GTI', client_name: 'João Silva', data_entrega: '15/01/2024' },
-  { id: '2', plate: 'XYZ-9999', vehicle: 'Fiat Argo', client_name: 'Pedro Santos', data_entrega: '10/01/2024' },
-];
-
-const mockCancelledAppointments = [
-  { id: '1', client_name: 'Roberto Lima', phone: '11988776655', vehicle: 'Chevrolet Onix', cancelled_at: '19/01/2024' },
-  { id: '2', client_name: 'Fernanda Costa', phone: '11977665544', vehicle: 'Renault Sandero', cancelled_at: '16/01/2024' },
-];
-
-const mockVehiclesInYard = [
-  { id: '1', plate: 'ABC-1234', vehicle: 'VW Golf GTI', client_name: 'João Silva', status: 'Em execução', etapa: 'Mecânica' },
-  { id: '2', plate: 'DEF-5678', vehicle: 'Honda Civic', client_name: 'Maria Santos', status: 'Diagnóstico', etapa: 'Elétrica' },
-  { id: '3', plate: 'GHI-9012', vehicle: 'Toyota Corolla', client_name: 'Carlos Oliveira', status: 'Aguardando peça', etapa: 'Suspensão' },
-  { id: '4', plate: 'JKL-3456', vehicle: 'BMW 320i', client_name: 'Ana Costa', status: 'Em execução', etapa: 'Motor' },
-  { id: '5', plate: 'MNO-7890', vehicle: 'Fiat Argo', client_name: 'Pedro Almeida', status: 'Finalizado', etapa: 'Lavagem' },
-];
-
-const mockAwaitingApproval = [
-  { id: '1', numero_os: 'OS-2024-010', vehicle: 'VW Polo', client_name: 'Roberto Lima', valor: 3500, dias_aguardando: 2 },
-  { id: '2', numero_os: 'OS-2024-012', vehicle: 'Chevrolet Onix', client_name: 'Fernanda Costa', valor: 1800, dias_aguardando: 1 },
-  { id: '3', numero_os: 'OS-2024-015', vehicle: 'Hyundai HB20', client_name: 'Lucas Mendes', valor: 4200, dias_aguardando: 3 },
-  { id: '4', numero_os: 'OS-2024-018', vehicle: 'Renault Kwid', client_name: 'Julia Santos', valor: 950, dias_aguardando: 0 },
-  { id: '5', numero_os: 'OS-2024-020', vehicle: 'Ford Ka', client_name: 'Marcos Silva', valor: 2100, dias_aguardando: 4 },
-];
-
-// Pending tasks count (mock)
-const pendingTasksCount = 5;
+import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 
 // Corinthians SVG Symbol - Timão
 const CorinthiansIcon = ({ size = 40 }: { size?: number }) => (
@@ -90,10 +20,22 @@ const CorinthiansIcon = ({ size = 40 }: { size?: number }) => (
   </svg>
 );
 
+// Pending tasks count (mock - pode ser conectado depois)
+const pendingTasksCount = 5;
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [stats] = useState<DashboardStats>(mockStats);
-  const [loading] = useState(false);
+  const {
+    stats,
+    loading,
+    todayAppointments,
+    newClients,
+    readyToDeliver,
+    returnVehicles,
+    cancelledAppointments,
+    vehiclesInYard,
+    awaitingApproval,
+  } = useAdminDashboard();
 
   // Modal states
   const [showAppointments, setShowAppointments] = useState(false);
@@ -101,10 +43,8 @@ const AdminDashboard = () => {
   const [showReadyToDeliver, setShowReadyToDeliver] = useState(false);
   const [showReturns, setShowReturns] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
-
   const [showVehiclesInYard, setShowVehiclesInYard] = useState(false);
   const [showAwaitingApproval, setShowAwaitingApproval] = useState(false);
-  const [showPendencias, setShowPendencias] = useState(false);
 
   const statusLabels: Record<string, string> = {
     pendente: "Pendente",
@@ -114,6 +54,7 @@ const AdminDashboard = () => {
     orcamento: "Orçamento",
     aguardando_aprovacao: "Aguardando",
     pronto_retirada: "Pronto",
+    agendado: "Agendado",
   };
 
   if (loading) {
@@ -380,9 +321,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {mockTodayAppointments.length > 0 ? (
+            {todayAppointments.length > 0 ? (
               <div className="space-y-3">
-                {mockTodayAppointments.map((apt) => (
+                {todayAppointments.map((apt) => (
                   <div key={apt.id} className="p-3 rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                       <div>
@@ -414,9 +355,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {mockNewClients.length > 0 ? (
+            {newClients.length > 0 ? (
               <div className="space-y-3">
-                {mockNewClients.map((client) => (
+                {newClients.map((client) => (
                   <div key={client.id} className="p-3 rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                       <div>
@@ -445,9 +386,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {mockReadyToDeliver.length > 0 ? (
+            {readyToDeliver.length > 0 ? (
               <div className="space-y-3">
-                {mockReadyToDeliver.map((os) => (
+                {readyToDeliver.map((os) => (
                   <div key={os.id} className="p-3 rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                       <div>
@@ -479,9 +420,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {mockReturnVehicles.length > 0 ? (
+            {returnVehicles.length > 0 ? (
               <div className="space-y-3">
-                {mockReturnVehicles.map((rv) => (
+                {returnVehicles.map((rv) => (
                   <div key={rv.id} className="p-3 rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                       <div>
@@ -511,9 +452,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {mockCancelledAppointments.length > 0 ? (
+            {cancelledAppointments.length > 0 ? (
               <div className="space-y-3">
-                {mockCancelledAppointments.map((ca) => (
+                {cancelledAppointments.map((ca) => (
                   <div key={ca.id} className="p-3 rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                       <div>
@@ -543,9 +484,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {mockVehiclesInYard.length > 0 ? (
+            {vehiclesInYard.length > 0 ? (
               <div className="space-y-3">
-                {mockVehiclesInYard.map((v) => (
+                {vehiclesInYard.map((v) => (
                   <div key={v.id} className="p-3 rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                       <div>
@@ -578,9 +519,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {mockAwaitingApproval.length > 0 ? (
+            {awaitingApproval.length > 0 ? (
               <div className="space-y-3">
-                {mockAwaitingApproval.map((os) => (
+                {awaitingApproval.map((os) => (
                   <div key={os.id} className="p-3 rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                       <div>
@@ -603,42 +544,6 @@ const AdminDashboard = () => {
             ) : (
               <p className="text-center py-8 text-muted-foreground">Nenhum orçamento aguardando aprovação</p>
             )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Pendências */}
-      <Dialog open={showPendencias} onOpenChange={setShowPendencias}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CorinthiansIcon size={24} />
-              Pendências do Dia
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <div className="space-y-3">
-              <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium">Confirmar agendamento</p>
-                <p className="text-sm text-muted-foreground">João Silva - 14:00</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium">Enviar orçamento</p>
-                <p className="text-sm text-muted-foreground">OS-2024-015 - Hyundai HB20</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium">Ligar para cliente</p>
-                <p className="text-sm text-muted-foreground">Maria Santos - Retorno</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium">Verificar peça</p>
-                <p className="text-sm text-muted-foreground">Filtro de óleo - VW Golf</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium">Finalizar OS</p>
-                <p className="text-sm text-muted-foreground">OS-2024-008 - Honda Civic</p>
-              </div>
-            </div>
           </ScrollArea>
         </DialogContent>
       </Dialog>
