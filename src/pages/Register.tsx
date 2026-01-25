@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Lock, ArrowRight, Eye, EyeOff, Phone, Car } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, ArrowRight, Eye, EyeOff, Phone, Car, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface FormData {
@@ -99,7 +100,53 @@ const Register: React.FC = () => {
       return;
     }
 
-    toast.success('Conta criada com sucesso!');
+    // Aguardar um momento para o auth processar e criar o profile
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Buscar o usuário recém criado
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      // Criar entrada em clients como auto-cadastro
+      const { error: clientError } = await supabase
+        .from('clients')
+        .insert({
+          name: formData.name,
+          phone: formData.phone.replace(/\D/g, ''),
+          email: formData.email,
+          registration_source: 'self',
+          pending_review: true,
+          user_id: user.id,
+          status: 'active'
+        });
+
+      if (clientError) {
+        console.error('Erro ao criar cliente:', clientError);
+      }
+
+      // Dar 50 pontos de boas-vindas no profile
+      const { error: pointsError } = await supabase
+        .from('profiles')
+        .update({ 
+          loyalty_points: 50,
+          loyalty_level: 'bronze'
+        })
+        .eq('user_id', user.id);
+
+      if (pointsError) {
+        console.error('Erro ao atribuir pontos:', pointsError);
+      }
+    }
+
+    toast.success(
+      <div className="flex items-center gap-2">
+        <Gift className="h-5 w-5 text-amber-500" />
+        <div>
+          <p className="font-semibold">Conta criada com sucesso!</p>
+          <p className="text-sm text-muted-foreground">Você ganhou 50 pontos de boas-vindas! 🎉</p>
+        </div>
+      </div>
+    );
     navigate('/');
   };
 

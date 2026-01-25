@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   UserCog,
   Cog,
@@ -9,9 +12,18 @@ import {
   Megaphone,
   Lightbulb,
   ArrowRight,
+  Bell,
 } from "lucide-react";
 
 const modules = [
+  {
+    title: "Notificações",
+    description: "Novos cadastros e ações pendentes de revisão",
+    url: "/gestao/notificacoes",
+    icon: Bell,
+    color: "from-rose-500 to-rose-600",
+    showBadge: true
+  },
   {
     title: "Recursos Humanos",
     description: "Gerencie mecânicos, performance e feedbacks da equipe",
@@ -45,7 +57,7 @@ const modules = [
     description: "Promoções, campanhas e aquisição de clientes",
     url: "/gestao/comercial",
     icon: Megaphone,
-    color: "from-rose-500 to-rose-600"
+    color: "from-pink-500 to-pink-600"
   },
   {
     title: "Melhorias",
@@ -58,6 +70,40 @@ const modules = [
 
 export default function GestaoDashboards() {
   const navigate = useNavigate();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      const { count } = await supabase
+        .from('clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('pending_review', true);
+      
+      setPendingCount(count || 0);
+    };
+
+    fetchPendingCount();
+
+    // Realtime updates
+    const channel = supabase
+      .channel('pending-count')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'clients'
+        },
+        () => {
+          fetchPendingCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return (
     <AdminLayout>
@@ -74,12 +120,22 @@ export default function GestaoDashboards() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {modules.map((module) => {
             const Icon = module.icon;
+            const showBadge = 'showBadge' in module && module.showBadge && pendingCount > 0;
+            
             return (
               <Card
                 key={module.url}
-                className="group cursor-pointer hover:shadow-lg transition-all duration-300 overflow-hidden"
+                className="group cursor-pointer hover:shadow-lg transition-all duration-300 overflow-hidden relative"
                 onClick={() => navigate(module.url)}
               >
+                {showBadge && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute top-3 right-3 z-10 animate-pulse"
+                  >
+                    {pendingCount}
+                  </Badge>
+                )}
                 <CardContent className="p-0">
                   <div className={`bg-gradient-to-r ${module.color} p-4`}>
                     <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center">
