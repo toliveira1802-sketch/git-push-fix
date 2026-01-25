@@ -20,19 +20,33 @@ import {
   TrendingUp,
   Instagram,
   Youtube,
-  
   BookOpen,
   User,
   LogOut,
   Wrench,
   Plus,
   Settings,
+  Sun,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Loader2 } from "lucide-react";
 import TikTokIcon from "@/components/icons/TikTokIcon";
 import ForcePasswordChange from "@/components/auth/ForcePasswordChange";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface VisaoDia {
+  veiculosPatio: number;
+  osEmAndamento: number;
+  entregasHoje: number;
+  agendamentosHoje: number;
+  horarioFuncionamento: string;
+}
 
 const Index = () => {
   const navigate = useNavigate();
@@ -40,12 +54,89 @@ const Index = () => {
   const { canAccessAdmin, canAccessGestao, isLoading: roleLoading } = useUserRole();
   const [userName, setUserName] = useState("...");
   const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
+  const [visaoDia, setVisaoDia] = useState<VisaoDia>({
+    veiculosPatio: 0,
+    osEmAndamento: 0,
+    entregasHoje: 0,
+    agendamentosHoje: 0,
+    horarioFuncionamento: '08:15 - 17:30',
+  });
 
   // Mock veículos
   const veiculosMock = [
     { id: "1", marca: "Honda", modelo: "Civic", placa: "ABC-1234", emServico: true },
     { id: "2", marca: "Toyota", modelo: "Corolla", placa: "XYZ-5678", emServico: false },
   ];
+
+  // Fetch visão do dia
+  useEffect(() => {
+    const fetchVisaoDia = async () => {
+      try {
+        const hoje = new Date();
+        const hojeStr = format(hoje, 'yyyy-MM-dd');
+        const diaSemana = hoje.getDay(); // 0 = domingo, 6 = sábado
+
+        // Buscar configuração de horário
+        const { data: configData } = await supabase
+          .from('system_config')
+          .select('value')
+          .eq('key', 'horario_funcionamento')
+          .maybeSingle();
+
+        let horario = '08:15 - 17:30';
+        if (configData?.value) {
+          const h = configData.value as { seg_sex?: { inicio: string; fim: string }; sab?: { inicio: string; fim: string } };
+          if (diaSemana === 6 && h.sab) {
+            horario = `${h.sab.inicio} - ${h.sab.fim}`;
+          } else if (diaSemana >= 1 && diaSemana <= 5 && h.seg_sex) {
+            horario = `${h.seg_sex.inicio} - ${h.seg_sex.fim}`;
+          } else if (diaSemana === 0) {
+            horario = 'Fechado';
+          }
+        }
+
+        // Buscar OSs ativas (veículos no pátio)
+        const { count: veiculosPatio } = await supabase
+          .from('service_orders')
+          .select('*', { count: 'exact', head: true })
+          .not('status', 'eq', 'entregue')
+          .not('status', 'eq', 'cancelado');
+
+        // Buscar OSs em execução
+        const { count: osEmAndamento } = await supabase
+          .from('service_orders')
+          .select('*', { count: 'exact', head: true })
+          .in('status', ['em_execucao', 'aguardando_pecas', 'diagnostico']);
+
+        // Buscar entregas previstas para hoje
+        const { count: entregasHoje } = await supabase
+          .from('service_orders')
+          .select('*', { count: 'exact', head: true })
+          .gte('estimated_completion', `${hojeStr}T00:00:00`)
+          .lte('estimated_completion', `${hojeStr}T23:59:59`)
+          .not('status', 'eq', 'entregue');
+
+        // Buscar agendamentos de hoje
+        const { count: agendamentosHoje } = await supabase
+          .from('appointments')
+          .select('*', { count: 'exact', head: true })
+          .eq('scheduled_date', hojeStr)
+          .eq('status', 'agendado');
+
+        setVisaoDia({
+          veiculosPatio: veiculosPatio || 0,
+          osEmAndamento: osEmAndamento || 0,
+          entregasHoje: entregasHoje || 0,
+          agendamentosHoje: agendamentosHoje || 0,
+          horarioFuncionamento: horario,
+        });
+      } catch (error) {
+        console.error('Erro ao buscar visão do dia:', error);
+      }
+    };
+
+    fetchVisaoDia();
+  }, []);
 
   useEffect(() => {
     // Get mock profile from localStorage
@@ -169,11 +260,64 @@ const Index = () => {
       {/* Main Content */}
       <main className="p-4 pb-24 max-w-2xl mx-auto">
         {/* Greeting */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h2 className="text-3xl font-bold mb-1">
             Olá, {userName} 👋
           </h2>
         </div>
+
+        {/* Visão do Dia */}
+        <Card className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border-gray-800 p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Sun className="w-5 h-5 text-yellow-500" />
+            <h3 className="font-semibold">Visão do Dia</h3>
+            <span className="text-sm text-gray-400 ml-auto">
+              {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 mb-4 text-sm">
+            <Clock className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-400">Funcionamento:</span>
+            <Badge variant="outline" className="border-gray-700 text-gray-300">
+              {visaoDia.horarioFuncionamento}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+              <div className="flex items-center gap-2 mb-1">
+                <Car className="w-4 h-4 text-blue-400" />
+                <span className="text-xs text-gray-400">No Pátio</span>
+              </div>
+              <p className="text-2xl font-bold">{visaoDia.veiculosPatio}</p>
+            </div>
+
+            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+              <div className="flex items-center gap-2 mb-1">
+                <Wrench className="w-4 h-4 text-orange-400" />
+                <span className="text-xs text-gray-400">Em Andamento</span>
+              </div>
+              <p className="text-2xl font-bold">{visaoDia.osEmAndamento}</p>
+            </div>
+
+            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <span className="text-xs text-gray-400">Entregas Hoje</span>
+              </div>
+              <p className="text-2xl font-bold">{visaoDia.entregasHoje}</p>
+            </div>
+
+            <div className="bg-[#0a0a0a] rounded-lg p-3 border border-gray-800">
+              <div className="flex items-center gap-2 mb-1">
+                <Calendar className="w-4 h-4 text-purple-400" />
+                <span className="text-xs text-gray-400">Agendamentos</span>
+              </div>
+              <p className="text-2xl font-bold">{visaoDia.agendamentosHoje}</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Meus Veículos - Modal */}
         <Card
