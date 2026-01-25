@@ -112,8 +112,22 @@ export type Database = {
             foreignKeyName: "appointments_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["vehicle_id"]
           },
           {
             foreignKeyName: "appointments_vehicle_id_fkey"
@@ -375,6 +389,13 @@ export type Database = {
             foreignKeyName: "service_order_history_service_order_id_fkey"
             columns: ["service_order_id"]
             isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["service_order_id"]
+          },
+          {
+            foreignKeyName: "service_order_history_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
             referencedRelation: "service_orders"
             referencedColumns: ["id"]
           },
@@ -421,6 +442,13 @@ export type Database = {
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "service_order_items_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["service_order_id"]
+          },
           {
             foreignKeyName: "service_order_items_service_order_id_fkey"
             columns: ["service_order_id"]
@@ -508,6 +536,13 @@ export type Database = {
             foreignKeyName: "service_orders_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "service_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -517,6 +552,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "mechanics"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["vehicle_id"]
           },
           {
             foreignKeyName: "service_orders_vehicle_id_fkey"
@@ -623,6 +665,13 @@ export type Database = {
             foreignKeyName: "vehicles_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "vehicles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -660,7 +709,37 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      client_service_history: {
+        Row: {
+          client_email: string | null
+          client_id: string | null
+          client_name: string | null
+          client_phone: string | null
+          completed_at: string | null
+          diagnosis: string | null
+          items: Json | null
+          order_date: string | null
+          order_number: string | null
+          order_status: string | null
+          payment_method: string | null
+          payment_status: string | null
+          problem_description: string | null
+          service_order_id: string | null
+          total: number | null
+          total_discount: number | null
+          total_labor: number | null
+          total_parts: number | null
+          user_id: string | null
+          vehicle_brand: string | null
+          vehicle_color: string | null
+          vehicle_id: string | null
+          vehicle_km: number | null
+          vehicle_model: string | null
+          vehicle_plate: string | null
+          vehicle_year: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_role: {
