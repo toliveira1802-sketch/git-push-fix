@@ -508,6 +508,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           diagnosis: string | null
+          em_terceiros: boolean
           entry_checklist: Json | null
           entry_km: number | null
           estimated_completion: string | null
@@ -532,6 +533,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           diagnosis?: string | null
+          em_terceiros?: boolean
           entry_checklist?: Json | null
           entry_km?: number | null
           estimated_completion?: string | null
@@ -556,6 +558,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           diagnosis?: string | null
+          em_terceiros?: boolean
           entry_checklist?: Json | null
           entry_km?: number | null
           estimated_completion?: string | null

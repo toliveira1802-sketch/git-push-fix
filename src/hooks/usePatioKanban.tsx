@@ -90,6 +90,7 @@ export function usePatioKanban() {
           problem_description,
           priority,
           mechanic_id,
+          em_terceiros,
           vehicles!inner(plate, model, brand, year, color),
           clients!inner(name, phone),
           mechanics(name)
@@ -156,7 +157,7 @@ export function usePatioKanban() {
               ? new Date(os.estimated_completion).toLocaleDateString('pt-BR')
               : null,
             total: os.total || 0,
-            emTerceiros: false,
+            emTerceiros: os.em_terceiros || false,
             mecanico: os.mechanics?.name || null,
             mecanicoId: os.mechanic_id || null,
           };
