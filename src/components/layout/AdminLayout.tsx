@@ -29,7 +29,6 @@ const menuItems = [
   { icon: Users, label: 'Clientes', path: '/admin/clientes' },
   { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
-  { icon: Bot, label: 'Assistentes IA', path: '/admin/ias' },
   { icon: BarChart3, label: 'Gestão', path: '/gestao' },
   { icon: Settings, label: 'Configurações', path: '/admin/configuracoes' },
 ];

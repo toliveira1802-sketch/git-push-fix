@@ -3,10 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Laptop, Users, Database, Activity, ArrowLeft, Brain } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Laptop, Users, Database, Activity, ArrowLeft, Brain, Lock, ArrowRight } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { toast } from "sonner";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
+
+// Senha para acessar o painel de IA (em produção, isso seria validado no backend)
+const IA_ACCESS_PASSWORD = "doctor2024";
 
 // Mock data
 const mockKpis = {
@@ -26,6 +33,33 @@ const funnelData = [
 export default function GestaoTecnologia() {
   const navigate = useNavigate();
   const [kpis] = useState(mockKpis);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleAccessIA = () => {
+    // Verificar se já está autenticado nesta sessão
+    const storedAuth = sessionStorage.getItem("ia_access_granted");
+    if (storedAuth === "true") {
+      navigate("/admin/ias");
+      return;
+    }
+    setShowPasswordDialog(true);
+  };
+
+  const handlePasswordSubmit = () => {
+    if (password === IA_ACCESS_PASSWORD) {
+      sessionStorage.setItem("ia_access_granted", "true");
+      setIsAuthenticated(true);
+      setShowPasswordDialog(false);
+      setPassword("");
+      toast.success("Acesso liberado!");
+      navigate("/admin/ias");
+    } else {
+      toast.error("Senha incorreta");
+      setPassword("");
+    }
+  };
 
   return (
     <AdminLayout>
@@ -105,6 +139,32 @@ export default function GestaoTecnologia() {
           </Card>
         </div>
 
+        {/* Card de Acesso aos Assistentes IA */}
+        <Card className="border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                  <Brain className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    Assistentes IA
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Dr. Auto, Anna Laura e Orça Pro - Acesso restrito
+                  </p>
+                </div>
+              </div>
+              <Button onClick={handleAccessIA} className="gap-2">
+                Acessar
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Funil de Conversão */}
         <Card>
           <CardHeader>
@@ -174,6 +234,43 @@ export default function GestaoTecnologia() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog de Senha */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Acesso Restrito
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Digite a senha para acessar o painel de Assistentes IA.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handlePasswordSubmit}>
+              Entrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
