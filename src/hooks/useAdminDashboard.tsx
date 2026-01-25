@@ -147,6 +147,7 @@ export function useAdminDashboard() {
           status,
           total,
           created_at,
+          estimated_completion,
           vehicles!inner(plate, model),
           clients!inner(name),
           service_order_items(total_price, status)
@@ -200,7 +201,7 @@ export function useAdminDashboard() {
       });
       setAwaitingApproval(formattedAguardando);
 
-      // Prontos para retirada
+      // Prontos para retirada (status pronto)
       const prontos = (ossAtivas || []).filter(os => os.status === 'pronto');
       const formattedProntos: ReadyToDeliver[] = prontos.map(os => ({
         id: os.id,
@@ -211,8 +212,13 @@ export function useAdminDashboard() {
       }));
       setReadyToDeliver(formattedProntos);
 
-      // Valor para sair hoje = soma dos prontos
-      const valorParaSair = formattedProntos.reduce((sum, os) => sum + os.valor_final, 0);
+      // Valor para sair hoje = soma dos valores aprovados com previsão de entrega para hoje
+      const paraSairHoje = (ossAtivas || []).filter(os => {
+        if (!os.estimated_completion) return false;
+        const previsao = new Date(os.estimated_completion);
+        return previsao.toDateString() === today.toDateString();
+      });
+      const valorParaSair = paraSairHoje.reduce((sum, os) => sum + calcValorAprovado(os), 0);
 
       // 4. Entregues do mês (faturamento)
       const { data: ossEntregues } = await supabase
