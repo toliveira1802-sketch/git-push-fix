@@ -143,11 +143,15 @@ export function usePatioKanban() {
           const createdAt = new Date(os.created_at);
           
           // Calcular valor aprovado (soma dos itens com status 'aprovado')
-          const valorAprovado = (os.service_order_items || [])
+          // Se não houver itens (ex: cards do Trello), usa o total da OS
+          const itensAprovados = (os.service_order_items || [])
             .filter((item: { status: string | null; total_price: number }) => 
               item.status?.toLowerCase() === 'aprovado'
-            )
-            .reduce((sum: number, item: { total_price: number }) => sum + (item.total_price || 0), 0);
+            );
+          
+          const valorAprovado = itensAprovados.length > 0
+            ? itensAprovados.reduce((sum: number, item: { total_price: number }) => sum + (item.total_price || 0), 0)
+            : (os.total || 0); // Fallback para total da OS (Trello)
 
           const veiculo: VeiculoKanban = {
             id: os.id,
