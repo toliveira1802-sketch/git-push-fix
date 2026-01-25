@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Gift, Settings, LogOut, ChevronRight, Award, Crown, Edit2, Camera, Loader2, TrendingUp } from "lucide-react";
+import { ArrowLeft, Gift, Settings, LogOut, ChevronRight, Award, Crown, Edit2, Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -175,16 +175,44 @@ export default function Profile() {
           progress={progressToNext}
         />
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="border-0 bg-gradient-to-br from-red-600/10 to-red-700/5">
+            <CardContent className="p-4 flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
+                <span className="text-2xl">📊</span>
+              </div>
+              <span className="text-xs text-muted-foreground">Estatísticas</span>
+              <span className="text-lg font-bold text-foreground">12</span>
+              <span className="text-[10px] text-muted-foreground">serviços</span>
+            </CardContent>
+          </Card>
+          <Card className="border-0 bg-gradient-to-br from-yellow-600/10 to-yellow-700/5">
+            <CardContent className="p-4 flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-yellow-600/20 rounded-full flex items-center justify-center mb-2">
+                <span className="text-2xl">🏆</span>
+              </div>
+              <span className="text-xs text-muted-foreground">Conquistas</span>
+              <span className="text-lg font-bold text-foreground">5</span>
+              <span className="text-[10px] text-muted-foreground">badges</span>
+            </CardContent>
+          </Card>
+          <Card className="border-0 bg-gradient-to-br from-green-600/10 to-green-700/5">
+            <CardContent className="p-4 flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-green-600/20 rounded-full flex items-center justify-center mb-2">
+                <span className="text-2xl">💰</span>
+              </div>
+              <span className="text-xs text-muted-foreground">Economia</span>
+              <span className="text-lg font-bold text-foreground">R$480</span>
+              <span className="text-[10px] text-muted-foreground">economizados</span>
+            </CardContent>
+          </Card>
+        </div>
+
         <Separator className="my-6" />
 
         {/* Menu Options */}
         <div className="space-y-2">
-          <MenuOption 
-            icon={TrendingUp} 
-            label="Visão Geral" 
-            badge="Novo"
-            onClick={() => navigate("/performance")}
-          />
           <MenuOption 
             icon={Settings} 
             label="Configurações" 
