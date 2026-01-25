@@ -63,9 +63,12 @@ const checklistItems = [
 export default function AdminOSDetalhes() {
   const { osId } = useParams<{ osId: string }>();
   const [searchParams] = useSearchParams();
-  const [currentOsId, setCurrentOsId] = useState<string | undefined>(osId);
-  const isNewOS = searchParams.get("new") === "true";
   const navigate = useNavigate();
+  
+  // Determina se é modo criação: osId é "nova" ou não existe
+  const isCreateMode = !osId || osId === "nova";
+  const [currentOsId, setCurrentOsId] = useState<string | undefined>(isCreateMode ? undefined : osId);
+  const isNewOS = searchParams.get("new") === "true";
 
   // Hooks for data - MUST be called before any conditional returns
   const { 
