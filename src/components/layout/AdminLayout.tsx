@@ -19,8 +19,7 @@ import {
   FolderOpen,
   Lightbulb,
   SlidersHorizontal,
-  CalendarClock,
-  Receipt
+  CalendarClock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -59,7 +58,6 @@ const companyMenuItems: MenuItem[] = [
   { icon: Home, label: 'Visão Geral', path: '/admin' },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
-  { icon: Receipt, label: 'Orçamentos', path: '/admin/orcamentos' },
   { 
     icon: FolderOpen, 
     label: 'Cadastros', 
