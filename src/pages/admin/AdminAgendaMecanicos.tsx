@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,13 +8,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   CalendarIcon, Plus, Save, RefreshCw, X, Check, 
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, MessageSquare
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Mechanic {
   id: string;
@@ -43,6 +45,7 @@ const HORARIOS_SABADO = ['08:00', '09:00', '10:00', '11:00'];
 const HORARIOS_ENCAIXE = ['E1', 'E2', 'E3'];
 
 export default function AdminAgendaMecanicos() {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [schedule, setSchedule] = useState<DaySchedule>({});
@@ -225,11 +228,27 @@ export default function AdminAgendaMecanicos() {
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Agenda dos Mecânicos</h1>
-            <p className="text-muted-foreground">
-              Gerencie os agendamentos diários
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Agenda dos Mecânicos</h1>
+              <p className="text-muted-foreground">
+                Gerencie os agendamentos diários
+              </p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => navigate("/admin/feedback-mecanicos")}
+                >
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Feedback Diário</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex items-center gap-3">
             <Button

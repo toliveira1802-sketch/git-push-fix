@@ -17,10 +17,12 @@ import {
   BarChart3,
   RefreshCw,
   Award,
-  Zap
+  Zap,
+  LineChart as LineChartIcon
 } from "lucide-react";
+import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
 interface MechanicProductivity {
   id: string;
@@ -146,14 +148,30 @@ export default function AdminProdutividade() {
             <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                Produtividade
-              </h1>
-              <p className="text-muted-foreground">
-                Análise de performance da equipe
-              </p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                  Produtividade
+                </h1>
+                <p className="text-muted-foreground">
+                  Análise de performance da equipe
+                </p>
+              </div>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => navigate("/admin/analytics-mecanicos")}
+                  >
+                    <LineChartIcon className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Analytics Detalhado</p>
+                </TooltipContent>
+              </UITooltip>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -247,7 +265,7 @@ export default function AdminProdutividade() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis className="text-xs" />
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -273,7 +291,7 @@ export default function AdminProdutividade() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis className="text-xs" />
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
