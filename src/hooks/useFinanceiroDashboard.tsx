@@ -2,6 +2,17 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, differenceInBusinessDays, startOfDay, endOfDay } from "date-fns";
 
+export interface VehicleFinanceInfo {
+  id: string;
+  plate: string;
+  model: string;
+  clientName: string;
+  valorAprovado: number;
+  status: string;
+  estimatedCompletion?: string;
+  daysInYard: number;
+}
+
 export interface FinanceMetrics {
   metaMensal: number;
   realizado: number;
@@ -17,6 +28,10 @@ export interface FinanceMetrics {
   diasRestantes: number;
   projecao: number;
   percentualMeta: number;
+  // Listas de veículos
+  vehiclesPreso: VehicleFinanceInfo[];
+  vehiclesAtrasado: VehicleFinanceInfo[];
+  vehiclesSaidaHoje: VehicleFinanceInfo[];
 }
 
 export interface MetaConfig {
@@ -40,6 +55,9 @@ export function useFinanceiroDashboard() {
     diasRestantes: 0,
     projecao: 0,
     percentualMeta: 0,
+    vehiclesPreso: [],
+    vehiclesAtrasado: [],
+    vehiclesSaidaHoje: [],
   });
   const [metaConfig, setMetaConfig] = useState<MetaConfig>({
     metaMensal: 300000,
@@ -109,7 +127,9 @@ export function useFinanceiroDashboard() {
           total,
           estimated_completion,
           created_at,
-          service_order_items(total_price, status)
+          service_order_items(total_price, status),
+          vehicles(plate, model, brand),
+          clients(name)
         `)
         .neq('status', 'entregue');
 
@@ -118,23 +138,42 @@ export function useFinanceiroDashboard() {
       let preso = 0;
       let atrasado = 0;
       let saidaHoje = 0;
+      
+      const vehiclesPreso: VehicleFinanceInfo[] = [];
+      const vehiclesAtrasado: VehicleFinanceInfo[] = [];
+      const vehiclesSaidaHoje: VehicleFinanceInfo[] = [];
 
       (ossAtivas || []).forEach(os => {
         const valorAprovado = calcValorAprovado(os);
         aprovadoPatio += valorAprovado;
+        const daysInYard = differenceInBusinessDays(today, new Date(os.created_at));
+
+        const vehicleInfo: VehicleFinanceInfo = {
+          id: os.id,
+          plate: (os.vehicles as any)?.plate || 'N/A',
+          model: (os.vehicles as any)?.model || '',
+          clientName: (os.clients as any)?.name || '',
+          valorAprovado,
+          status: os.status,
+          estimatedCompletion: os.estimated_completion || undefined,
+          daysInYard,
+        };
 
         // Preso = valor aprovado de veículos no pátio
         preso += valorAprovado;
+        vehiclesPreso.push(vehicleInfo);
 
         // Atrasado = previsão de entrega vencida
         if (os.estimated_completion) {
           const previsao = new Date(os.estimated_completion);
           if (previsao < todayStart) {
             atrasado += valorAprovado;
+            vehiclesAtrasado.push(vehicleInfo);
           }
           // Saída hoje = previsão de entrega para hoje
           if (previsao >= todayStart && previsao <= todayEnd) {
             saidaHoje += valorAprovado;
+            vehiclesSaidaHoje.push(vehicleInfo);
           }
         }
       });
@@ -161,6 +200,9 @@ export function useFinanceiroDashboard() {
         diasRestantes,
         projecao,
         percentualMeta,
+        vehiclesPreso: vehiclesPreso.sort((a, b) => b.valorAprovado - a.valorAprovado),
+        vehiclesAtrasado: vehiclesAtrasado.sort((a, b) => b.daysInYard - a.daysInYard),
+        vehiclesSaidaHoje,
       });
       setLastUpdate(new Date());
 
