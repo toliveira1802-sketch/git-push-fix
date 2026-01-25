@@ -29,6 +29,7 @@ import { LayoutPatio, type Area as LayoutArea } from "@/components/patio/LayoutP
 import { usePatioKanban, type VeiculoKanban } from "@/hooks/usePatioKanban";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { KanbanCard } from "@/components/patio/KanbanCard";
 
 
 // Layout da oficina - estrutura fixa (sem veículos mockados)
@@ -202,7 +203,7 @@ export default function MonitoramentoPatio() {
             {etapasFiltradas.map((etapa) => (
               <Card 
                 key={etapa.id} 
-                className={`w-56 shrink-0 border transition-all ${etapa.color} ${
+                className={`w-72 shrink-0 border transition-all ${etapa.color} ${
                   dragOverEtapa === etapa.id ? 'ring-2 ring-primary ring-offset-2' : ''
                 }`}
                 onDragOver={(e) => handleDragOver(e, etapa.id)}
@@ -224,33 +225,13 @@ export default function MonitoramentoPatio() {
                       </div>
                     ) : (
                       etapa.veiculos.map((veiculo, idx) => (
-                        <div
-                          key={veiculo.placa + idx}
-                          draggable
+                        <KanbanCard
+                          key={veiculo.id + idx}
+                          veiculo={veiculo}
+                          isDragging={draggedVeiculoKanban?.veiculo.id === veiculo.id}
                           onDragStart={() => handleDragStart(veiculo, etapa.id)}
                           onDragEnd={handleDragEnd}
-                          className={`p-2 rounded-lg border bg-card hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${
-                            draggedVeiculoKanban?.veiculo.placa === veiculo.placa ? 'opacity-50 scale-95' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <GripVertical className="w-3 h-3 text-muted-foreground" />
-                            <Car className="w-3 h-3 text-primary" />
-                            <span className="font-mono font-bold text-xs">{veiculo.placa}</span>
-                          </div>
-                          <p className="text-xs truncate">{veiculo.modelo}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{veiculo.cliente}</p>
-                          <div className="flex items-center justify-between mt-1.5">
-                            <Badge variant="outline" className="text-[10px]">
-                              {veiculo.servico}
-                            </Badge>
-                            {veiculo.total > 0 && (
-                              <span className="text-[10px] font-semibold text-primary">
-                                R$ {veiculo.total.toLocaleString('pt-BR')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        />
                       ))
                     )}
                   </div>

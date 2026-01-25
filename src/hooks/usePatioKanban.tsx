@@ -4,14 +4,23 @@ import { toast } from "sonner";
 
 export interface VeiculoKanban {
   id: string; // service_order id
+  orderNumber: string;
   placa: string;
   modelo: string;
   marca: string;
+  ano: number | null;
+  cor: string | null;
   cliente: string;
+  clienteTelefone: string;
   servico: string;
+  categoria: string;
   entrada: string;
+  entradaData: Date;
+  previsaoEntrega: string | null;
   total: number;
   emTerceiros: boolean;
+  mecanico: string | null;
+  mecanicoId: string | null;
 }
 
 export interface EtapaWorkflow {
@@ -67,7 +76,7 @@ export function usePatioKanban() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Buscar todas as OSs com veículos e clientes
+      // Buscar todas as OSs com veículos, clientes e mecânicos
       const { data: oss, error } = await supabase
         .from('service_orders')
         .select(`
@@ -77,9 +86,13 @@ export function usePatioKanban() {
           total,
           created_at,
           completed_at,
+          estimated_completion,
           problem_description,
-          vehicles!inner(plate, model, brand),
-          clients!inner(name)
+          priority,
+          mechanic_id,
+          vehicles!inner(plate, model, brand, year, color),
+          clients!inner(name, phone),
+          mechanics(name)
         `)
         .order('created_at', { ascending: false });
 
@@ -100,21 +113,52 @@ export function usePatioKanban() {
 
       let totalMes = 0;
 
+      // Função para determinar categoria baseada na descrição
+      const getCategoria = (desc: string | null): string => {
+        if (!desc) return 'Geral';
+        const lower = desc.toLowerCase();
+        if (lower.includes('revisão') || lower.includes('revisao')) return 'Revisão';
+        if (lower.includes('óleo') || lower.includes('oleo')) return 'Troca de Óleo';
+        if (lower.includes('freio')) return 'Freios';
+        if (lower.includes('suspensão') || lower.includes('suspensao')) return 'Suspensão';
+        if (lower.includes('motor')) return 'Motor';
+        if (lower.includes('elétric') || lower.includes('eletric')) return 'Elétrica';
+        if (lower.includes('ar condicionado') || lower.includes('ac')) return 'Ar Condicionado';
+        return 'Manutenção';
+      };
+
       oss?.forEach(os => {
         const etapaId = statusToEtapa[os.status] || 'orcamento';
         const etapaIndex = novasEtapas.findIndex(e => e.id === etapaId);
         
         if (etapaIndex >= 0) {
+          const createdAt = new Date(os.created_at);
           const veiculo: VeiculoKanban = {
             id: os.id,
+            orderNumber: os.order_number,
             placa: os.vehicles?.plate || '',
             modelo: os.vehicles?.model || '',
             marca: os.vehicles?.brand || '',
+            ano: os.vehicles?.year || null,
+            cor: os.vehicles?.color || null,
             cliente: os.clients?.name || '',
+            clienteTelefone: os.clients?.phone || '',
             servico: os.problem_description || os.order_number,
-            entrada: new Date(os.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            categoria: getCategoria(os.problem_description),
+            entrada: createdAt.toLocaleString('pt-BR', { 
+              day: '2-digit', 
+              month: '2-digit',
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            entradaData: createdAt,
+            previsaoEntrega: os.estimated_completion 
+              ? new Date(os.estimated_completion).toLocaleDateString('pt-BR')
+              : null,
             total: os.total || 0,
-            emTerceiros: false, // TODO: adicionar campo no banco
+            emTerceiros: false,
+            mecanico: os.mechanics?.name || null,
+            mecanicoId: os.mechanic_id || null,
           };
           
           novasEtapas[etapaIndex].veiculos.push(veiculo);
