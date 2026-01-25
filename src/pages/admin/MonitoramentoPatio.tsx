@@ -12,7 +12,6 @@ import {
   Car,
   Calendar,
   RefreshCw,
-  Wrench,
   MapPin,
   ArrowLeft,
   LayoutGrid,
@@ -20,9 +19,12 @@ import {
   GripVertical,
   CalendarClock,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  DollarSign,
+  Loader2
 } from "lucide-react";
 import { LayoutPatio, type Area as LayoutArea } from "@/components/patio/LayoutPatio";
+import { usePatioKanban, type VeiculoKanban } from "@/hooks/usePatioKanban";
 
 interface VeiculoNaoAlocado {
   id: string;
@@ -34,53 +36,11 @@ interface VeiculoNaoAlocado {
   previsaoSaida: string;
 }
 
-interface VeiculoKanban {
-  placa: string;
-  modelo: string;
-  cliente: string;
-  servico: string;
-  entrada: string;
-  emTerceiros: boolean;
-}
-
-interface EtapaWorkflow {
-  id: string;
-  titulo: string;
-  color: string;
-  veiculos: VeiculoKanban[];
-}
-
 // Mock veículos não alocados
 const mockVeiculosNaoAlocados: VeiculoNaoAlocado[] = [
   { id: 'v1', placa: 'MNO-7890', modelo: 'Fiat Argo 2023', cliente: 'Roberto Lima', servico: 'Troca de pastilhas', entrada: '11:30', previsaoSaida: '14:00' },
   { id: 'v2', placa: 'PQR-1234', modelo: 'VW Polo 2022', cliente: 'Fernanda Costa', servico: 'Revisão 20.000km', entrada: '12:00', previsaoSaida: '17:00' },
   { id: 'v3', placa: 'STU-5678', modelo: 'Hyundai Creta 2024', cliente: 'Lucas Mendes', servico: 'Diagnóstico', entrada: '13:00', previsaoSaida: '15:00' },
-];
-
-// Mock inicial das etapas do workflow
-const initialEtapasWorkflow: EtapaWorkflow[] = [
-  { id: 'diagnostico', titulo: 'Diagnóstico', color: 'bg-purple-500/10 border-purple-500/30', veiculos: [
-    { placa: 'ABC-1234', modelo: 'Gol 2020', cliente: 'João Silva', servico: 'Verificar barulho', entrada: '08:30', emTerceiros: false },
-  ]},
-  { id: 'orcamento', titulo: 'Orçamento', color: 'bg-blue-500/10 border-blue-500/30', veiculos: [
-    { placa: 'XYZ-5678', modelo: 'Civic 2019', cliente: 'Maria Santos', servico: 'Revisão completa', entrada: '09:15', emTerceiros: false },
-  ]},
-  { id: 'aguardando-apv', titulo: 'Aguardando Aprovação', color: 'bg-amber-500/10 border-amber-500/30', veiculos: [
-    { placa: 'DEF-9012', modelo: 'Corolla 2021', cliente: 'Pedro Costa', servico: 'Suspensão', entrada: '10:00', emTerceiros: false },
-    { placa: 'MNO-7890', modelo: 'Fiat Argo', cliente: 'Roberto Lima', servico: 'Freios', entrada: '11:30', emTerceiros: false },
-  ]},
-  { id: 'aguardando-peca', titulo: 'Aguardando Peça', color: 'bg-orange-500/10 border-orange-500/30', veiculos: [
-    { placa: 'GHI-3456', modelo: 'HB20 2022', cliente: 'Ana Lima', servico: 'Embreagem', entrada: '07:00', emTerceiros: true },
-  ]},
-  { id: 'execucao', titulo: 'Em Execução', color: 'bg-cyan-500/10 border-cyan-500/30', veiculos: [
-    { placa: 'PQR-1234', modelo: 'VW Polo', cliente: 'Fernanda Costa', servico: 'Motor', entrada: '12:00', emTerceiros: false },
-    { placa: 'STU-5678', modelo: 'Hyundai Creta', cliente: 'Lucas Mendes', servico: 'Injeção', entrada: '13:00', emTerceiros: false },
-  ]},
-  { id: 'teste', titulo: 'Em Teste', color: 'bg-indigo-500/10 border-indigo-500/30', veiculos: [] },
-  { id: 'pronto', titulo: 'Pronto', color: 'bg-emerald-500/10 border-emerald-500/30', veiculos: [
-    { placa: 'JKL-0000', modelo: 'Onix 2023', cliente: 'Carlos Oliveira', servico: 'Revisão', entrada: '06:00', emTerceiros: false },
-  ]},
-  { id: 'entregue', titulo: 'Entregue', color: 'bg-muted border-muted-foreground/20', veiculos: [] },
 ];
 
 export default function MonitoramentoPatio() {
@@ -139,17 +99,17 @@ export default function MonitoramentoPatio() {
   ]);
   
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [etapasWorkflow, setEtapasWorkflow] = useState<EtapaWorkflow[]>(initialEtapasWorkflow);
+  const { etapas: etapasWorkflow, loading, totalEntreguesMes, moverVeiculo, refetch } = usePatioKanban();
   const [draggedVeiculoKanban, setDraggedVeiculoKanban] = useState<{ veiculo: VeiculoKanban; fromEtapaId: string } | null>(null);
   const [dragOverEtapa, setDragOverEtapa] = useState<string | null>(null);
   
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      console.log("Atualizando dados do pátio...");
+      refetch();
     }, 30000);
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, refetch]);
   
   const veiculosEmAtendimento = areas.filter(a => a.veiculo);
   
@@ -160,9 +120,11 @@ export default function MonitoramentoPatio() {
   
   // Encontrar gargalo (etapa com mais veículos, exceto entregue)
   const etapasAtivas = etapasWorkflow.filter(e => e.id !== 'entregue');
-  const gargalo = etapasAtivas.reduce((max, etapa) => 
-    etapa.veiculos.length > max.veiculos.length ? etapa : max
-  , etapasAtivas[0]);
+  const gargalo = etapasAtivas.length > 0 
+    ? etapasAtivas.reduce((max, etapa) => 
+        etapa.veiculos.length > max.veiculos.length ? etapa : max
+      , etapasAtivas[0])
+    : { titulo: '-', veiculos: [] };
   
   const handleAreaClick = (area: LayoutArea) => {
     if (area.veiculo) {
@@ -189,7 +151,7 @@ export default function MonitoramentoPatio() {
     setDragOverEtapa(null);
   };
 
-  const handleDrop = (e: React.DragEvent, toEtapaId: string) => {
+  const handleDrop = async (e: React.DragEvent, toEtapaId: string) => {
     e.preventDefault();
     if (!draggedVeiculoKanban) return;
     
@@ -201,15 +163,8 @@ export default function MonitoramentoPatio() {
       return;
     }
     
-    setEtapasWorkflow(prev => prev.map(etapa => {
-      if (etapa.id === fromEtapaId) {
-        return { ...etapa, veiculos: etapa.veiculos.filter(v => v.placa !== veiculo.placa) };
-      }
-      if (etapa.id === toEtapaId) {
-        return { ...etapa, veiculos: [...etapa.veiculos, veiculo] };
-      }
-      return etapa;
-    }));
+    // Mover veículo e persistir no banco
+    await moverVeiculo(veiculo.id, fromEtapaId, toEtapaId);
     
     setDraggedVeiculoKanban(null);
     setDragOverEtapa(null);
@@ -261,9 +216,16 @@ export default function MonitoramentoPatio() {
                           </div>
                           <p className="text-xs truncate">{veiculo.modelo}</p>
                           <p className="text-[10px] text-muted-foreground truncate">{veiculo.cliente}</p>
-                          <Badge variant="outline" className="text-[10px] mt-1.5 w-full justify-center">
-                            {veiculo.servico}
-                          </Badge>
+                          <div className="flex items-center justify-between mt-1.5">
+                            <Badge variant="outline" className="text-[10px]">
+                              {veiculo.servico}
+                            </Badge>
+                            {veiculo.total > 0 && (
+                              <span className="text-[10px] font-semibold text-primary">
+                                R$ {veiculo.total.toLocaleString('pt-BR')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))
                     )}
@@ -369,12 +331,19 @@ export default function MonitoramentoPatio() {
               <Switch id="auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
               <Label htmlFor="auto-refresh" className="text-sm">Auto-refresh</Label>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Atualizar
+            <Button variant="outline" size="sm" className="gap-2" onClick={refetch} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Carregando...' : 'Atualizar'}
             </Button>
           </div>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
 
         {/* Indicadores */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -393,16 +362,18 @@ export default function MonitoramentoPatio() {
             </CardContent>
           </Card>
 
-          {/* Reagendados */}
+          {/* Faturado no Mês (Entregues) */}
           <Card className="border bg-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                  <CalendarClock className="w-5 h-5 text-amber-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-amber-500">1</p>
-                  <p className="text-xs text-muted-foreground">Reagendados</p>
+                  <p className="text-2xl font-bold text-primary">
+                    R$ {totalEntreguesMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Faturado (Mês)</p>
                 </div>
               </div>
             </CardContent>
