@@ -12,18 +12,9 @@ import {
   Megaphone,
   Lightbulb,
   ArrowRight,
-  Bell,
 } from "lucide-react";
 
 const modules = [
-  {
-    title: "Notificações",
-    description: "Novos cadastros e ações pendentes de revisão",
-    url: "/gestao/notificacoes",
-    icon: Bell,
-    color: "from-rose-500 to-rose-600",
-    showBadge: true
-  },
   {
     title: "Recursos Humanos",
     description: "Gerencie mecânicos, performance e feedbacks da equipe",
@@ -54,10 +45,11 @@ const modules = [
   },
   {
     title: "Comercial e Marketing",
-    description: "Promoções, campanhas e aquisição de clientes",
+    description: "Promoções, campanhas e novos cadastros de clientes",
     url: "/gestao/comercial",
     icon: Megaphone,
-    color: "from-pink-500 to-pink-600"
+    color: "from-pink-500 to-pink-600",
+    showBadge: true
   },
   {
     title: "Melhorias",
