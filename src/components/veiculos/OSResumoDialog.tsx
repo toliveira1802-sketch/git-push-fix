@@ -7,8 +7,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, XCircle, Clock, Wrench, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, XCircle, Clock, Wrench, Package, Check, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export interface OSItem {
   id: string;
@@ -38,6 +41,8 @@ interface OSResumoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: OSResumoData | null;
+  onAprovarTudo?: () => void;
+  onRevisar?: () => void;
 }
 
 const statusConfig = {
@@ -61,12 +66,45 @@ const statusConfig = {
   },
 };
 
-export function OSResumoDialog({ open, onOpenChange, data }: OSResumoDialogProps) {
+export function OSResumoDialog({ open, onOpenChange, data, onAprovarTudo, onRevisar }: OSResumoDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!data) return null;
 
   const itensAprovados = data.itens.filter(i => i.status === "aprovado");
   const itensRecusados = data.itens.filter(i => i.status === "recusado");
   const itensPendentes = data.itens.filter(i => i.status === "pendente");
+  const temPendentes = itensPendentes.length > 0;
+
+  const handleAprovarTudo = async () => {
+    setIsSubmitting(true);
+    try {
+      if (onAprovarTudo) {
+        await onAprovarTudo();
+      }
+      toast.success("Orçamento aprovado! A oficina foi notificada.");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Erro ao aprovar. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRevisar = async () => {
+    setIsSubmitting(true);
+    try {
+      if (onRevisar) {
+        await onRevisar();
+      }
+      toast.success("Solicitação de revisão enviada! A oficina entrará em contato.");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Erro ao enviar. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -168,6 +206,35 @@ export function OSResumoDialog({ open, onOpenChange, data }: OSResumoDialogProps
               )}
             </div>
           </ScrollArea>
+
+          {/* Action Buttons - only show if there are pending items */}
+          {temPendentes && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90" 
+                  onClick={handleAprovarTudo}
+                  disabled={isSubmitting}
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Aprovar Orçamento (R$ {data.totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={handleRevisar}
+                  disabled={isSubmitting}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Quero Revisar
+                </Button>
+                <p className="text-[10px] text-center text-muted-foreground">
+                  Ao revisar, um consultor entrará em contato para discutir os itens
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
