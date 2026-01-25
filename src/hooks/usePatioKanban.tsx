@@ -81,7 +81,7 @@ export function usePatioKanban() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Buscar todas as OSs com veículos, clientes, mecânicos e itens
+      // Buscar OSs ativas (exceto entregues) com veículos, clientes, mecânicos e itens
       const { data: oss, error } = await supabase
         .from('service_orders')
         .select(`
@@ -102,9 +102,34 @@ export function usePatioKanban() {
           mechanics(name),
           service_order_items(total_price, status)
         `)
+        .neq('status', 'entregue')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Buscar total faturado do mês (entregues do mês atual) - query separada
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+      
+      const { data: entreguesMes } = await supabase
+        .from('service_orders')
+        .select('total, service_order_items(total_price, status)')
+        .eq('status', 'entregue')
+        .gte('completed_at', inicioMes.toISOString());
+      
+      // Calcular total faturado (soma dos valores aprovados)
+      let totalMes = 0;
+      entreguesMes?.forEach(os => {
+        const itensAprovados = (os.service_order_items || [])
+          .filter((item: { status: string | null; total_price: number }) => 
+            item.status?.toLowerCase() === 'aprovado'
+          );
+        const valorAprovado = itensAprovados.length > 0
+          ? itensAprovados.reduce((sum: number, item: { total_price: number }) => sum + (item.total_price || 0), 0)
+          : (os.total || 0);
+        totalMes += valorAprovado;
+      });
 
       // Organizar por etapas
       const novasEtapas: EtapaWorkflow[] = etapasConfig.map(e => ({
@@ -113,13 +138,6 @@ export function usePatioKanban() {
         color: e.color,
         veiculos: []
       }));
-
-      // Calcular total entregues do mês
-      const inicioMes = new Date();
-      inicioMes.setDate(1);
-      inicioMes.setHours(0, 0, 0, 0);
-
-      let totalMes = 0;
 
       // Função para determinar categoria baseada na descrição
       const getCategoria = (desc: string | null): string => {
@@ -184,14 +202,6 @@ export function usePatioKanban() {
           };
           
           novasEtapas[etapaIndex].veiculos.push(veiculo);
-
-          // Somar total de entregues do mês
-          if (os.status === 'entregue' && os.completed_at) {
-            const completedDate = new Date(os.completed_at);
-            if (completedDate >= inicioMes) {
-              totalMes += os.total || 0;
-            }
-          }
         }
       });
 
