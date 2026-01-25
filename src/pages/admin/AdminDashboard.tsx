@@ -58,6 +58,22 @@ const mockCancelledAppointments = [
   { id: '2', client_name: 'Fernanda Costa', phone: '11977665544', vehicle: 'Renault Sandero', cancelled_at: '16/01/2024' },
 ];
 
+const mockVehiclesInYard = [
+  { id: '1', plate: 'ABC-1234', vehicle: 'VW Golf GTI', client_name: 'João Silva', status: 'Em execução', etapa: 'Mecânica' },
+  { id: '2', plate: 'DEF-5678', vehicle: 'Honda Civic', client_name: 'Maria Santos', status: 'Diagnóstico', etapa: 'Elétrica' },
+  { id: '3', plate: 'GHI-9012', vehicle: 'Toyota Corolla', client_name: 'Carlos Oliveira', status: 'Aguardando peça', etapa: 'Suspensão' },
+  { id: '4', plate: 'JKL-3456', vehicle: 'BMW 320i', client_name: 'Ana Costa', status: 'Em execução', etapa: 'Motor' },
+  { id: '5', plate: 'MNO-7890', vehicle: 'Fiat Argo', client_name: 'Pedro Almeida', status: 'Finalizado', etapa: 'Lavagem' },
+];
+
+const mockAwaitingApproval = [
+  { id: '1', numero_os: 'OS-2024-010', vehicle: 'VW Polo', client_name: 'Roberto Lima', valor: 3500, dias_aguardando: 2 },
+  { id: '2', numero_os: 'OS-2024-012', vehicle: 'Chevrolet Onix', client_name: 'Fernanda Costa', valor: 1800, dias_aguardando: 1 },
+  { id: '3', numero_os: 'OS-2024-015', vehicle: 'Hyundai HB20', client_name: 'Lucas Mendes', valor: 4200, dias_aguardando: 3 },
+  { id: '4', numero_os: 'OS-2024-018', vehicle: 'Renault Kwid', client_name: 'Julia Santos', valor: 950, dias_aguardando: 0 },
+  { id: '5', numero_os: 'OS-2024-020', vehicle: 'Ford Ka', client_name: 'Marcos Silva', valor: 2100, dias_aguardando: 4 },
+];
+
 // Pending tasks count (mock)
 const pendingTasksCount = 5;
 
@@ -86,6 +102,10 @@ const AdminDashboard = () => {
   const [showReturns, setShowReturns] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
 
+  const [showVehiclesInYard, setShowVehiclesInYard] = useState(false);
+  const [showAwaitingApproval, setShowAwaitingApproval] = useState(false);
+  const [showPendencias, setShowPendencias] = useState(false);
+
   const statusLabels: Record<string, string> = {
     pendente: "Pendente",
     confirmado: "Confirmado",
@@ -112,7 +132,7 @@ const AdminDashboard = () => {
         {/* Pendências do dia - Botão com quantidade */}
         <Card
           className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-primary/5 to-primary/10"
-          onClick={() => navigate('/admin/pendencias')}
+          onClick={() => setShowPendencias(true)}
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -203,7 +223,7 @@ const AdminDashboard = () => {
           {/* Veículos no Pátio */}
           <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-blue-500/10 to-blue-600/5"
-            onClick={() => navigate('/admin/patio')}
+            onClick={() => setShowVehiclesInYard(true)}
           >
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
@@ -221,7 +241,7 @@ const AdminDashboard = () => {
           {/* Aguardando Aprovação */}
           <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-amber-500/10 to-amber-600/5"
-            onClick={() => navigate('/admin/ordens-servico?status=aguardando')}
+            onClick={() => setShowAwaitingApproval(true)}
           >
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
@@ -509,6 +529,116 @@ const AdminDashboard = () => {
             ) : (
               <p className="text-center py-8 text-muted-foreground">Nenhum cancelamento este mês</p>
             )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Veículos no Pátio */}
+      <Dialog open={showVehiclesInYard} onOpenChange={setShowVehiclesInYard}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="w-5 h-5 text-blue-500" />
+              Veículos no Pátio
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            {mockVehiclesInYard.length > 0 ? (
+              <div className="space-y-3">
+                {mockVehiclesInYard.map((v) => (
+                  <div key={v.id} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-mono font-bold text-primary">{v.plate}</p>
+                        <p className="text-sm text-muted-foreground">{v.vehicle}</p>
+                        <p className="text-xs text-muted-foreground">{v.client_name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{v.status}</p>
+                        <p className="text-xs text-muted-foreground">{v.etapa}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-8 text-muted-foreground">Nenhum veículo no pátio</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Aguardando Aprovação */}
+      <Dialog open={showAwaitingApproval} onOpenChange={setShowAwaitingApproval}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-500" />
+              Aguardando Aprovação
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            {mockAwaitingApproval.length > 0 ? (
+              <div className="space-y-3">
+                {mockAwaitingApproval.map((os) => (
+                  <div key={os.id} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-mono text-xs text-muted-foreground">{os.numero_os}</p>
+                        <p className="font-medium">{os.client_name}</p>
+                        <p className="text-sm text-muted-foreground">{os.vehicle}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-emerald-500">
+                          R$ {os.valor.toLocaleString("pt-BR")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {os.dias_aguardando === 0 ? 'Hoje' : `${os.dias_aguardando}d aguardando`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-8 text-muted-foreground">Nenhum orçamento aguardando aprovação</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Pendências */}
+      <Dialog open={showPendencias} onOpenChange={setShowPendencias}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CorinthiansIcon size={24} />
+              Pendências do Dia
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-muted/50">
+                <p className="font-medium">Confirmar agendamento</p>
+                <p className="text-sm text-muted-foreground">João Silva - 14:00</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <p className="font-medium">Enviar orçamento</p>
+                <p className="text-sm text-muted-foreground">OS-2024-015 - Hyundai HB20</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <p className="font-medium">Ligar para cliente</p>
+                <p className="text-sm text-muted-foreground">Maria Santos - Retorno</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <p className="font-medium">Verificar peça</p>
+                <p className="text-sm text-muted-foreground">Filtro de óleo - VW Golf</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <p className="font-medium">Finalizar OS</p>
+                <p className="text-sm text-muted-foreground">OS-2024-008 - Honda Civic</p>
+              </div>
+            </div>
           </ScrollArea>
         </DialogContent>
       </Dialog>
