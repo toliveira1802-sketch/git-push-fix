@@ -97,7 +97,7 @@ const AdminDashboard = () => {
           {/* Operacional */}
           <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-blue-500/10 to-blue-600/5"
-            onClick={() => navigate('/admin/ordens-servico')}
+            onClick={() => navigate('/admin/operacional')}
           >
             <CardContent className="p-6">
               <div className="flex flex-col items-center gap-3 text-center">
@@ -113,7 +113,7 @@ const AdminDashboard = () => {
           {/* Financeiro */}
           <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-green-500/10 to-green-600/5"
-            onClick={() => navigate('/admin/ordens-servico')}
+            onClick={() => navigate('/admin/financeiro')}
           >
             <CardContent className="p-6">
               <div className="flex flex-col items-center gap-3 text-center">
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
           {/* Produtividade */}
           <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-purple-500/10 to-purple-600/5"
-            onClick={() => navigate('/admin/ordens-servico')}
+            onClick={() => navigate('/admin/produtividade')}
           >
             <CardContent className="p-6">
               <div className="flex flex-col items-center gap-3 text-center">
