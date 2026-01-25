@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Car, Plus, ArrowLeft, MoreVertical, Wrench } from "lucide-react";
+import { Car, Plus, ArrowLeft, MoreVertical, Wrench, Loader2 } from "lucide-react";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import {
   Dialog,
@@ -24,52 +24,24 @@ import {
 import { toast } from "sonner";
 import { VeiculoPatioStatus, type PatioStatusInfo } from "@/components/veiculos/VeiculoPatioStatus";
 import { OSResumoDialog, type OSResumoData, type OSItem } from "@/components/veiculos/OSResumoDialog";
+import { useClientData, type ClientVehicle, type ClientServiceHistory } from "@/hooks/useClientData";
 
-interface Veiculo {
-  id: string;
-  marca: string;
-  modelo: string;
-  ano: string;
-  placa: string;
-  cor: string;
-  emServico: boolean;
-  patioStatus?: PatioStatusInfo;
-}
-
-// Mock data com status do pátio
-const veiculosMock: Veiculo[] = [
-  {
-    id: "1",
-    marca: "Honda",
-    modelo: "Civic",
-    ano: "2022",
-    placa: "ABC-1234",
-    cor: "Preto",
-    emServico: true,
-    patioStatus: {
-      etapaId: "em_execucao",
-      local: "Elevador 5",
-      osNumero: "2025-00042",
-      servico: "Revisão Completa + Troca de Óleo",
-      entrada: "09:15",
-      previsaoSaida: "16:00",
-      valorAprovado: 1250.00,
-    },
-  },
-  {
-    id: "2",
-    marca: "Toyota",
-    modelo: "Corolla",
-    ano: "2021",
-    placa: "XYZ-5678",
-    cor: "Branco",
-    emServico: false,
-  },
-];
+// Mapping from DB status to workflow stage
+const statusToEtapa: Record<string, string> = {
+  'orcamento': 'orcamento',
+  'aguardando_aprovacao': 'aguardando_aprovacao',
+  'aprovado': 'pronto_iniciar',
+  'em_execucao': 'em_execucao',
+  'em_teste': 'em_teste',
+  'pronto': 'pronto_retirada',
+  'pronto_retirada': 'pronto_retirada',
+  'diagnostico': 'diagnostico',
+  'aguardando_peca': 'aguardando_peca',
+};
 
 const Veiculos = () => {
   const navigate = useNavigate();
-  const [veiculos, setVeiculos] = useState<Veiculo[]>(veiculosMock);
+  const { vehicles, serviceHistory, loading, getActiveServiceOrder } = useClientData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [osResumoOpen, setOsResumoOpen] = useState(false);
   const [selectedOSResumo, setSelectedOSResumo] = useState<OSResumoData | null>(null);
@@ -81,36 +53,54 @@ const Veiculos = () => {
     cor: "",
   });
 
-  // Mock dados da OS para o resumo
-  const mockOSItens: OSItem[] = [
-    { id: "1", descricao: "Óleo Motor 5W30 Sintético", tipo: "peca", valor: 89.90, quantidade: 4, status: "aprovado" },
-    { id: "2", descricao: "Filtro de Óleo", tipo: "peca", valor: 45.00, quantidade: 1, status: "aprovado" },
-    { id: "3", descricao: "Filtro de Ar", tipo: "peca", valor: 65.00, quantidade: 1, status: "aprovado" },
-    { id: "4", descricao: "Mão de Obra - Revisão", tipo: "servico", valor: 350.00, quantidade: 1, status: "aprovado" },
-    { id: "5", descricao: "Pastilhas de Freio Dianteiras", tipo: "peca", valor: 189.00, quantidade: 1, status: "pendente" },
-    { id: "6", descricao: "Alinhamento e Balanceamento", tipo: "servico", valor: 120.00, quantidade: 1, status: "recusado" },
-  ];
+  // Build patio status from active service order
+  const getPatioStatus = (vehicle: ClientVehicle): PatioStatusInfo | undefined => {
+    const activeOrder = getActiveServiceOrder(vehicle.plate);
+    if (!activeOrder) return undefined;
 
-  const handleVerOSResumo = (veiculo: Veiculo) => {
-    if (!veiculo.patioStatus) return;
+    const etapaId = statusToEtapa[activeOrder.order_status.toLowerCase()] || 'diagnostico';
     
-    const itensAprovados = mockOSItens.filter(i => i.status === "aprovado");
-    const itensPendentes = mockOSItens.filter(i => i.status === "pendente");
-    const itensRecusados = mockOSItens.filter(i => i.status === "recusado");
+    // Calculate approved value from items
+    const valorAprovado = activeOrder.items
+      .filter(item => item.status === 'aprovado')
+      .reduce((sum, item) => sum + (item.total_price || 0), 0);
+
+    return {
+      etapaId,
+      osNumero: activeOrder.order_number,
+      servico: activeOrder.problem_description || 'Serviço em andamento',
+      entrada: new Date(activeOrder.order_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      previsaoSaida: 'A definir',
+      valorAprovado: valorAprovado > 0 ? valorAprovado : undefined,
+    };
+  };
+
+  const handleVerOSResumo = (vehicle: ClientVehicle, activeOrder: ClientServiceHistory) => {
+    const itensAprovados = activeOrder.items.filter(i => i.status === 'aprovado');
+    const itensPendentes = activeOrder.items.filter(i => i.status === 'pendente' || i.status === 'orcamento');
+    const itensRecusados = activeOrder.items.filter(i => i.status === 'recusado');
     
     const resumo: OSResumoData = {
-      osNumero: veiculo.patioStatus.osNumero,
+      osNumero: activeOrder.order_number,
       veiculo: {
-        placa: veiculo.placa,
-        modelo: `${veiculo.marca} ${veiculo.modelo}`,
+        placa: vehicle.plate,
+        modelo: `${vehicle.brand} ${vehicle.model}`,
       },
-      servico: veiculo.patioStatus.servico,
-      entrada: veiculo.patioStatus.entrada,
-      previsaoSaida: veiculo.patioStatus.previsaoSaida,
-      itens: mockOSItens,
-      totalAprovado: itensAprovados.reduce((sum, i) => sum + (i.valor * i.quantidade), 0),
-      totalPendente: itensPendentes.reduce((sum, i) => sum + (i.valor * i.quantidade), 0),
-      totalRecusado: itensRecusados.reduce((sum, i) => sum + (i.valor * i.quantidade), 0),
+      servico: activeOrder.problem_description || 'Serviço em andamento',
+      entrada: new Date(activeOrder.order_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      previsaoSaida: 'A definir',
+      itens: activeOrder.items.map(item => ({
+        id: item.id,
+        descricao: item.description,
+        tipo: item.type as 'peca' | 'servico',
+        valor: item.unit_price,
+        quantidade: item.quantity || 1,
+        status: (item.status === 'aprovado' ? 'aprovado' : 
+                item.status === 'recusado' ? 'recusado' : 'pendente') as 'aprovado' | 'recusado' | 'pendente',
+      })),
+      totalAprovado: itensAprovados.reduce((sum, i) => sum + (i.total_price || 0), 0),
+      totalPendente: itensPendentes.reduce((sum, i) => sum + (i.total_price || 0), 0),
+      totalRecusado: itensRecusados.reduce((sum, i) => sum + (i.total_price || 0), 0),
     };
     
     setSelectedOSResumo(resumo);
@@ -123,17 +113,19 @@ const Veiculos = () => {
       return;
     }
 
-    const veiculo: Veiculo = {
-      id: Date.now().toString(),
-      ...novoVeiculo,
-      emServico: false,
-    };
-
-    setVeiculos([...veiculos, veiculo]);
+    // For now just show a message - real implementation would call Supabase
+    toast.info("Para cadastrar um veículo, entre em contato com a oficina.");
     setNovoVeiculo({ marca: "", modelo: "", ano: "", placa: "", cor: "" });
     setDialogOpen(false);
-    toast.success("Veículo adicionado com sucesso!");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -256,7 +248,7 @@ const Veiculos = () => {
 
       {/* Main Content */}
       <main className="p-4 pb-24 max-w-2xl mx-auto space-y-4">
-        {veiculos.length === 0 ? (
+        {vehicles.length === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-4">
@@ -264,77 +256,76 @@ const Veiculos = () => {
             </div>
             <h2 className="text-xl font-semibold mb-2">Nenhum veículo cadastrado</h2>
             <p className="text-muted-foreground text-center mb-6">
-              Adicione seu primeiro veículo para acompanhar serviços e manutenções.
+              Seus veículos aparecerão aqui quando você realizar serviços na oficina.
             </p>
-            <Button 
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Veículo
-            </Button>
           </div>
         ) : (
           /* Vehicle Cards */
-          veiculos.map((veiculo) => (
-            <Card 
-              key={veiculo.id} 
-              className={`relative overflow-hidden ${
-                veiculo.emServico ? "border-primary/50" : ""
-              }`}
-            >
-              {/* Status indicator */}
-              {veiculo.emServico && (
-                <div className="absolute top-0 right-0 w-3 h-3 bg-primary rounded-full m-3 animate-pulse" />
-              )}
-              
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                    veiculo.emServico 
-                      ? "bg-primary/20" 
-                      : "bg-muted"
-                  }`}>
-                    <Car className={`w-7 h-7 ${
-                      veiculo.emServico ? "text-primary" : "text-muted-foreground"
-                    }`} />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg">
-                        {veiculo.marca} {veiculo.modelo}
-                      </h3>
-                      {veiculo.emServico && (
-                        <Badge className="bg-primary text-primary-foreground text-xs">
-                          <Wrench className="w-3 h-3 mr-1" />
-                          Em serviço
-                        </Badge>
+          vehicles.map((veiculo) => {
+            const activeOrder = getActiveServiceOrder(veiculo.plate);
+            const emServico = !!activeOrder;
+            const patioStatus = getPatioStatus(veiculo);
+
+            return (
+              <Card 
+                key={veiculo.id} 
+                className={`relative overflow-hidden ${
+                  emServico ? "border-primary/50" : ""
+                }`}
+              >
+                {/* Status indicator */}
+                {emServico && (
+                  <div className="absolute top-0 right-0 w-3 h-3 bg-primary rounded-full m-3 animate-pulse" />
+                )}
+                
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                      emServico 
+                        ? "bg-primary/20" 
+                        : "bg-muted"
+                    }`}>
+                      <Car className={`w-7 h-7 ${
+                        emServico ? "text-primary" : "text-muted-foreground"
+                      }`} />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-lg">
+                          {veiculo.brand} {veiculo.model}
+                        </h3>
+                        {emServico && (
+                          <Badge className="bg-primary text-primary-foreground text-xs">
+                            <Wrench className="w-3 h-3 mr-1" />
+                            Em serviço
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        {veiculo.year && <span>{veiculo.year}</span>}
+                        {veiculo.color && <span>{veiculo.color}</span>}
+                        <span className="font-mono">{veiculo.plate}</span>
+                      </div>
+                      
+                      {/* Status do Pátio */}
+                      {emServico && patioStatus && activeOrder && (
+                        <VeiculoPatioStatus 
+                          status={patioStatus} 
+                          onVerOS={() => handleVerOSResumo(veiculo, activeOrder)}
+                        />
                       )}
                     </div>
                     
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <span>{veiculo.ano}</span>
-                      <span>{veiculo.cor}</span>
-                      <span className="font-mono">{veiculo.placa}</span>
-                    </div>
-                    
-                    {/* Status do Pátio - Novo componente */}
-                    {veiculo.emServico && veiculo.patioStatus && (
-                      <VeiculoPatioStatus 
-                        status={veiculo.patioStatus} 
-                        onVerOS={() => handleVerOSResumo(veiculo)}
-                      />
-                    )}
+                    <Button variant="ghost" size="icon" className="text-muted-foreground">
+                      <MoreVertical className="w-5 h-5" />
+                    </Button>
                   </div>
-                  
-                  <Button variant="ghost" size="icon" className="text-muted-foreground">
-                    <MoreVertical className="w-5 h-5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </main>
 
