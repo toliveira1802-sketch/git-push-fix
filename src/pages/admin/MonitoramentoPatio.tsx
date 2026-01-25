@@ -102,7 +102,43 @@ export default function MonitoramentoPatio() {
   }, [autoRefresh]);
   
   const veiculosEmAtendimento = areas.filter(a => a.veiculo);
-  const totalVeiculosPatio = veiculosEmAtendimento.length + veiculosNaoAlocados.length;
+  
+  // Dados do workflow (mock) - veículos em cada etapa
+  const etapasWorkflow = [
+    { id: 'diagnostico', titulo: 'Diagnóstico', color: 'bg-purple-500/10 border-purple-500/30', veiculos: [
+      { placa: 'ABC-1234', modelo: 'Gol 2020', cliente: 'João Silva', servico: 'Verificar barulho', entrada: '08:30', emTerceiros: false },
+    ]},
+    { id: 'orcamento', titulo: 'Orçamento', color: 'bg-blue-500/10 border-blue-500/30', veiculos: [
+      { placa: 'XYZ-5678', modelo: 'Civic 2019', cliente: 'Maria Santos', servico: 'Revisão completa', entrada: '09:15', emTerceiros: false },
+    ]},
+    { id: 'aguardando-apv', titulo: 'Aguardando Aprovação', color: 'bg-amber-500/10 border-amber-500/30', veiculos: [
+      { placa: 'DEF-9012', modelo: 'Corolla 2021', cliente: 'Pedro Costa', servico: 'Suspensão', entrada: '10:00', emTerceiros: false },
+      { placa: 'MNO-7890', modelo: 'Fiat Argo', cliente: 'Roberto Lima', servico: 'Freios', entrada: '11:30', emTerceiros: false },
+    ]},
+    { id: 'aguardando-peca', titulo: 'Aguardando Peça', color: 'bg-orange-500/10 border-orange-500/30', veiculos: [
+      { placa: 'GHI-3456', modelo: 'HB20 2022', cliente: 'Ana Lima', servico: 'Embreagem', entrada: '07:00', emTerceiros: true }, // Em terceiros
+    ]},
+    { id: 'execucao', titulo: 'Em Execução', color: 'bg-cyan-500/10 border-cyan-500/30', veiculos: [
+      { placa: 'PQR-1234', modelo: 'VW Polo', cliente: 'Fernanda Costa', servico: 'Motor', entrada: '12:00', emTerceiros: false },
+      { placa: 'STU-5678', modelo: 'Hyundai Creta', cliente: 'Lucas Mendes', servico: 'Injeção', entrada: '13:00', emTerceiros: false },
+    ]},
+    { id: 'teste', titulo: 'Em Teste', color: 'bg-indigo-500/10 border-indigo-500/30', veiculos: [] },
+    { id: 'pronto', titulo: 'Pronto', color: 'bg-emerald-500/10 border-emerald-500/30', veiculos: [
+      { placa: 'JKL-0000', modelo: 'Onix 2023', cliente: 'Carlos Oliveira', servico: 'Revisão', entrada: '06:00', emTerceiros: false },
+    ]},
+    { id: 'entregue', titulo: 'Entregue', color: 'bg-muted border-muted-foreground/20', veiculos: [] },
+  ];
+  
+  // Total de veículos no pátio = todos no workflow EXCETO os que estão "em terceiros" e "entregue"
+  const todosVeiculos = etapasWorkflow.flatMap(e => e.veiculos);
+  const veiculosNoPatio = todosVeiculos.filter(v => !v.emTerceiros);
+  const totalVeiculosPatio = veiculosNoPatio.length;
+  
+  // Encontrar gargalo (etapa com mais veículos, exceto entregue)
+  const etapasAtivas = etapasWorkflow.filter(e => e.id !== 'entregue');
+  const gargalo = etapasAtivas.reduce((max, etapa) => 
+    etapa.veiculos.length > max.veiculos.length ? etapa : max
+  , etapasAtivas[0]);
   
   const handleAreaClick = (area: LayoutArea) => {
     if (area.veiculo) {
@@ -112,36 +148,10 @@ export default function MonitoramentoPatio() {
 
   // Componente Kanban
   const KanbanView = () => {
-    // Mock de veículos por etapa
-    const etapas = [
-      { id: 'diagnostico', titulo: 'Diagnóstico', color: 'bg-purple-500/10 border-purple-500/30', veiculos: [
-        { placa: 'ABC-1234', modelo: 'Gol 2020', cliente: 'João Silva', servico: 'Verificar barulho', entrada: '08:30' },
-      ]},
-      { id: 'orcamento', titulo: 'Orçamento', color: 'bg-blue-500/10 border-blue-500/30', veiculos: [
-        { placa: 'XYZ-5678', modelo: 'Civic 2019', cliente: 'Maria Santos', servico: 'Revisão completa', entrada: '09:15' },
-      ]},
-      { id: 'aguardando-apv', titulo: 'Aguardando Aprovação', color: 'bg-amber-500/10 border-amber-500/30', veiculos: [
-        { placa: 'DEF-9012', modelo: 'Corolla 2021', cliente: 'Pedro Costa', servico: 'Suspensão', entrada: '10:00' },
-        { placa: 'MNO-7890', modelo: 'Fiat Argo', cliente: 'Roberto Lima', servico: 'Freios', entrada: '11:30' },
-      ]},
-      { id: 'aguardando-peca', titulo: 'Aguardando Peça', color: 'bg-orange-500/10 border-orange-500/30', veiculos: [
-        { placa: 'GHI-3456', modelo: 'HB20 2022', cliente: 'Ana Lima', servico: 'Embreagem', entrada: '07:00' },
-      ]},
-      { id: 'execucao', titulo: 'Em Execução', color: 'bg-cyan-500/10 border-cyan-500/30', veiculos: [
-        { placa: 'PQR-1234', modelo: 'VW Polo', cliente: 'Fernanda Costa', servico: 'Motor', entrada: '12:00' },
-        { placa: 'STU-5678', modelo: 'Hyundai Creta', cliente: 'Lucas Mendes', servico: 'Injeção', entrada: '13:00' },
-      ]},
-      { id: 'teste', titulo: 'Em Teste', color: 'bg-indigo-500/10 border-indigo-500/30', veiculos: [] },
-      { id: 'pronto', titulo: 'Pronto', color: 'bg-emerald-500/10 border-emerald-500/30', veiculos: [
-        { placa: 'JKL-0000', modelo: 'Onix 2023', cliente: 'Carlos Oliveira', servico: 'Revisão', entrada: '06:00' },
-      ]},
-      { id: 'entregue', titulo: 'Entregue', color: 'bg-muted border-muted-foreground/20', veiculos: [] },
-    ];
-    
     return (
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-3 min-w-max">
-          {etapas.map((etapa) => (
+          {etapasWorkflow.map((etapa) => (
             <Card key={etapa.id} className={`w-56 shrink-0 border ${etapa.color}`}>
               <CardHeader className="pb-2 px-3 pt-3">
                 <CardTitle className="text-xs flex items-center justify-between">
@@ -338,8 +348,8 @@ export default function MonitoramentoPatio() {
                   <AlertTriangle className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-orange-500">Aguard. APV</p>
-                  <p className="text-xs text-muted-foreground">Gargalo</p>
+                  <p className="text-lg font-bold text-orange-500">{gargalo.titulo}</p>
+                  <p className="text-xs text-muted-foreground">Gargalo ({gargalo.veiculos.length})</p>
                 </div>
               </div>
             </CardContent>
