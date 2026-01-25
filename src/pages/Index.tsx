@@ -26,15 +26,17 @@ import {
   LogOut,
   Wrench,
   Plus,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
+  const { canAccessAdmin, canAccessGestao, isLoading: roleLoading } = useUserRole();
   const [userName, setUserName] = useState("...");
-  const [activeTab, setActiveTab] = useState("cliente");
   const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
 
   // Mock veículos
@@ -64,7 +66,7 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -107,32 +109,41 @@ const Index = () => {
           <h1 className="text-lg font-bold">Doctor Auto Prime</h1>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant={activeTab === "cliente" ? "default" : "ghost"}
-            size="sm"
-            className={activeTab === "cliente" ? "bg-red-600 hover:bg-red-700" : ""}
-            onClick={() => setActiveTab("cliente")}
-          >
-            <Home className="w-4 h-4 mr-2" />
-            Cliente
-          </Button>
-          <Button
-            variant={activeTab === "admin" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => navigate("/admin")}
-          >
-            Admin
-          </Button>
-          <Button
-            variant={activeTab === "gestao" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => navigate("/gestao")}
-          >
-            Gestão
-          </Button>
-        </div>
+        {/* Navigation Tabs - Only show if user has access to other modules */}
+        {(canAccessAdmin || canAccessGestao) && (
+          <div className="flex items-center gap-1 bg-[#1a1a1a] rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Home className="w-4 h-4 mr-1" />
+              Cliente
+            </Button>
+            {canAccessAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white hover:bg-[#252525]"
+                onClick={() => navigate("/admin")}
+              >
+                <Settings className="w-4 h-4 mr-1" />
+                Admin
+              </Button>
+            )}
+            {canAccessGestao && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white hover:bg-[#252525]"
+                onClick={() => navigate("/gestao")}
+              >
+                <TrendingUp className="w-4 h-4 mr-1" />
+                Gestão
+              </Button>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={() => navigate("/perfil")}>
