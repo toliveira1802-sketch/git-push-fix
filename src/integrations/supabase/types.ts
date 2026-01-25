@@ -55,6 +55,30 @@ export type Database = {
           },
         ]
       }
+      agenda_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_agenda: string
+          id: string
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_agenda: string
+          id?: string
+          snapshot: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_agenda?: string
+          id?: string
+          snapshot?: Json
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           cancel_reason: string | null
@@ -412,6 +436,73 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pendencias: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          mechanic_id: string | null
+          prioridade: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          service_order_id: string | null
+          status: string
+          tipo: string
+          titulo: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          mechanic_id?: string | null
+          prioridade?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          service_order_id?: string | null
+          status?: string
+          tipo?: string
+          titulo: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          mechanic_id?: string | null
+          prioridade?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          service_order_id?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pendencias_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "mechanics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pendencias_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["service_order_id"]
+          },
+          {
+            foreignKeyName: "pendencias_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
             referencedColumns: ["id"]
           },
         ]

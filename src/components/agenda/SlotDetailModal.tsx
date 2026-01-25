@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Car, User, Wrench, Calendar, Clock, ExternalLink, X } from "lucide-react";
+import { Car, User, Wrench, Calendar, Clock, CheckCircle, FlaskConical, AlertTriangle, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SlotDetail {
@@ -18,6 +18,7 @@ export interface SlotDetail {
   origem: 'patio' | 'agendamento';
   tipo: 'normal' | 'encaixe';
   status: string;
+  serviceOrderId?: string;
 }
 
 interface SlotDetailModalProps {
@@ -25,9 +26,22 @@ interface SlotDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRemove?: (slot: SlotDetail) => void;
+  onPronto?: (slot: SlotDetail) => void;
+  onEmTeste?: (slot: SlotDetail) => void;
+  onBOPeca?: (slot: SlotDetail) => void;
+  onFeedback?: (slot: SlotDetail) => void;
 }
 
-export function SlotDetailModal({ slot, open, onOpenChange, onRemove }: SlotDetailModalProps) {
+export function SlotDetailModal({ 
+  slot, 
+  open, 
+  onOpenChange, 
+  onRemove,
+  onPronto,
+  onEmTeste,
+  onBOPeca,
+  onFeedback
+}: SlotDetailModalProps) {
   if (!slot) return null;
 
   const isAgendamento = slot.origem === 'agendamento';
@@ -123,29 +137,81 @@ export function SlotDetailModal({ slot, open, onOpenChange, onRemove }: SlotDeta
             <span>Mecânico: {slot.mechanicName}</span>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2">
-            {onRemove && (
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="gap-1"
-                onClick={() => {
-                  onRemove(slot);
-                  onOpenChange(false);
-                }}
-              >
-                <X className="w-3 h-3" />
-                Remover
-              </Button>
-            )}
+          {/* Action Buttons - 3 principais */}
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t">
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => onOpenChange(false)}
+              className="gap-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/30"
+              onClick={() => {
+                onPronto?.(slot);
+                onOpenChange(false);
+              }}
             >
-              Fechar
+              <CheckCircle className="w-3.5 h-3.5" />
+              Pronto
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border-indigo-500/30"
+              onClick={() => {
+                onEmTeste?.(slot);
+                onOpenChange(false);
+              }}
+            >
+              <FlaskConical className="w-3.5 h-3.5" />
+              Em Teste
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-600 border-red-500/30"
+              onClick={() => {
+                onBOPeca?.(slot);
+                onOpenChange(false);
+              }}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              B.O Peça
+            </Button>
+          </div>
+
+          {/* Botão de Feedback + Remover */}
+          <div className="flex justify-between gap-2 pt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1"
+              onClick={() => {
+                onFeedback?.(slot);
+              }}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Feedback
+            </Button>
+            
+            <div className="flex gap-2">
+              {onRemove && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => {
+                    onRemove(slot);
+                    onOpenChange(false);
+                  }}
+                >
+                  Remover
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onOpenChange(false)}
+              >
+                Fechar
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
