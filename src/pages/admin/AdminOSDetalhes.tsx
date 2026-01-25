@@ -57,12 +57,20 @@ interface HistoricoEvento {
 interface OrcamentoVersao {
   id: string;
   versao: number;
+  nome: string;
+  tipo: 'premium' | 'standard' | 'eco';
   data_criacao: string;
   itens: OrdemServicoItem[];
   total: number;
   status: 'rascunho' | 'enviado' | 'aprovado' | 'recusado';
   observacoes?: string;
 }
+
+const tipoVersaoConfig: Record<string, { label: string; color: string; icon: string }> = {
+  premium: { label: 'Premium', color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', icon: '⭐' },
+  standard: { label: 'Standard', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', icon: '🔧' },
+  eco: { label: 'Eco', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', icon: '💰' },
+};
 
 const prioridadeConfig: Record<string, { label: string; borderColor: string; bgColor: string }> = {
   verde: { label: "Tranquilo", borderColor: "border-emerald-500", bgColor: "bg-emerald-500/5" },
@@ -173,28 +181,55 @@ const mockHistorico: HistoricoEvento[] = [
   { id: 'h4', data: '2024-01-21T09:00:00Z', tipo: 'orcamento', descricao: 'Orçamento V2 criado com novos itens' },
 ];
 
-// Mock versões do orçamento
+// Mock versões do orçamento - 3 níveis padrão
 const mockVersoes: OrcamentoVersao[] = [
   {
     id: 'v1',
     versao: 1,
+    nome: 'Peças Primeira Linha',
+    tipo: 'premium',
     data_criacao: '2024-01-20T14:00:00Z',
     itens: [
-      { id: 'v1-item-1', descricao: 'Pastilhas de freio dianteiras', tipo: 'peca', quantidade: 1, valor_unitario: 320, valor_total: 320, status: 'recusado', prioridade: 'vermelho', motivo_recusa: 'Preço alto' },
-      { id: 'v1-item-2', descricao: 'Mão de obra - Troca de freios', tipo: 'mao_de_obra', quantidade: 1, valor_unitario: 180, valor_total: 180, status: 'aprovado', prioridade: 'amarelo' },
+      { id: 'v1-item-1', descricao: 'Pastilhas de freio Brembo', tipo: 'peca', quantidade: 1, valor_unitario: 580, valor_total: 580, status: 'pendente', prioridade: 'vermelho' },
+      { id: 'v1-item-2', descricao: 'Discos de freio Fremax Premium', tipo: 'peca', quantidade: 2, valor_unitario: 420, valor_total: 840, status: 'pendente', prioridade: 'vermelho' },
+      { id: 'v1-item-3', descricao: 'Mão de obra especializada', tipo: 'mao_de_obra', quantidade: 1, valor_unitario: 350, valor_total: 350, status: 'pendente', prioridade: 'amarelo' },
+      { id: 'v1-item-4', descricao: 'Fluido de freio DOT4 Racing', tipo: 'peca', quantidade: 1, valor_unitario: 120, valor_total: 120, status: 'pendente', prioridade: 'verde' },
     ],
-    total: 500,
-    status: 'recusado',
-    observacoes: 'Cliente achou o valor das pastilhas alto'
+    total: 1890,
+    status: 'rascunho',
+    observacoes: '⭐ Peças originais e de primeira linha. Maior durabilidade e performance.'
   },
   {
     id: 'v2',
     versao: 2,
-    data_criacao: '2024-01-21T09:00:00Z',
-    itens: mockItens,
-    total: mockItens.reduce((acc, item) => acc + item.valor_total, 0),
+    nome: 'Padrão',
+    tipo: 'standard',
+    data_criacao: '2024-01-20T14:30:00Z',
+    itens: [
+      { id: 'v2-item-1', descricao: 'Pastilhas de freio Cobreq', tipo: 'peca', quantidade: 1, valor_unitario: 350, valor_total: 350, status: 'pendente', prioridade: 'vermelho' },
+      { id: 'v2-item-2', descricao: 'Discos de freio Fremax', tipo: 'peca', quantidade: 2, valor_unitario: 280, valor_total: 560, status: 'pendente', prioridade: 'vermelho' },
+      { id: 'v2-item-3', descricao: 'Mão de obra - Troca de freios', tipo: 'mao_de_obra', quantidade: 1, valor_unitario: 200, valor_total: 200, status: 'pendente', prioridade: 'amarelo' },
+      { id: 'v2-item-4', descricao: 'Fluido de freio DOT4', tipo: 'peca', quantidade: 1, valor_unitario: 80, valor_total: 80, status: 'pendente', prioridade: 'verde' },
+    ],
+    total: 1190,
     status: 'enviado',
-    observacoes: 'Versão com desconto nas pastilhas'
+    observacoes: '🔧 Melhor custo-benefício. Peças de qualidade com garantia.'
+  },
+  {
+    id: 'v3',
+    versao: 3,
+    nome: 'Até Onde Nossa Qualidade Permite',
+    tipo: 'eco',
+    data_criacao: '2024-01-20T15:00:00Z',
+    itens: [
+      { id: 'v3-item-1', descricao: 'Pastilhas de freio Fras-le', tipo: 'peca', quantidade: 1, valor_unitario: 180, valor_total: 180, status: 'pendente', prioridade: 'vermelho' },
+      { id: 'v3-item-2', descricao: 'Usinagem dos discos (se possível)', tipo: 'mao_de_obra', quantidade: 2, valor_unitario: 80, valor_total: 160, status: 'pendente', prioridade: 'vermelho' },
+      { id: 'v3-item-3', descricao: 'Mão de obra - Troca de freios', tipo: 'mao_de_obra', quantidade: 1, valor_unitario: 150, valor_total: 150, status: 'pendente', prioridade: 'amarelo' },
+      { id: 'v3-item-4', descricao: 'Fluido de freio DOT3', tipo: 'peca', quantidade: 1, valor_unitario: 45, valor_total: 45, status: 'pendente', prioridade: 'verde' },
+    ],
+    total: 535,
+    status: 'rascunho',
+    observacoes: '💰 Opção econômica mantendo segurança. Peças básicas com garantia reduzida.'
   },
 ];
 
@@ -313,11 +348,18 @@ export default function AdminOSDetalhes() {
   };
 
   // ========== VERSÕES DO ORÇAMENTO ==========
-  const handleNovaVersao = () => {
+  const handleNovaVersao = (tipo: 'premium' | 'standard' | 'eco' = 'standard') => {
     const novaVersao = versoes.length + 1;
+    const nomesPorTipo = {
+      premium: 'Peças Primeira Linha',
+      standard: 'Padrão',
+      eco: 'Até Onde Nossa Qualidade Permite'
+    };
     const novaVersaoObj: OrcamentoVersao = {
       id: `v${novaVersao}`,
       versao: novaVersao,
+      nome: nomesPorTipo[tipo],
+      tipo,
       data_criacao: new Date().toISOString(),
       itens: itens.map(item => ({ ...item, id: `v${novaVersao}-${item.id}` })),
       total: totalOrcado,
@@ -329,7 +371,7 @@ export default function AdminOSDetalhes() {
       id: `h${Date.now()}`,
       data: new Date().toISOString(),
       tipo: 'orcamento',
-      descricao: `Orçamento V${novaVersao} criado`
+      descricao: `Orçamento V${novaVersao} (${nomesPorTipo[tipo]}) criado`
     }]);
     toast.success(`Versão ${novaVersao} criada!`);
   };
@@ -506,54 +548,67 @@ export default function AdminOSDetalhes() {
             {/* Versões do Orçamento */}
             <Card className="border-primary/20">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <History className="w-4 h-4" />
                     Versões do Orçamento
                   </CardTitle>
-                  <Button size="sm" variant="outline" onClick={handleNovaVersao}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Nova Versão
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => handleNovaVersao('premium')} className="text-amber-600 border-amber-500/30 hover:bg-amber-500/10">
+                      ⭐ Premium
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleNovaVersao('standard')} className="text-blue-600 border-blue-500/30 hover:bg-blue-500/10">
+                      🔧 Standard
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleNovaVersao('eco')} className="text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10">
+                      💰 Eco
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {versoes.map((versao) => {
                     const statusVersao = getVersaoStatusConfig(versao.status);
+                    const tipoVersao = tipoVersaoConfig[versao.tipo];
                     const isActive = versao.versao === versaoAtual;
                     return (
                       <button
                         key={versao.id}
                         onClick={() => handleSelecionarVersao(versao.versao)}
                         className={cn(
-                          "flex flex-col items-start p-3 rounded-lg border min-w-[140px] transition-all",
+                          "flex flex-col items-start p-3 rounded-lg border min-w-[160px] transition-all",
                           isActive 
                             ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
                             : "border-border hover:border-primary/50 hover:bg-accent/50"
                         )}
                       >
-                        <div className="flex items-center gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full flex-wrap">
                           <span className={cn("font-bold", isActive && "text-primary")}>
                             V{versao.versao}
                           </span>
-                          <Badge variant="outline" className={cn("text-xs", statusVersao.color)}>
+                          <Badge variant="outline" className={cn("text-xs", tipoVersao?.color)}>
+                            {tipoVersao?.icon} {tipoVersao?.label}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground mt-1 text-left">
+                          {versao.nome}
+                        </span>
+                        <div className="flex items-center justify-between w-full mt-1">
+                          <span className="text-sm font-medium">
+                            {formatCurrency(versao.total)}
+                          </span>
+                          <Badge variant="outline" className={cn("text-[10px]", statusVersao.color)}>
                             {statusVersao.label}
                           </Badge>
                         </div>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {new Date(versao.data_criacao).toLocaleDateString('pt-BR')}
-                        </span>
-                        <span className="text-sm font-medium mt-1">
-                          {formatCurrency(versao.total)}
-                        </span>
                       </button>
                     );
                   })}
                 </div>
                 {versaoSelecionada?.observacoes && (
                   <div className="mt-3 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
-                    <strong>Obs:</strong> {versaoSelecionada.observacoes}
+                    {versaoSelecionada.observacoes}
                   </div>
                 )}
               </CardContent>
