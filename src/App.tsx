@@ -42,6 +42,8 @@ import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminProdutividade from "./pages/admin/AdminProdutividade";
 import AdminMelhorias from "./pages/admin/AdminMelhorias";
 import AdminParametros from "./pages/admin/AdminParametros";
+import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
+import AdminPatioDetalhes from "./pages/admin/AdminPatioDetalhes";
 import Cadastros from "./pages/admin/Cadastros";
 
 // Gestão pages
@@ -91,7 +93,8 @@ const App = () => (
                 <Route path="/admin/ias" element={<AdminIAs />} />
                 <Route path="/admin/nova-promocao" element={<NovaPromocao />} />
                 <Route path="/admin/patio" element={<MonitoramentoPatio />} />
-                <Route path="/admin/operacional" element={<AdminOperacional />} />
+                <Route path="/admin/patio/:patioId" element={<AdminPatioDetalhes />} />
+                <Route path="/admin/documentacao" element={<AdminDocumentacao />} />
                 <Route path="/admin/agenda-mecanicos" element={<AdminAgendaMecanicos />} />
                 <Route path="/admin/feedback-mecanicos" element={<AdminMechanicFeedback />} />
                 <Route path="/admin/analytics-mecanicos" element={<AdminMechanicAnalytics />} />
