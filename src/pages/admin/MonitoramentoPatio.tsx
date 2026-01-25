@@ -118,69 +118,74 @@ export default function MonitoramentoPatio() {
 
   // Componente Kanban
   const KanbanView = () => {
-    const veiculosAguardando = veiculosNaoAlocados.map(v => ({
-      placa: v.placa,
-      modelo: v.modelo,
-      cliente: v.cliente,
-      servico: v.servico,
-      entrada: v.entrada,
-      previsaoSaida: v.previsaoSaida,
-    }));
-    
-    const veiculosAtendimento = veiculosEmAtendimento.map(a => a.veiculo!);
-    
-    const colunas = [
-      { id: 'aguardando', titulo: 'Aguardando', veiculos: veiculosAguardando, color: 'bg-muted' },
-      { id: 'em-atendimento', titulo: 'Em Atendimento', veiculos: veiculosAtendimento, color: 'bg-amber-500/10' },
-      { id: 'finalizado', titulo: 'Finalizado', veiculos: [] as typeof veiculosAtendimento, color: 'bg-emerald-500/10' },
+    // Mock de veículos por etapa
+    const etapas = [
+      { id: 'diagnostico', titulo: 'Diagnóstico', color: 'bg-purple-500/10 border-purple-500/30', veiculos: [
+        { placa: 'ABC-1234', modelo: 'Gol 2020', cliente: 'João Silva', servico: 'Verificar barulho', entrada: '08:30' },
+      ]},
+      { id: 'orcamento', titulo: 'Orçamento', color: 'bg-blue-500/10 border-blue-500/30', veiculos: [
+        { placa: 'XYZ-5678', modelo: 'Civic 2019', cliente: 'Maria Santos', servico: 'Revisão completa', entrada: '09:15' },
+      ]},
+      { id: 'aguardando-apv', titulo: 'Aguardando Aprovação', color: 'bg-amber-500/10 border-amber-500/30', veiculos: [
+        { placa: 'DEF-9012', modelo: 'Corolla 2021', cliente: 'Pedro Costa', servico: 'Suspensão', entrada: '10:00' },
+        { placa: 'MNO-7890', modelo: 'Fiat Argo', cliente: 'Roberto Lima', servico: 'Freios', entrada: '11:30' },
+      ]},
+      { id: 'aguardando-peca', titulo: 'Aguardando Peça', color: 'bg-orange-500/10 border-orange-500/30', veiculos: [
+        { placa: 'GHI-3456', modelo: 'HB20 2022', cliente: 'Ana Lima', servico: 'Embreagem', entrada: '07:00' },
+      ]},
+      { id: 'execucao', titulo: 'Em Execução', color: 'bg-cyan-500/10 border-cyan-500/30', veiculos: [
+        { placa: 'PQR-1234', modelo: 'VW Polo', cliente: 'Fernanda Costa', servico: 'Motor', entrada: '12:00' },
+        { placa: 'STU-5678', modelo: 'Hyundai Creta', cliente: 'Lucas Mendes', servico: 'Injeção', entrada: '13:00' },
+      ]},
+      { id: 'teste', titulo: 'Em Teste', color: 'bg-indigo-500/10 border-indigo-500/30', veiculos: [] },
+      { id: 'pronto', titulo: 'Pronto', color: 'bg-emerald-500/10 border-emerald-500/30', veiculos: [
+        { placa: 'JKL-0000', modelo: 'Onix 2023', cliente: 'Carlos Oliveira', servico: 'Revisão', entrada: '06:00' },
+      ]},
+      { id: 'entregue', titulo: 'Entregue', color: 'bg-muted border-muted-foreground/20', veiculos: [] },
     ];
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {colunas.map((coluna) => (
-          <Card key={coluna.id} className={coluna.color}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center justify-between">
-                {coluna.titulo}
-                <Badge variant="secondary">{coluna.veiculos.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-2 pr-2">
-                  {coluna.veiculos.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      Nenhum veículo
-                    </p>
-                  ) : (
-                    coluna.veiculos.map((veiculo, idx) => (
-                      <div
-                        key={veiculo.placa + idx}
-                        className="p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Car className="w-4 h-4 text-primary" />
-                          <span className="font-mono font-bold">{veiculo.placa}</span>
-                        </div>
-                        <p className="text-sm">{veiculo.modelo}</p>
-                        <p className="text-xs text-muted-foreground">{veiculo.cliente}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            <Wrench className="w-3 h-3 mr-1" />
+      <div className="overflow-x-auto pb-4">
+        <div className="flex gap-3 min-w-max">
+          {etapas.map((etapa) => (
+            <Card key={etapa.id} className={`w-56 shrink-0 border ${etapa.color}`}>
+              <CardHeader className="pb-2 px-3 pt-3">
+                <CardTitle className="text-xs flex items-center justify-between">
+                  {etapa.titulo}
+                  <Badge variant="secondary" className="text-[10px] px-1.5">{etapa.veiculos.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                <ScrollArea className="h-[450px]">
+                  <div className="space-y-2 pr-1">
+                    {etapa.veiculos.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-6">
+                        Vazio
+                      </p>
+                    ) : (
+                      etapa.veiculos.map((veiculo, idx) => (
+                        <div
+                          key={veiculo.placa + idx}
+                          className="p-2 rounded-lg border bg-card hover:shadow-md transition-shadow cursor-pointer"
+                        >
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Car className="w-3 h-3 text-primary" />
+                            <span className="font-mono font-bold text-xs">{veiculo.placa}</span>
+                          </div>
+                          <p className="text-xs truncate">{veiculo.modelo}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{veiculo.cliente}</p>
+                          <Badge variant="outline" className="text-[10px] mt-1.5 w-full justify-center">
                             {veiculo.servico}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {veiculo.entrada} → {veiculo.previsaoSaida}
-                          </span>
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        ))}
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   };
