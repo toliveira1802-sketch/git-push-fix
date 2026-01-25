@@ -247,7 +247,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="p-2 border-b border-sidebar-border space-y-2">
             {canSelectCompany ? (
               <>
-                <Select value={isConsolidated ? "all" : currentCompany.id} onValueChange={(value) => {
+                <Select value={isConsolidated ? "all" : currentCompany?.id || ""} onValueChange={(value) => {
                   if (value === "all") {
                     setConsolidated(true);
                   } else {
@@ -269,7 +269,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     </SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
-                        {company.name}
+                        {company.code}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -283,7 +283,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             ) : (
               <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sidebar-accent text-sidebar-foreground">
                 <Building2 className="h-4 w-4" />
-                <span className="font-medium">{currentCompany.name}</span>
+                <span className="font-medium">{currentCompany?.code || 'Carregando...'}</span>
               </div>
             )}
           </div>
@@ -305,7 +305,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <>
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
-                      <span className="text-xs font-medium uppercase tracking-wider">{currentCompany.name}</span>
+                      <span className="text-xs font-medium uppercase tracking-wider">{currentCompany?.code || ''}</span>
                     </div>
                     {companyOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </>
@@ -372,7 +372,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 {getInitials(userName)}
               </AvatarFallback>
             </Avatar>
-            <span className="font-bold text-sidebar-foreground">{userName || currentCompany.name}</span>
+            <span className="font-bold text-sidebar-foreground">{userName || currentCompany?.code || ''}</span>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)} className="text-sidebar-foreground">
             <Menu className="h-5 w-5" />
@@ -385,7 +385,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             {/* Company Selector Mobile - Only for dev/master */}
             <div className="pb-2 mb-2 border-b border-sidebar-border">
               {canSelectCompany ? (
-                <Select value={isConsolidated ? "all" : currentCompany.id} onValueChange={(value) => {
+                <Select value={isConsolidated ? "all" : currentCompany?.id || ""} onValueChange={(value) => {
                   if (value === "all") {
                     setConsolidated(true);
                   } else {
@@ -407,7 +407,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     </SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
-                        {company.name}
+                        {company.code}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -415,7 +415,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               ) : (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sidebar-accent text-sidebar-foreground">
                   <Building2 className="h-4 w-4" />
-                  <span className="font-medium">{currentCompany.name}</span>
+                  <span className="font-medium">{currentCompany?.code || 'Carregando...'}</span>
                 </div>
               )}
             </div>
@@ -423,7 +423,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             {/* Company Menu Items */}
             <div className="space-y-1">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">
-                {currentCompany.name}
+                {currentCompany?.code || ''}
               </span>
               {companyMenuItems.map((item) => renderMenuItem(item, () => setMobileOpen(false)))}
             </div>

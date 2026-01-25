@@ -4,34 +4,77 @@ import { User } from '@supabase/supabase-js';
 
 export interface Company {
   id: string;
+  code: string;
   name: string;
-  logo?: string;
+  hora_abertura?: string;
+  hora_fechamento?: string;
+  dias_atendimento?: string[];
+  meta_mensal?: number;
+  meta_diaria?: number;
+  is_active?: boolean;
 }
 
 interface CompanyContextType {
   companies: Company[];
-  currentCompany: Company;
+  currentCompany: Company | null;
   setCurrentCompany: (company: Company) => void;
-  userCompany: Company | null; // Empresa do usuário (para admins)
-  canSelectCompany: boolean; // Se pode trocar empresa (dev/master)
-  isConsolidated: boolean; // Visão consolidada (todas empresas)
+  userCompany: Company | null;
+  canSelectCompany: boolean;
+  isConsolidated: boolean;
   setConsolidated: (value: boolean) => void;
+  isLoading: boolean;
 }
-
-const defaultCompanies: Company[] = [
-  { id: 'pombal', name: 'POMBAL' },
-  { id: 'centro', name: 'CENTRO' },
-  { id: 'matriz', name: 'MATRIZ' },
-];
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [currentCompany, setCurrentCompany] = useState<Company>(defaultCompanies[0]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [userCompany, setUserCompany] = useState<Company | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isConsolidated, setConsolidated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Buscar empresas do banco
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+
+        const mappedCompanies: Company[] = (data || []).map(c => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          hora_abertura: c.hora_abertura,
+          hora_fechamento: c.hora_fechamento,
+          dias_atendimento: c.dias_atendimento,
+          meta_mensal: c.meta_mensal,
+          meta_diaria: c.meta_diaria,
+          is_active: c.is_active,
+        }));
+
+        setCompanies(mappedCompanies);
+        
+        // Definir empresa padrão se ainda não tiver
+        if (mappedCompanies.length > 0 && !currentCompany) {
+          setCurrentCompany(mappedCompanies[0]);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar empresas:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
 
   // Escutar mudanças de auth diretamente do Supabase
   useEffect(() => {
@@ -51,9 +94,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   // Buscar role e empresa do usuário
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user) {
-        setUserRole(null);
-        setUserCompany(null);
+      if (!user || companies.length === 0) {
+        if (!user) {
+          setUserRole(null);
+          setUserCompany(null);
+        }
         return;
       }
 
@@ -69,19 +114,13 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         const role = roleData?.role || 'user';
         setUserRole(role);
 
-        // Buscar empresa do usuário (do profile ou metadata)
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
         // Por enquanto, usar empresa padrão baseada na role
-        // Futuramente: buscar do campo company_id no profile
-        if (role === 'admin') {
-          // Admin fixo na primeira empresa (POMBAL) - futuramente virá do cadastro
-          setUserCompany(defaultCompanies[0]);
-          setCurrentCompany(defaultCompanies[0]);
+        // Futuramente: buscar do campo company_code no profile
+        if (role === 'admin' || role === 'gestao') {
+          // Admin/gestao fixo na primeira empresa - futuramente virá do cadastro
+          const defaultCompany = companies[0];
+          setUserCompany(defaultCompany);
+          setCurrentCompany(defaultCompany);
         } else if (role === 'dev') {
           // Dev pode ver todas
           setUserCompany(null);
@@ -92,7 +131,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     };
 
     fetchUserData();
-  }, [user]);
+  }, [user, companies]);
 
   // Verificar se pode selecionar empresa (apenas dev/master)
   const canSelectCompany = userRole === 'dev';
@@ -101,19 +140,20 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const handleSetCurrentCompany = (company: Company) => {
     if (canSelectCompany || !userCompany) {
       setCurrentCompany(company);
-      setConsolidated(false); // Desativa consolidado ao selecionar empresa
+      setConsolidated(false);
     }
   };
 
   return (
     <CompanyContext.Provider value={{ 
-      companies: defaultCompanies, 
+      companies, 
       currentCompany: userCompany || currentCompany, 
       setCurrentCompany: handleSetCurrentCompany,
       userCompany,
       canSelectCompany,
       isConsolidated,
       setConsolidated,
+      isLoading,
     }}>
       {children}
     </CompanyContext.Provider>
