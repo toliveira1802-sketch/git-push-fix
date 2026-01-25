@@ -81,8 +81,13 @@ export function usePatioKanban() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Buscar OSs ativas (exceto entregues) com veículos, clientes, mecânicos e itens
-      const { data: oss, error } = await supabase
+      // Calcular início do mês para filtrar entregues
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+
+      // Buscar OSs ativas (não entregues)
+      const { data: ossAtivas, error: errorAtivas } = await supabase
         .from('service_orders')
         .select(`
           id,
@@ -105,22 +110,41 @@ export function usePatioKanban() {
         .neq('status', 'entregue')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (errorAtivas) throw errorAtivas;
 
-      // Buscar total faturado do mês (entregues do mês atual) - query separada
-      const inicioMes = new Date();
-      inicioMes.setDate(1);
-      inicioMes.setHours(0, 0, 0, 0);
-      
-      const { data: entreguesMes } = await supabase
+      // Buscar entregues do mês atual (para mostrar na coluna Entregue)
+      const { data: ossEntregues, error: errorEntregues } = await supabase
         .from('service_orders')
-        .select('total, service_order_items(total_price, status)')
+        .select(`
+          id,
+          order_number,
+          status,
+          total,
+          created_at,
+          completed_at,
+          estimated_completion,
+          problem_description,
+          priority,
+          mechanic_id,
+          em_terceiros,
+          recurso,
+          vehicles!inner(plate, model, brand, year, color),
+          clients!inner(name, phone),
+          mechanics(name),
+          service_order_items(total_price, status)
+        `)
         .eq('status', 'entregue')
-        .gte('completed_at', inicioMes.toISOString());
+        .gte('completed_at', inicioMes.toISOString())
+        .order('completed_at', { ascending: false });
+
+      if (errorEntregues) throw errorEntregues;
+
+      // Combinar OSs ativas + entregues do mês
+      const oss = [...(ossAtivas || []), ...(ossEntregues || [])];
       
-      // Calcular total faturado (soma dos valores aprovados)
+      // Calcular total faturado do mês
       let totalMes = 0;
-      entreguesMes?.forEach(os => {
+      ossEntregues?.forEach(os => {
         const itensAprovados = (os.service_order_items || [])
           .filter((item: { status: string | null; total_price: number }) => 
             item.status?.toLowerCase() === 'aprovado'
