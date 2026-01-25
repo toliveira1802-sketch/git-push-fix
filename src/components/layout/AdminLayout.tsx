@@ -9,7 +9,8 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  Menu
+  Menu,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -21,6 +22,7 @@ interface AdminLayoutProps {
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+  { icon: Plus, label: 'Nova OS', path: '/admin/nova-os', highlight: true },
   { icon: ClipboardList, label: 'Ordens de Serviço', path: '/admin/ordens-servico' },
   { icon: Users, label: 'Clientes', path: '/admin/clientes' },
   { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
@@ -68,14 +70,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             const Icon = item.icon;
             const isActive = location.pathname === item.path || 
               (item.path !== '/admin' && location.pathname.startsWith(item.path));
+            const isHighlight = 'highlight' in item && item.highlight;
             
             return (
               <Button
                 key={item.path}
-                variant={isActive ? "secondary" : "ghost"}
+                variant={isHighlight ? "default" : isActive ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start gap-3",
-                  collapsed && "justify-center px-2"
+                  collapsed && "justify-center px-2",
+                  isHighlight && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
                 onClick={() => navigate(item.path)}
               >
@@ -118,12 +122,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               const Icon = item.icon;
               const isActive = location.pathname === item.path ||
                 (item.path !== '/admin' && location.pathname.startsWith(item.path));
+              const isHighlight = 'highlight' in item && item.highlight;
               
               return (
                 <Button
                   key={item.path}
-                  variant={isActive ? "secondary" : "ghost"}
-                  className="w-full justify-start gap-3"
+                  variant={isHighlight ? "default" : isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3",
+                    isHighlight && "bg-primary text-primary-foreground hover:bg-primary/90"
+                  )}
                   onClick={() => {
                     navigate(item.path);
                     setMobileOpen(false);

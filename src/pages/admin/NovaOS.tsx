@@ -1,318 +1,372 @@
-import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { mockUsers, mockVehicles, mockServices } from '@/lib/mock-data'
-import { formatPlate, formatCurrency } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { mockUsers, mockVehicles, MockUser, MockVehicle } from '@/lib/mock-data'
+import { formatPlate } from '@/lib/utils'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import {
-  ClipboardList,
-  ArrowLeft,
   Search,
   Plus,
   Car,
   User,
-  Check
+  Phone,
+  Mail,
+  ArrowRight
 } from 'lucide-react'
 
-type Step = 'client' | 'vehicle' | 'services' | 'review'
+interface SearchResult {
+  type: 'client' | 'vehicle';
+  client: MockUser;
+  vehicle?: MockVehicle;
+}
 
 export default function NovaOS() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const [step, setStep] = useState<Step>('client')
-  const [searchClient, setSearchClient] = useState('')
-  const [selectedClient, setSelectedClient] = useState<typeof mockUsers[0] | null>(null)
-  const [selectedVehicle, setSelectedVehicle] = useState<typeof mockVehicles[0] | null>(null)
-  const [selectedServices, setSelectedServices] = useState<typeof mockServices>([])
-  const [notes, setNotes] = useState('')
+  const [search, setSearch] = useState('')
+  const [showQuickRegister, setShowQuickRegister] = useState(false)
+  
+  // Quick register form
+  const [newClient, setNewClient] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    vehicleBrand: '',
+    vehicleModel: '',
+    vehicleYear: '',
+    vehiclePlate: '',
+    vehicleColor: ''
+  })
 
+  // Get all clients
   const clients = mockUsers.filter((u) => u.role === 'user')
-  const filteredClients = clients.filter((c) =>
-    c.full_name?.toLowerCase().includes(searchClient.toLowerCase()) ||
-    c.email?.toLowerCase().includes(searchClient.toLowerCase())
-  )
 
-  const clientVehicles = selectedClient
-    ? mockVehicles.filter((v) => v.user_id === selectedClient.id)
-    : []
-
-  const total = selectedServices.reduce((acc, s) => acc + s.price, 0)
-
-  const basePath = location.pathname.includes('/gestao') ? '/gestao' : '/admin'
-
-  const handleCreateOS = () => {
-    // In real app, would create OS in database and get the ID
-    // For now, using a mock ID
-    const mockOSId = 'os-' + Date.now()
+  // Unified search - searches by client name, vehicle plate, vehicle model
+  const searchResults = useMemo(() => {
+    if (!search.trim()) return []
     
-    // Redirect to OS details page with new=true to open all sections
-    navigate(`${basePath}/os/${mockOSId}?new=true`)
+    const searchLower = search.toLowerCase()
+    const results: SearchResult[] = []
+    
+    // Search through vehicles (includes plate, model, brand)
+    mockVehicles.forEach(vehicle => {
+      const client = clients.find(c => c.id === vehicle.user_id)
+      if (!client) return
+      
+      const matchesPlate = vehicle.plate.toLowerCase().includes(searchLower)
+      const matchesModel = vehicle.model.toLowerCase().includes(searchLower)
+      const matchesBrand = vehicle.brand.toLowerCase().includes(searchLower)
+      const matchesClientName = client.full_name?.toLowerCase().includes(searchLower)
+      
+      if (matchesPlate || matchesModel || matchesBrand || matchesClientName) {
+        results.push({
+          type: 'vehicle',
+          client,
+          vehicle
+        })
+      }
+    })
+    
+    // Add clients without matching vehicles (if they match by name)
+    clients.forEach(client => {
+      const matchesName = client.full_name?.toLowerCase().includes(searchLower)
+      const alreadyInResults = results.some(r => r.client.id === client.id)
+      
+      if (matchesName && !alreadyInResults) {
+        // Get first vehicle of this client if any
+        const clientVehicle = mockVehicles.find(v => v.user_id === client.id)
+        results.push({
+          type: 'client',
+          client,
+          vehicle: clientVehicle
+        })
+      }
+    })
+    
+    return results
+  }, [search, clients])
+
+  const handleSelectResult = (result: SearchResult) => {
+    // Navigate to OS details page directly with client and vehicle data
+    const osId = 'os-' + Date.now()
+    navigate(`/admin/os/${osId}?new=true&clientId=${result.client.id}${result.vehicle ? `&vehicleId=${result.vehicle.id}` : ''}`)
   }
 
-  const toggleService = (service: typeof mockServices[0]) => {
-    if (selectedServices.find((s) => s.id === service.id)) {
-      setSelectedServices(selectedServices.filter((s) => s.id !== service.id))
-    } else {
-      setSelectedServices([...selectedServices, service])
-    }
+  const handleQuickRegister = () => {
+    // In real app, would save to database
+    const newClientId = 'client-' + Date.now()
+    const newVehicleId = 'vehicle-' + Date.now()
+    
+    // Simulate creation and navigate
+    const osId = 'os-' + Date.now()
+    navigate(`/admin/os/${osId}?new=true`)
+    
+    setShowQuickRegister(false)
   }
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ClipboardList className="h-6 w-6" />
-              Nova Ordem de Serviço
-            </h1>
-            <p className="text-muted-foreground">
-              Passo {step === 'client' ? 1 : step === 'vehicle' ? 2 : step === 'services' ? 3 : 4} de 4
-            </p>
-          </div>
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold">Nova Ordem de Serviço</h1>
+          <p className="text-muted-foreground">
+            Busque por cliente, placa ou veículo para iniciar
+          </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center gap-2">
-          {['client', 'vehicle', 'services', 'review'].map((s, i) => (
-            <div key={s} className="flex items-center gap-2 flex-1">
-              <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step === s
-                    ? 'bg-primary text-primary-foreground'
-                    : ['client', 'vehicle', 'services', 'review'].indexOf(step) > i
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {['client', 'vehicle', 'services', 'review'].indexOf(step) > i ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  i + 1
-                )}
-              </div>
-              {i < 3 && <div className="flex-1 h-1 bg-muted rounded" />}
+        {/* Search Box */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Digite nome do cliente, placa ou modelo do veículo..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-12 h-14 text-lg"
+                autoFocus
+              />
             </div>
-          ))}
-        </div>
 
-        {/* Step: Select Client */}
-        {step === 'client' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Selecionar Cliente
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar cliente por nome ou email..."
-                  value={searchClient}
-                  onChange={(e) => setSearchClient(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            {/* Quick Register Button */}
+            <div className="mt-4 flex justify-center">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowQuickRegister(true)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Cadastro Rápido (Novo Cliente)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {filteredClients.map((client) => (
-                  <div
-                    key={client.id}
-                    onClick={() => {
-                      setSelectedClient(client)
-                      setStep('vehicle')
-                    }}
-                    className={`p-4 rounded-lg border cursor-pointer transition-colors hover:bg-accent ${
-                      selectedClient?.id === client.id ? 'border-primary bg-primary/5' : ''
-                    }`}
+        {/* Search Results */}
+        {search.trim() && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground px-1">
+              {searchResults.length} resultado(s) encontrado(s)
+            </p>
+
+            {searchResults.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-muted-foreground mb-4">
+                    Nenhum resultado para "{search}"
+                  </p>
+                  <Button onClick={() => setShowQuickRegister(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Cadastrar Novo Cliente
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {searchResults.map((result, index) => (
+                  <Card 
+                    key={`${result.client.id}-${result.vehicle?.id || index}`}
+                    className="hover:bg-accent/50 transition-colors cursor-pointer group"
+                    onClick={() => handleSelectResult(result)}
                   >
-                    <p className="font-medium">{client.full_name}</p>
-                    <p className="text-sm text-muted-foreground">{client.email}</p>
-                  </div>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        {/* Icon */}
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          {result.vehicle ? (
+                            <Car className="h-6 w-6 text-primary" />
+                          ) : (
+                            <User className="h-6 w-6 text-primary" />
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground truncate">
+                            {result.client.full_name}
+                          </p>
+                          {result.vehicle ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="font-mono">
+                                {formatPlate(result.vehicle.plate)}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                {result.vehicle.brand} {result.vehicle.model} ({result.vehicle.year})
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              {result.client.phone || result.client.email}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Arrow */}
+                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         )}
 
-        {/* Step: Select Vehicle */}
-        {step === 'vehicle' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Car className="h-5 w-5" />
-                Selecionar Veículo
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Cliente: <strong>{selectedClient?.full_name}</strong>
+        {/* Empty State - when no search */}
+        {!search.trim() && (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center">
+              <Car className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+              <h3 className="text-lg font-medium mb-2">Comece a digitar para buscar</h3>
+              <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                Busque pelo nome do cliente, placa do veículo ou modelo do carro
               </p>
-
-              <div className="space-y-2">
-                {clientVehicles.length === 0 ? (
-                  <p className="text-center py-8 text-muted-foreground">
-                    Cliente não possui veículos cadastrados
-                  </p>
-                ) : (
-                  clientVehicles.map((vehicle) => (
-                    <div
-                      key={vehicle.id}
-                      onClick={() => {
-                        setSelectedVehicle(vehicle)
-                        setStep('services')
-                      }}
-                      className={`p-4 rounded-lg border cursor-pointer transition-colors hover:bg-accent ${
-                        selectedVehicle?.id === vehicle.id ? 'border-primary bg-primary/5' : ''
-                      }`}
-                    >
-                      <p className="font-medium">
-                        {vehicle.brand} {vehicle.model} ({vehicle.year})
-                      </p>
-                      <Badge variant="outline">{formatPlate(vehicle.plate)}</Badge>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <Button variant="outline" onClick={() => setStep('client')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step: Select Services */}
-        {step === 'services' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Adicionar Serviços</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Veículo: <strong>{selectedVehicle?.brand} {selectedVehicle?.model}</strong>
-              </p>
-
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {mockServices.map((service) => {
-                  const isSelected = selectedServices.find((s) => s.id === service.id)
-                  return (
-                    <div
-                      key={service.id}
-                      onClick={() => toggleService(service)}
-                      className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                        isSelected ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{service.name}</p>
-                          <p className="text-sm text-muted-foreground">{service.description}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">{formatCurrency(service.price)}</p>
-                          {isSelected && <Check className="h-4 w-4 text-primary ml-auto" />}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {selectedServices.length > 0 && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex justify-between font-medium">
-                    <span>Total ({selectedServices.length} serviço(s))</span>
-                    <span>{formatCurrency(total)}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep('vehicle')}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => setStep('review')}
-                  disabled={selectedServices.length === 0}
-                >
-                  Revisar OS
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step: Review */}
-        {step === 'review' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Revisar Ordem de Serviço</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Cliente</p>
-                  <p className="font-medium">{selectedClient?.full_name}</p>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Veículo</p>
-                  <p className="font-medium">
-                    {selectedVehicle?.brand} {selectedVehicle?.model} - {formatPlate(selectedVehicle?.plate || '')}
-                  </p>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-2">Serviços</p>
-                  {selectedServices.map((s) => (
-                    <div key={s.id} className="flex justify-between text-sm">
-                      <span>{s.name}</span>
-                      <span>{formatCurrency(s.price)}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between font-bold mt-2 pt-2 border-t">
-                    <span>Total</span>
-                    <span>{formatCurrency(total)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Input
-                  id="notes"
-                  placeholder="Observações adicionais..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep('services')}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Button>
-                <Button className="flex-1" onClick={handleCreateOS}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar OS
-                </Button>
-              </div>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Quick Register Dialog */}
+      <Dialog open={showQuickRegister} onOpenChange={setShowQuickRegister}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Cadastro Rápido
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Client Section */}
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Dados do Cliente
+              </h3>
+              <div className="grid gap-3">
+                <div>
+                  <Label htmlFor="name">Nome Completo *</Label>
+                  <Input
+                    id="name"
+                    placeholder="Nome do cliente"
+                    value={newClient.name}
+                    onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="phone">Telefone *</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        placeholder="(11) 99999-9999"
+                        value={newClient.phone}
+                        onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="email">E-mail</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="email@exemplo.com"
+                        value={newClient.email}
+                        onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vehicle Section */}
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <Car className="h-4 w-4" />
+                Dados do Veículo
+              </h3>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="brand">Marca *</Label>
+                    <Input
+                      id="brand"
+                      placeholder="Ex: Volkswagen"
+                      value={newClient.vehicleBrand}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, vehicleBrand: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="model">Modelo *</Label>
+                    <Input
+                      id="model"
+                      placeholder="Ex: Golf GTI"
+                      value={newClient.vehicleModel}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, vehicleModel: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label htmlFor="year">Ano</Label>
+                    <Input
+                      id="year"
+                      placeholder="2024"
+                      value={newClient.vehicleYear}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, vehicleYear: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="plate">Placa *</Label>
+                    <Input
+                      id="plate"
+                      placeholder="ABC-1234"
+                      value={newClient.vehiclePlate}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
+                      className="font-mono"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="color">Cor</Label>
+                    <Input
+                      id="color"
+                      placeholder="Preto"
+                      value={newClient.vehicleColor}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, vehicleColor: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowQuickRegister(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleQuickRegister}
+              disabled={!newClient.name || !newClient.phone || !newClient.vehicleBrand || !newClient.vehicleModel || !newClient.vehiclePlate}
+              className="gap-2"
+            >
+              <ArrowRight className="h-4 w-4" />
+              Criar e Abrir OS
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   )
 }
