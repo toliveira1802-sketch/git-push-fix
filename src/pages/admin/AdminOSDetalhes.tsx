@@ -4,7 +4,8 @@ import {
   ArrowLeft, Save, Plus, Trash2, Phone, Car, User,
   Calendar, DollarSign, FileText, Wrench, CheckCircle,
   XCircle, AlertTriangle, Clock, Loader2, Edit2,
-  ChevronDown, ChevronUp, Camera, Check
+  ChevronDown, ChevronUp, Camera, Check, Send, MessageSquare,
+  History, ExternalLink, Copy
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -42,6 +44,14 @@ interface OrdemServicoItem {
   valor_total: number;
   status: string;
   prioridade: 'verde' | 'amarelo' | 'vermelho' | null;
+  motivo_recusa?: string;
+}
+
+interface HistoricoEvento {
+  id: string;
+  data: string;
+  tipo: string;
+  descricao: string;
 }
 
 const prioridadeConfig: Record<string, { label: string; borderColor: string; bgColor: string }> = {
@@ -134,6 +144,22 @@ const mockItens: OrdemServicoItem[] = [
     status: 'pendente',
     prioridade: 'amarelo',
   },
+  {
+    id: 'item-4',
+    descricao: 'Fluido de freio DOT4',
+    tipo: 'peca',
+    quantidade: 1,
+    valor_unitario: 80,
+    valor_total: 80,
+    status: 'aprovado',
+    prioridade: 'verde',
+  },
+];
+
+const mockHistorico: HistoricoEvento[] = [
+  { id: 'h1', data: '2024-01-20T10:00:00Z', tipo: 'criacao', descricao: 'OS criada' },
+  { id: 'h2', data: '2024-01-20T11:30:00Z', tipo: 'diagnostico', descricao: 'Diagnóstico realizado' },
+  { id: 'h3', data: '2024-01-20T14:00:00Z', tipo: 'orcamento', descricao: 'Orçamento enviado ao cliente' },
 ];
 
 const checklistItems = [
@@ -155,20 +181,24 @@ export default function AdminOSDetalhes() {
 
   const [os, setOS] = useState<OrdemServico>(mockOS);
   const [itens, setItens] = useState<OrdemServicoItem[]>(mockItens);
+  const [historico] = useState<HistoricoEvento[]>(mockHistorico);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedOS, setEditedOS] = useState<Partial<OrdemServico>>({});
+  const [activeTab, setActiveTab] = useState("orcamento");
 
   // Collapsible sections
   const [checklistOpen, setChecklistOpen] = useState(isNewOS);
   const [fotosOpen, setFotosOpen] = useState(isNewOS);
-  const [servicosOpen, setServicosOpen] = useState(true);
 
   // Checklist state
   const [checklistEntrada, setChecklistEntrada] = useState<Record<string, boolean>>({});
 
   // Add item dialog
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
+  const [showRecusaDialog, setShowRecusaDialog] = useState(false);
+  const [recusaItemId, setRecusaItemId] = useState<string | null>(null);
+  const [motivoRecusa, setMotivoRecusa] = useState('');
   const [newItem, setNewItem] = useState({
     descricao: "",
     tipo: "peca",
@@ -220,12 +250,52 @@ export default function AdminOSDetalhes() {
   };
 
   const handleItemStatusChange = (itemId: string, status: string) => {
-    setItens(itens.map(i => i.id === itemId ? { ...i, status } : i));
-    toast.success("Status do item atualizado!");
+    if (status === 'recusado') {
+      setRecusaItemId(itemId);
+      setShowRecusaDialog(true);
+    } else {
+      setItens(itens.map(i => i.id === itemId ? { ...i, status, motivo_recusa: undefined } : i));
+      toast.success("Item aprovado!");
+    }
+  };
+
+  const handleConfirmRecusa = () => {
+    if (recusaItemId) {
+      setItens(itens.map(i => i.id === recusaItemId ? { ...i, status: 'recusado', motivo_recusa: motivoRecusa } : i));
+      toast.success("Item recusado!");
+    }
+    setShowRecusaDialog(false);
+    setRecusaItemId(null);
+    setMotivoRecusa('');
+  };
+
+  const handleEnviarOrcamento = () => {
+    const phone = os.client_phone?.replace(/\D/g, '');
+    if (!phone) {
+      toast.error("Telefone do cliente não informado");
+      return;
+    }
+    
+    const linkOrcamento = `${window.location.origin}/orcamento/${os.id}`;
+    const mensagem = `Olá ${os.client_name}! 🚗\n\nSeu orçamento da OS ${os.numero_os} está pronto.\n\nVeículo: ${os.vehicle}\nPlaca: ${os.plate}\n\nValor Total: ${formatCurrency(totalOrcado)}\n\nAcesse o link para aprovar ou recusar os itens:\n${linkOrcamento}\n\nDoctor Auto Prime`;
+    
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    toast.success("Abrindo WhatsApp...");
+  };
+
+  const handleCopyLink = () => {
+    const linkOrcamento = `${window.location.origin}/orcamento/${os.id}`;
+    navigator.clipboard.writeText(linkOrcamento);
+    toast.success("Link copiado!");
   };
 
   const totalOrcado = itens.reduce((acc, item) => acc + item.valor_total, 0);
   const totalAprovado = itens.filter(i => i.status === 'aprovado').reduce((acc, item) => acc + item.valor_total, 0);
+  const totalRecusado = itens.filter(i => i.status === 'recusado').reduce((acc, item) => acc + item.valor_total, 0);
+
+  const itensAprovados = itens.filter(i => i.status === 'aprovado');
+  const itensPendentes = itens.filter(i => i.status === 'pendente');
+  const itensRecusados = itens.filter(i => i.status === 'recusado');
 
   const currentStatus = statusConfig[os.status] || statusConfig.orcamento;
   const StatusIcon = currentStatus.icon;
@@ -250,7 +320,7 @@ export default function AdminOSDetalhes() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold font-mono text-foreground">{os.numero_os}</h1>
                 <Badge variant="outline" className={cn("gap-1", currentStatus.color)}>
                   <StatusIcon className="w-3 h-3" />
@@ -258,23 +328,31 @@ export default function AdminOSDetalhes() {
                 </Badge>
               </div>
               <p className="text-muted-foreground text-sm">
-                Entrada: {os.data_entrada ? new Date(os.data_entrada).toLocaleDateString('pt-BR') : '-'}
+                {os.client_name} • {os.plate} • Entrada: {os.data_entrada ? new Date(os.data_entrada).toLocaleDateString('pt-BR') : '-'}
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={handleCopyLink}>
+              <Copy className="w-4 h-4 mr-2" />
+              Link
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleEnviarOrcamento}>
+              <Send className="w-4 h-4 mr-2" />
+              Enviar WhatsApp
+            </Button>
             {isEditing ? (
               <>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleSave}>
+                <Button size="sm" onClick={handleSave}>
                   <Save className="w-4 h-4 mr-2" />
                   Salvar
                 </Button>
               </>
             ) : (
-              <Button variant="outline" onClick={() => setIsEditing(true)}>
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                 <Edit2 className="w-4 h-4 mr-2" />
                 Editar
               </Button>
@@ -282,80 +360,281 @@ export default function AdminOSDetalhes() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Client & Vehicle */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <User className="w-5 h-5" />
-                  Cliente e Veículo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground">Nome</Label>
-                    {isEditing ? (
-                      <Input
-                        value={editedOS.client_name || ""}
-                        onChange={(e) => setEditedOS({ ...editedOS, client_name: e.target.value })}
-                      />
-                    ) : (
-                      <p className="font-medium mt-1">{os.client_name || "-"}</p>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="bg-card">
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground">Total Orçado</p>
+              <p className="text-2xl font-bold">{formatCurrency(totalOrcado)}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-emerald-500/5 border-emerald-500/20">
+            <CardContent className="p-4">
+              <p className="text-sm text-emerald-600">Aprovado</p>
+              <p className="text-2xl font-bold text-emerald-600">{formatCurrency(totalAprovado)}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-red-500/5 border-red-500/20">
+            <CardContent className="p-4">
+              <p className="text-sm text-red-600">Recusado</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalRecusado)}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-amber-500/5 border-amber-500/20">
+            <CardContent className="p-4">
+              <p className="text-sm text-amber-600">Pendente</p>
+              <p className="text-2xl font-bold text-amber-600">{formatCurrency(totalOrcado - totalAprovado - totalRecusado)}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="orcamento" className="gap-2">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Orçamento</span>
+              <Badge variant="secondary" className="ml-1">{itens.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="detalhes" className="gap-2">
+              <Car className="w-4 h-4" />
+              <span className="hidden sm:inline">Detalhes</span>
+            </TabsTrigger>
+            <TabsTrigger value="checklist" className="gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Checklist</span>
+            </TabsTrigger>
+            <TabsTrigger value="historico" className="gap-2">
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">Histórico</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab: Orçamento */}
+          <TabsContent value="orcamento" className="space-y-4">
+            {/* Status Filter */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-accent shrink-0"
+                onClick={() => {}}
+              >
+                Todos ({itens.length})
+              </Badge>
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-emerald-500/10 text-emerald-600 border-emerald-500/30 shrink-0"
+              >
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Aprovados ({itensAprovados.length})
+              </Badge>
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-amber-500/10 text-amber-600 border-amber-500/30 shrink-0"
+              >
+                <Clock className="w-3 h-3 mr-1" />
+                Pendentes ({itensPendentes.length})
+              </Badge>
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-red-500/10 text-red-600 border-red-500/30 shrink-0"
+              >
+                <XCircle className="w-3 h-3 mr-1" />
+                Recusados ({itensRecusados.length})
+              </Badge>
+            </div>
+
+            {/* Items List */}
+            <div className="space-y-3">
+              {itens.map((item) => {
+                const prioridade = item.prioridade ? prioridadeConfig[item.prioridade] : null;
+                const itemStatus = itemStatusConfig[item.status] || itemStatusConfig.pendente;
+
+                return (
+                  <Card
+                    key={item.id}
+                    className={cn(
+                      "border-l-4",
+                      prioridade?.borderColor || "border-l-border",
+                      item.status === 'recusado' && "opacity-60"
                     )}
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Telefone</Label>
-                    {isEditing ? (
-                      <Input
-                        value={editedOS.client_phone || ""}
-                        onChange={(e) => setEditedOS({ ...editedOS, client_phone: e.target.value })}
-                      />
-                    ) : (
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="font-medium">{os.client_phone || "-"}</p>
-                        {os.client_phone && (
-                          <a
-                            href={`https://wa.me/55${os.client_phone.replace(/\D/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-600 hover:text-emerald-700"
-                          >
-                            <Phone className="w-4 h-4" />
-                          </a>
-                        )}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className={cn(
+                              "font-medium",
+                              item.status === 'recusado' && "line-through"
+                            )}>
+                              {item.descricao}
+                            </span>
+                            <Badge variant="outline" className={itemStatus.color}>
+                              {itemStatus.label}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {item.tipo === 'mao_de_obra' ? 'Mão de Obra' : 'Peça'}
+                            </Badge>
+                            {prioridade && (
+                              <Badge variant="outline" className={cn(prioridade.borderColor, "border text-xs")}>
+                                {prioridade.label}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Qtd: {item.quantidade} × {formatCurrency(item.valor_unitario)}
+                          </p>
+                          {item.motivo_recusa && (
+                            <p className="text-sm text-red-600 mt-1">
+                              <AlertTriangle className="w-3 h-3 inline mr-1" />
+                              Motivo: {item.motivo_recusa}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className={cn(
+                            "font-bold text-lg",
+                            item.status === 'aprovado' && "text-emerald-600",
+                            item.status === 'recusado' && "text-red-600 line-through"
+                          )}>
+                            {formatCurrency(item.valor_total)}
+                          </p>
+                          <div className="flex gap-1 mt-2 justify-end">
+                            {item.status !== 'aprovado' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 w-8 p-0"
+                                onClick={() => handleItemStatusChange(item.id, 'aprovado')}
+                                title="Aprovar"
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {item.status !== 'recusado' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                                onClick={() => handleItemStatusChange(item.id, 'recusado')}
+                                title="Recusar"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
+                              onClick={() => handleDeleteItem(item.id)}
+                              title="Remover"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground">Veículo</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Car className="w-4 h-4 text-muted-foreground" />
-                      <p className="font-medium">{os.vehicle}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowAddItemDialog(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Item
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Tab: Detalhes */}
+          <TabsContent value="detalhes" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Client & Vehicle */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <User className="w-5 h-5" />
+                    Cliente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Nome</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editedOS.client_name || ""}
+                          onChange={(e) => setEditedOS({ ...editedOS, client_name: e.target.value })}
+                        />
+                      ) : (
+                        <p className="font-medium">{os.client_name || "-"}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Telefone</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editedOS.client_phone || ""}
+                          onChange={(e) => setEditedOS({ ...editedOS, client_phone: e.target.value })}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{os.client_phone || "-"}</p>
+                          {os.client_phone && (
+                            <a
+                              href={`https://wa.me/55${os.client_phone.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-emerald-600 hover:text-emerald-700"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground">Placa</Label>
-                    <p className="font-mono font-bold text-primary mt-1">{os.plate}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Car className="w-5 h-5" />
+                    Veículo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Veículo</Label>
+                      <p className="font-medium">{os.vehicle}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Placa</Label>
+                        <p className="font-mono font-bold text-primary">{os.plate}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">KM Atual</Label>
+                        {isEditing ? (
+                          <Input
+                            value={editedOS.km_atual || ""}
+                            onChange={(e) => setEditedOS({ ...editedOS, km_atual: e.target.value })}
+                          />
+                        ) : (
+                          <p className="font-medium">{os.km_atual || "-"} km</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">KM Atual</Label>
-                  {isEditing ? (
-                    <Input
-                      value={editedOS.km_atual || ""}
-                      onChange={(e) => setEditedOS({ ...editedOS, km_atual: e.target.value })}
-                    />
-                  ) : (
-                    <p className="font-medium mt-1">{os.km_atual || "-"} km</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Problem & Diagnostic */}
             <Card>
@@ -367,7 +646,7 @@ export default function AdminOSDetalhes() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-muted-foreground">Descrição do Problema</Label>
+                  <Label className="text-muted-foreground text-xs">Descrição do Problema</Label>
                   {isEditing ? (
                     <Textarea
                       value={editedOS.descricao_problema || ""}
@@ -379,7 +658,7 @@ export default function AdminOSDetalhes() {
                   )}
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Diagnóstico</Label>
+                  <Label className="text-muted-foreground text-xs">Diagnóstico</Label>
                   {isEditing ? (
                     <Textarea
                       value={editedOS.diagnostico || ""}
@@ -390,181 +669,29 @@ export default function AdminOSDetalhes() {
                     <p className="mt-1">{os.diagnostico || "-"}</p>
                   )}
                 </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Observações</Label>
+                  {isEditing ? (
+                    <Textarea
+                      value={editedOS.observacoes || ""}
+                      onChange={(e) => setEditedOS({ ...editedOS, observacoes: e.target.value })}
+                      rows={2}
+                    />
+                  ) : (
+                    <p className="mt-1">{os.observacoes || "-"}</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Checklist */}
-            <Collapsible open={checklistOpen} onOpenChange={setChecklistOpen}>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
-                    <CardTitle className="flex items-center justify-between text-lg">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5" />
-                        Checklist de Entrada
-                      </div>
-                      {checklistOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </CardTitle>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {checklistItems.map((item) => (
-                        <div key={item.key} className="flex items-center gap-2">
-                          <Checkbox
-                            id={item.key}
-                            checked={checklistEntrada[item.key] || false}
-                            onCheckedChange={(checked) => {
-                              setChecklistEntrada({ ...checklistEntrada, [item.key]: !!checked });
-                            }}
-                          />
-                          <Label htmlFor={item.key} className="text-sm cursor-pointer">
-                            {item.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Photos */}
-            <Collapsible open={fotosOpen} onOpenChange={setFotosOpen}>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
-                    <CardTitle className="flex items-center justify-between text-lg">
-                      <div className="flex items-center gap-2">
-                        <Camera className="w-5 h-5" />
-                        Fotos
-                      </div>
-                      {fotosOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </CardTitle>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent>
-                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-                      <Camera className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-muted-foreground">Nenhuma foto adicionada</p>
-                      <Button variant="outline" className="mt-4">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Adicionar Fotos
-                      </Button>
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Services */}
-            <Collapsible open={servicosOpen} onOpenChange={setServicosOpen}>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
-                    <CardTitle className="flex items-center justify-between text-lg">
-                      <div className="flex items-center gap-2">
-                        <Wrench className="w-5 h-5" />
-                        Serviços e Peças
-                      </div>
-                      {servicosOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </CardTitle>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="space-y-4">
-                    {itens.map((item) => {
-                      const prioridade = item.prioridade ? prioridadeConfig[item.prioridade] : null;
-                      const itemStatus = itemStatusConfig[item.status] || itemStatusConfig.pendente;
-
-                      return (
-                        <div
-                          key={item.id}
-                          className={cn(
-                            "p-4 rounded-lg border-2",
-                            prioridade?.borderColor || "border-border",
-                            prioridade?.bgColor
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">{item.descricao}</span>
-                                <Badge variant="outline" className={itemStatus.color}>
-                                  {itemStatus.label}
-                                </Badge>
-                                {prioridade && (
-                                  <Badge variant="outline" className={cn(prioridade.borderColor, "border")}>
-                                    {prioridade.label}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                {item.tipo === 'mao_de_obra' ? 'Mão de Obra' : 'Peça'} • 
-                                Qtd: {item.quantidade} • 
-                                {formatCurrency(item.valor_unitario)}/un
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-lg">{formatCurrency(item.valor_total)}</p>
-                              <div className="flex gap-1 mt-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                  onClick={() => handleItemStatusChange(item.id, 'aprovado')}
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => handleItemStatusChange(item.id, 'recusado')}
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => handleDeleteItem(item.id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setShowAddItemDialog(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Item
-                    </Button>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          </div>
-
-          {/* Right Column - Summary */}
-          <div className="space-y-6">
             {/* Status */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Status</CardTitle>
+                <CardTitle className="text-lg">Status da OS</CardTitle>
               </CardHeader>
               <CardContent>
                 <Select value={os.status} onValueChange={handleStatusChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full md:w-64">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -583,59 +710,89 @@ export default function AdminOSDetalhes() {
                 </Select>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Totals */}
+          {/* Tab: Checklist */}
+          <TabsContent value="checklist" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <DollarSign className="w-5 h-5" />
-                  Valores
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Checklist de Entrada
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Orçado</span>
-                  <span className="font-bold text-xl">{formatCurrency(totalOrcado)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Aprovado</span>
-                  <span className="font-bold text-xl text-emerald-600">{formatCurrency(totalAprovado)}</span>
-                </div>
-                <div className="flex justify-between items-center pt-4 border-t">
-                  <span className="text-muted-foreground">Itens</span>
-                  <span>{itens.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Aprovados</span>
-                  <span className="text-emerald-600">{itens.filter(i => i.status === 'aprovado').length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Pendentes</span>
-                  <span className="text-amber-600">{itens.filter(i => i.status === 'pendente').length}</span>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {checklistItems.map((item) => (
+                    <div key={item.key} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                      <Checkbox
+                        id={item.key}
+                        checked={checklistEntrada[item.key] || false}
+                        onCheckedChange={(checked) => {
+                          setChecklistEntrada({ ...checklistEntrada, [item.key]: !!checked });
+                        }}
+                      />
+                      <Label htmlFor={item.key} className="text-sm cursor-pointer flex-1">
+                        {item.label}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Observations */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Observações</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5" />
+                  Fotos do Veículo
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {isEditing ? (
-                  <Textarea
-                    value={editedOS.observacoes || ""}
-                    onChange={(e) => setEditedOS({ ...editedOS, observacoes: e.target.value })}
-                    rows={4}
-                    placeholder="Observações gerais..."
-                  />
-                ) : (
-                  <p className="text-sm">{os.observacoes || "Nenhuma observação"}</p>
-                )}
+                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                  <Camera className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-muted-foreground mb-4">Nenhuma foto adicionada</p>
+                  <Button variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Fotos
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Tab: Histórico */}
+          <TabsContent value="historico" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5" />
+                  Histórico de Eventos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {historico.map((evento, index) => (
+                    <div key={evento.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        {index < historico.length - 1 && (
+                          <div className="w-0.5 h-full bg-border flex-1 mt-1" />
+                        )}
+                      </div>
+                      <div className="flex-1 pb-4">
+                        <p className="font-medium">{evento.descricao}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(evento.data).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Add Item Dialog */}
@@ -720,6 +877,37 @@ export default function AdminOSDetalhes() {
             </Button>
             <Button onClick={handleAddItem} disabled={!newItem.descricao || newItem.valor_unitario <= 0}>
               Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recusa Dialog */}
+      <Dialog open={showRecusaDialog} onOpenChange={setShowRecusaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <XCircle className="w-5 h-5" />
+              Recusar Item
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Informe o motivo da recusa (opcional):
+            </p>
+            <Textarea
+              value={motivoRecusa}
+              onChange={(e) => setMotivoRecusa(e.target.value)}
+              placeholder="Ex: Cliente não quis fazer o serviço agora..."
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRecusaDialog(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmRecusa}>
+              Confirmar Recusa
             </Button>
           </DialogFooter>
         </DialogContent>
