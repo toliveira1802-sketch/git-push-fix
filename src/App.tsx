@@ -24,6 +24,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import OrdensServico from "./pages/admin/OrdensServico";
 import NovaOS from "./pages/admin/NovaOS";
 import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
+import Clientes from "./pages/admin/Clientes";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/admin/ordens-servico" element={<OrdensServico />} />
             <Route path="/admin/nova-os" element={<NovaOS />} />
             <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} />
+            <Route path="/admin/clientes" element={<Clientes />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
