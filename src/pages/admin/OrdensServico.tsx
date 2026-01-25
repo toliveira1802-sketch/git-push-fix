@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { mockServiceOrders, getVehicleById, getUserById, OrderStatus } from '@/lib/mock-data'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { ClipboardList, Search, Filter, ChevronRight, CalendarIcon, X, AlertTriangle } from 'lucide-react'
+import { ClipboardList, Search, Filter, ChevronRight, CalendarIcon, X, AlertTriangle, FileText, Clock, CheckCircle, XCircle, DollarSign } from 'lucide-react'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -76,6 +76,15 @@ export default function OrdensServico() {
     setEndDate(undefined)
   }
 
+  // Calculate summary stats
+  const totalOrders = mockServiceOrders.length
+  const ordersInBudget = mockServiceOrders.filter(o => ['waiting_approval', 'open'].includes(o.status)).length
+  const approvedOrders = mockServiceOrders.filter(o => ['in_progress', 'completed'].includes(o.status)).length
+  const rejectedOrders = mockServiceOrders.filter(o => o.status === 'cancelled').length
+  const totalRevenue = mockServiceOrders
+    .filter(o => o.status === 'completed')
+    .reduce((sum, o) => sum + o.total, 0)
+
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
@@ -88,6 +97,59 @@ export default function OrdensServico() {
           <p className="text-muted-foreground">
             {filteredOrders.length} ordem(ns) encontrada(s)
           </p>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Card className="bg-card border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                <FileText className="h-4 w-4" />
+                Total
+              </div>
+              <p className="text-2xl font-bold">{totalOrders}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-blue-950/50 border-blue-900">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-blue-400 text-sm mb-1">
+                <Clock className="h-4 w-4" />
+                Orçamento
+              </div>
+              <p className="text-2xl font-bold text-blue-400">{ordersInBudget}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-green-950/50 border-green-900">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-green-400 text-sm mb-1">
+                <CheckCircle className="h-4 w-4" />
+                Aprovadas
+              </div>
+              <p className="text-2xl font-bold text-green-400">{approvedOrders}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-red-950/50 border-red-900">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-red-400 text-sm mb-1">
+                <XCircle className="h-4 w-4" />
+                Recusadas
+              </div>
+              <p className="text-2xl font-bold text-red-400">{rejectedOrders}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-emerald-950/50 border-emerald-900">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-emerald-400 text-sm mb-1">
+                <DollarSign className="h-4 w-4" />
+                Faturado
+              </div>
+              <p className="text-2xl font-bold text-emerald-400">{formatCurrency(totalRevenue)}</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search */}
