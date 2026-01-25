@@ -565,13 +565,21 @@ Deno.serve(async (req) => {
         }
 
         // Verificar se já existe OS para este veículo com status ativo (não entregue e não cancelado)
-        // Também verifica pelo trello_card_id se já foi sincronizado antes
-        const { data: existingOS } = await supabase
+        // Busca TODAS as OSs ativas do veículo para evitar criar duplicadas
+        const { data: existingOSList } = await supabase
           .from('service_orders')
-          .select('id, status')
+          .select('id, status, problem_description, created_at')
           .eq('vehicle_id', vehicleId)
           .not('status', 'in', '("entregue","cancelado")')
-          .maybeSingle();
+          .order('created_at', { ascending: false });
+
+        // Se já existe qualquer OS ativa para este veículo, usar a mais recente
+        const existingOS = existingOSList && existingOSList.length > 0 ? existingOSList[0] : null;
+        
+        // Log para debug de duplicação
+        if (existingOSList && existingOSList.length > 1) {
+          console.log(`ALERTA: Veículo ${extractedData.plate} tem ${existingOSList.length} OSs ativas! Usando a mais recente.`);
+        }
 
         if (existingOS) {
           // Atualizar status da OS existente

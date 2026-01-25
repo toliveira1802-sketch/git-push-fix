@@ -406,6 +406,464 @@ export type Database = {
           },
         ]
       }
+      ia_anna_atendimentos: {
+        Row: {
+          agendou: boolean | null
+          chegou_boca_gol: boolean | null
+          created_at: string
+          data_agendamento: string | null
+          fim_atendimento: string | null
+          id: string
+          inicio_atendimento: string | null
+          lead_id: string
+          lead_nome: string | null
+          lead_telefone: string | null
+          motivo_transferencia: string | null
+          pos_venda_data: string | null
+          pos_venda_iniciado: boolean | null
+          quantidade_mensagens: number | null
+          satisfacao_cliente: number | null
+          score_qualidade: number | null
+          status: string | null
+          temperatura: string | null
+          tempo_medio_resposta_segundos: number | null
+          tempo_total_minutos: number | null
+          transferiu_humano: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          agendou?: boolean | null
+          chegou_boca_gol?: boolean | null
+          created_at?: string
+          data_agendamento?: string | null
+          fim_atendimento?: string | null
+          id?: string
+          inicio_atendimento?: string | null
+          lead_id: string
+          lead_nome?: string | null
+          lead_telefone?: string | null
+          motivo_transferencia?: string | null
+          pos_venda_data?: string | null
+          pos_venda_iniciado?: boolean | null
+          quantidade_mensagens?: number | null
+          satisfacao_cliente?: number | null
+          score_qualidade?: number | null
+          status?: string | null
+          temperatura?: string | null
+          tempo_medio_resposta_segundos?: number | null
+          tempo_total_minutos?: number | null
+          transferiu_humano?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          agendou?: boolean | null
+          chegou_boca_gol?: boolean | null
+          created_at?: string
+          data_agendamento?: string | null
+          fim_atendimento?: string | null
+          id?: string
+          inicio_atendimento?: string | null
+          lead_id?: string
+          lead_nome?: string | null
+          lead_telefone?: string | null
+          motivo_transferencia?: string | null
+          pos_venda_data?: string | null
+          pos_venda_iniciado?: boolean | null
+          quantidade_mensagens?: number | null
+          satisfacao_cliente?: number | null
+          score_qualidade?: number | null
+          status?: string | null
+          temperatura?: string | null
+          tempo_medio_resposta_segundos?: number | null
+          tempo_total_minutos?: number | null
+          transferiu_humano?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ia_joao_qualidade: {
+        Row: {
+          analise_texto: string | null
+          atendimento_id: string | null
+          created_at: string
+          demonstrou_desinteresse: boolean | null
+          enviou_audio: boolean | null
+          enviou_midia: boolean | null
+          id: string
+          lead_id: string
+          mencionou_urgencia: boolean | null
+          pediu_agendamento: boolean | null
+          perguntou_prazo: boolean | null
+          perguntou_preco: boolean | null
+          recomendacao: string | null
+          score_engajamento: number | null
+          score_intencao_compra: number | null
+          score_tempo_resposta: number | null
+          score_total: number | null
+          score_urgencia: number | null
+          temperatura: string | null
+          updated_at: string
+        }
+        Insert: {
+          analise_texto?: string | null
+          atendimento_id?: string | null
+          created_at?: string
+          demonstrou_desinteresse?: boolean | null
+          enviou_audio?: boolean | null
+          enviou_midia?: boolean | null
+          id?: string
+          lead_id: string
+          mencionou_urgencia?: boolean | null
+          pediu_agendamento?: boolean | null
+          perguntou_prazo?: boolean | null
+          perguntou_preco?: boolean | null
+          recomendacao?: string | null
+          score_engajamento?: number | null
+          score_intencao_compra?: number | null
+          score_tempo_resposta?: number | null
+          score_total?: number | null
+          score_urgencia?: number | null
+          temperatura?: string | null
+          updated_at?: string
+        }
+        Update: {
+          analise_texto?: string | null
+          atendimento_id?: string | null
+          created_at?: string
+          demonstrou_desinteresse?: boolean | null
+          enviou_audio?: boolean | null
+          enviou_midia?: boolean | null
+          id?: string
+          lead_id?: string
+          mencionou_urgencia?: boolean | null
+          pediu_agendamento?: boolean | null
+          perguntou_prazo?: boolean | null
+          perguntou_preco?: boolean | null
+          recomendacao?: string | null
+          score_engajamento?: number | null
+          score_intencao_compra?: number | null
+          score_tempo_resposta?: number | null
+          score_total?: number | null
+          score_urgencia?: number | null
+          temperatura?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_joao_qualidade_atendimento_id_fkey"
+            columns: ["atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "ia_anna_atendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ia_luiz_base_leads: {
+        Row: {
+          carro: string | null
+          created_at: string
+          data_primeiro_contato: string | null
+          data_ultimo_contato: string | null
+          dias_sem_contato: number | null
+          email: string | null
+          enviado_em: string | null
+          enviado_para_pedro: boolean | null
+          id: string
+          interesse: string | null
+          lead_id: string
+          nome: string | null
+          onda: number | null
+          origem: string | null
+          score_historico: number | null
+          status: string | null
+          tags: Json | null
+          telefone: string | null
+          temperatura: string | null
+          updated_at: string
+        }
+        Insert: {
+          carro?: string | null
+          created_at?: string
+          data_primeiro_contato?: string | null
+          data_ultimo_contato?: string | null
+          dias_sem_contato?: number | null
+          email?: string | null
+          enviado_em?: string | null
+          enviado_para_pedro?: boolean | null
+          id?: string
+          interesse?: string | null
+          lead_id: string
+          nome?: string | null
+          onda?: number | null
+          origem?: string | null
+          score_historico?: number | null
+          status?: string | null
+          tags?: Json | null
+          telefone?: string | null
+          temperatura?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carro?: string | null
+          created_at?: string
+          data_primeiro_contato?: string | null
+          data_ultimo_contato?: string | null
+          dias_sem_contato?: number | null
+          email?: string | null
+          enviado_em?: string | null
+          enviado_para_pedro?: boolean | null
+          id?: string
+          interesse?: string | null
+          lead_id?: string
+          nome?: string | null
+          onda?: number | null
+          origem?: string | null
+          score_historico?: number | null
+          status?: string | null
+          tags?: Json | null
+          telefone?: string | null
+          temperatura?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ia_metricas_diarias: {
+        Row: {
+          anna_leads_atendidos: number | null
+          anna_pos_vendas: number | null
+          anna_taxa_agendamento: number | null
+          anna_taxa_boca_gol: number | null
+          anna_tempo_medio_resposta: number | null
+          anna_transferencias: number | null
+          created_at: string
+          data: string
+          id: string
+          joao_leads_analisados: number | null
+          joao_leads_frios: number | null
+          joao_leads_gelados: number | null
+          joao_leads_mornos: number | null
+          joao_leads_quentes: number | null
+          joao_score_medio: number | null
+          luiz_enviados_pedro: number | null
+          luiz_leads_mapeados: number | null
+          luiz_onda1: number | null
+          luiz_onda2: number | null
+          luiz_onda3: number | null
+          luiz_onda4: number | null
+          pedro_reativacoes_enviadas: number | null
+          pedro_reativados: number | null
+          pedro_respostas: number | null
+          pedro_taxa_reativacao: number | null
+          pedro_taxa_resposta: number | null
+          updated_at: string
+          zoraide_alertas_resolvidos: number | null
+          zoraide_alertas_total: number | null
+          zoraide_campos_preenchidos: number | null
+          zoraide_tempo_medio_resolucao: number | null
+        }
+        Insert: {
+          anna_leads_atendidos?: number | null
+          anna_pos_vendas?: number | null
+          anna_taxa_agendamento?: number | null
+          anna_taxa_boca_gol?: number | null
+          anna_tempo_medio_resposta?: number | null
+          anna_transferencias?: number | null
+          created_at?: string
+          data: string
+          id?: string
+          joao_leads_analisados?: number | null
+          joao_leads_frios?: number | null
+          joao_leads_gelados?: number | null
+          joao_leads_mornos?: number | null
+          joao_leads_quentes?: number | null
+          joao_score_medio?: number | null
+          luiz_enviados_pedro?: number | null
+          luiz_leads_mapeados?: number | null
+          luiz_onda1?: number | null
+          luiz_onda2?: number | null
+          luiz_onda3?: number | null
+          luiz_onda4?: number | null
+          pedro_reativacoes_enviadas?: number | null
+          pedro_reativados?: number | null
+          pedro_respostas?: number | null
+          pedro_taxa_reativacao?: number | null
+          pedro_taxa_resposta?: number | null
+          updated_at?: string
+          zoraide_alertas_resolvidos?: number | null
+          zoraide_alertas_total?: number | null
+          zoraide_campos_preenchidos?: number | null
+          zoraide_tempo_medio_resolucao?: number | null
+        }
+        Update: {
+          anna_leads_atendidos?: number | null
+          anna_pos_vendas?: number | null
+          anna_taxa_agendamento?: number | null
+          anna_taxa_boca_gol?: number | null
+          anna_tempo_medio_resposta?: number | null
+          anna_transferencias?: number | null
+          created_at?: string
+          data?: string
+          id?: string
+          joao_leads_analisados?: number | null
+          joao_leads_frios?: number | null
+          joao_leads_gelados?: number | null
+          joao_leads_mornos?: number | null
+          joao_leads_quentes?: number | null
+          joao_score_medio?: number | null
+          luiz_enviados_pedro?: number | null
+          luiz_leads_mapeados?: number | null
+          luiz_onda1?: number | null
+          luiz_onda2?: number | null
+          luiz_onda3?: number | null
+          luiz_onda4?: number | null
+          pedro_reativacoes_enviadas?: number | null
+          pedro_reativados?: number | null
+          pedro_respostas?: number | null
+          pedro_taxa_reativacao?: number | null
+          pedro_taxa_resposta?: number | null
+          updated_at?: string
+          zoraide_alertas_resolvidos?: number | null
+          zoraide_alertas_total?: number | null
+          zoraide_campos_preenchidos?: number | null
+          zoraide_tempo_medio_resolucao?: number | null
+        }
+        Relationships: []
+      }
+      ia_pedro_reativacoes: {
+        Row: {
+          atendimento_id: string | null
+          base_lead_id: string | null
+          created_at: string
+          entregue: boolean | null
+          enviado_em: string | null
+          id: string
+          lead_id: string
+          lido: boolean | null
+          mensagem_enviada: string | null
+          nome: string | null
+          onda: number | null
+          reativou: boolean | null
+          respondeu: boolean | null
+          resposta_em: string | null
+          sentimento_resposta: string | null
+          telefone: string | null
+          tempo_ate_resposta_minutos: number | null
+          tipo_abordagem: string | null
+          virou_atendimento: boolean | null
+        }
+        Insert: {
+          atendimento_id?: string | null
+          base_lead_id?: string | null
+          created_at?: string
+          entregue?: boolean | null
+          enviado_em?: string | null
+          id?: string
+          lead_id: string
+          lido?: boolean | null
+          mensagem_enviada?: string | null
+          nome?: string | null
+          onda?: number | null
+          reativou?: boolean | null
+          respondeu?: boolean | null
+          resposta_em?: string | null
+          sentimento_resposta?: string | null
+          telefone?: string | null
+          tempo_ate_resposta_minutos?: number | null
+          tipo_abordagem?: string | null
+          virou_atendimento?: boolean | null
+        }
+        Update: {
+          atendimento_id?: string | null
+          base_lead_id?: string | null
+          created_at?: string
+          entregue?: boolean | null
+          enviado_em?: string | null
+          id?: string
+          lead_id?: string
+          lido?: boolean | null
+          mensagem_enviada?: string | null
+          nome?: string | null
+          onda?: number | null
+          reativou?: boolean | null
+          respondeu?: boolean | null
+          resposta_em?: string | null
+          sentimento_resposta?: string | null
+          telefone?: string | null
+          tempo_ate_resposta_minutos?: number | null
+          tipo_abordagem?: string | null
+          virou_atendimento?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_pedro_reativacoes_atendimento_id_fkey"
+            columns: ["atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "ia_anna_atendimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ia_pedro_reativacoes_base_lead_id_fkey"
+            columns: ["base_lead_id"]
+            isOneToOne: false
+            referencedRelation: "ia_luiz_base_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ia_zoraide_monitor: {
+        Row: {
+          acao_tomada: string | null
+          campos_extraidos: Json | null
+          campos_preenchidos_em: string | null
+          created_at: string
+          id: string
+          lead_carro: string | null
+          lead_email: string | null
+          lead_id: string
+          lead_nome: string | null
+          lead_telefone: string | null
+          resolvido: boolean | null
+          resolvido_em: string | null
+          tempo_sem_resposta: number | null
+          tipo_alerta: string | null
+          updated_at: string
+        }
+        Insert: {
+          acao_tomada?: string | null
+          campos_extraidos?: Json | null
+          campos_preenchidos_em?: string | null
+          created_at?: string
+          id?: string
+          lead_carro?: string | null
+          lead_email?: string | null
+          lead_id: string
+          lead_nome?: string | null
+          lead_telefone?: string | null
+          resolvido?: boolean | null
+          resolvido_em?: string | null
+          tempo_sem_resposta?: number | null
+          tipo_alerta?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acao_tomada?: string | null
+          campos_extraidos?: Json | null
+          campos_preenchidos_em?: string | null
+          created_at?: string
+          id?: string
+          lead_carro?: string | null
+          lead_email?: string | null
+          lead_id?: string
+          lead_nome?: string | null
+          lead_telefone?: string | null
+          resolvido?: boolean | null
+          resolvido_em?: string | null
+          tempo_sem_resposta?: number | null
+          tipo_alerta?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mechanic_daily_feedback: {
         Row: {
           created_at: string
