@@ -14,6 +14,121 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_mecanicos: {
+        Row: {
+          created_at: string
+          data: string
+          hora_inicio: string
+          id: string
+          mechanic_id: string
+          status: string
+          tipo: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          hora_inicio: string
+          id?: string
+          mechanic_id: string
+          status?: string
+          tipo?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          hora_inicio?: string
+          id?: string
+          mechanic_id?: string
+          status?: string
+          tipo?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_mecanicos_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "mechanics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mechanic_daily_feedback: {
+        Row: {
+          created_at: string
+          feedback_date: string
+          given_by: string | null
+          id: string
+          mechanic_id: string
+          notes: string | null
+          performance_score: number
+          punctuality_score: number
+          quality_score: number
+        }
+        Insert: {
+          created_at?: string
+          feedback_date: string
+          given_by?: string | null
+          id?: string
+          mechanic_id: string
+          notes?: string | null
+          performance_score: number
+          punctuality_score: number
+          quality_score: number
+        }
+        Update: {
+          created_at?: string
+          feedback_date?: string
+          given_by?: string | null
+          id?: string
+          mechanic_id?: string
+          notes?: string | null
+          performance_score?: number
+          punctuality_score?: number
+          quality_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mechanic_daily_feedback_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "mechanics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mechanics: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          specialty: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -44,6 +159,27 @@ export type Database = {
         }
         Relationships: []
       }
+      system_config: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -62,6 +198,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      workflow_etapas: {
+        Row: {
+          cor: string
+          created_at: string
+          icone: string
+          id: string
+          is_active: boolean
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          icone?: string
+          id?: string
+          is_active?: boolean
+          nome: string
+          ordem: number
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          icone?: string
+          id?: string
+          is_active?: boolean
+          nome?: string
+          ordem?: number
         }
         Relationships: []
       }
