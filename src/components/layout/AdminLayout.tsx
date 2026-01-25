@@ -52,7 +52,7 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { icon: Home, label: 'Home', path: '/admin' },
+  { icon: Home, label: 'Visão Geral', path: '/admin' },
   { icon: Plus, label: 'Nova OS', path: '/admin/nova-os', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },

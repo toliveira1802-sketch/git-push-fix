@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle } from "lucide-react";
+import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -14,6 +14,8 @@ interface DashboardStats {
   valueTodayDelivery: number;
   returnsMonth: number;
   cancelledMonth: number;
+  vehiclesInYard: number;
+  awaitingApproval: number;
 }
 
 // Mock data for frontend-only mode
@@ -24,6 +26,8 @@ const mockStats: DashboardStats = {
   valueTodayDelivery: 8500,
   returnsMonth: 3,
   cancelledMonth: 2,
+  vehiclesInYard: 14,
+  awaitingApproval: 5,
 };
 
 const mockTodayAppointments = [
@@ -194,7 +198,46 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Indicadores */}
+        {/* Indicadores Principais - Pátio e Aguardando APV */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Veículos no Pátio */}
+          <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-blue-500/10 to-blue-600/5"
+            onClick={() => navigate('/admin/patio')}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Car className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground">{stats.vehiclesInYard}</p>
+                  <p className="text-sm text-muted-foreground">Veículos no Pátio</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Aguardando Aprovação */}
+          <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-amber-500/10 to-amber-600/5"
+            onClick={() => navigate('/admin/ordens-servico?status=aguardando')}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground">{stats.awaitingApproval}</p>
+                  <p className="text-sm text-muted-foreground">Aguardando APV</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Indicadores Secundários */}
         <div className="grid grid-cols-2 gap-4">
           {/* Faturado Mês */}
           <Card className="border">
