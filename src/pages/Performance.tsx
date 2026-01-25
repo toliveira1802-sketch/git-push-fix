@@ -74,27 +74,6 @@ export default function Performance() {
           Estamos preparando uma experiência épica para você acompanhar toda sua jornada com a Doctor Auto Prime.
         </p>
 
-        {/* Feature Preview Cards */}
-        <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-8">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center">
-            <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
-              <span className="text-xl">📊</span>
-            </div>
-            <span className="text-xs text-gray-400">Estatísticas</span>
-          </div>
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center">
-            <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
-              <span className="text-xl">🏆</span>
-            </div>
-            <span className="text-xs text-gray-400">Conquistas</span>
-          </div>
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center">
-            <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
-              <span className="text-xl">💰</span>
-            </div>
-            <span className="text-xs text-gray-400">Economia</span>
-          </div>
-        </div>
 
         {/* CTA Button */}
         <Button 
