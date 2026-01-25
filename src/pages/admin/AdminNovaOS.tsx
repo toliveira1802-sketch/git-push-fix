@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -30,7 +31,7 @@ interface ClienteEncontrado {
   }[];
 }
 
-export default function AdminNovaOS() {
+export default function NovaOS() {
   const navigate = useNavigate();
   const [flowType, setFlowType] = useState<FlowType>("select");
   const [isLoading, setIsLoading] = useState(false);
@@ -221,15 +222,15 @@ export default function AdminNovaOS() {
           vehicle_id: newVehicle.id,
           status: "diagnostico",
         })
-        .select("order_number")
+        .select("id, order_number")
         .single();
 
       if (osError) throw osError;
 
       toast.success(`OS ${newOS.order_number} criada com sucesso!`);
       
-      // Redirecionar para detalhes da OS usando order_number
-      navigate(`/admin/os/${newOS.order_number}?new=true`);
+      // Redirecionar para detalhes da OS
+      navigate(`/admin/os/${newOS.id}?new=true`);
 
     } catch (error) {
       console.error("Erro ao criar OS:", error);
@@ -261,7 +262,7 @@ export default function AdminNovaOS() {
           vehicle_id: selectedVehicle.id,
           status: "diagnostico",
         })
-        .select("order_number")
+        .select("id, order_number")
         .single();
 
       if (osError) throw osError;
@@ -269,7 +270,7 @@ export default function AdminNovaOS() {
       toast.success(`OS ${newOS.order_number} criada com sucesso!`);
       
       // Redirecionar para detalhes da OS
-      navigate(`/admin/os/${newOS.order_number}?new=true`);
+      navigate(`/admin/os/${newOS.id}?new=true`);
 
     } catch (error) {
       console.error("Erro ao criar OS:", error);
@@ -280,302 +281,304 @@ export default function AdminNovaOS() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ordens-servico")}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Nova Ordem de Serviço</h1>
-          <p className="text-muted-foreground">Escolha como deseja abrir a OS</p>
+    <AdminLayout>
+      <div className="p-4 md:p-6 max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ordens-servico")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Nova Ordem de Serviço</h1>
+            <p className="text-muted-foreground">Escolha como deseja abrir a OS</p>
+          </div>
         </div>
+
+        {/* Etapa 1: Seleção do tipo */}
+        {flowType === "select" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card 
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() => setFlowType("quick")}
+            >
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <Zap className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Cliente Rápido</CardTitle>
+                <CardDescription>
+                  Cadastro rápido para novos clientes. Preencha apenas nome, veículo e placa.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Button className="w-full">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Novo Cliente
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() => setFlowType("existing")}
+            >
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
+                  <Users className="w-8 h-8 text-green-600" />
+                </div>
+                <CardTitle className="text-xl">Cliente Existente</CardTitle>
+                <CardDescription>
+                  Busque por telefone ou placa para clientes já cadastrados.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Button variant="outline" className="w-full">
+                  <Search className="w-4 h-4 mr-2" />
+                  Buscar Cliente
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Etapa 2A: Cliente Rápido */}
+        {flowType === "quick" && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-primary" />
+                    Cliente Rápido
+                  </CardTitle>
+                  <CardDescription>Preencha os dados básicos para abrir a OS</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setFlowType("select")}>
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Voltar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Dados do Cliente */}
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Dados do Cliente
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome *</Label>
+                    <Input
+                      id="name"
+                      placeholder="Nome do cliente"
+                      value={quickForm.name}
+                      onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input
+                      id="phone"
+                      placeholder="(11) 99999-9999"
+                      value={quickForm.phone}
+                      onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados do Veículo */}
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <Car className="w-4 h-4" />
+                  Dados do Veículo
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="brand">Marca</Label>
+                    <Input
+                      id="brand"
+                      placeholder="Ex: Honda"
+                      value={quickForm.brand}
+                      onChange={(e) => setQuickForm({ ...quickForm, brand: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="model">Modelo *</Label>
+                    <Input
+                      id="model"
+                      placeholder="Ex: Civic"
+                      value={quickForm.model}
+                      onChange={(e) => setQuickForm({ ...quickForm, model: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="plate">Placa *</Label>
+                    <Input
+                      id="plate"
+                      placeholder="ABC1D23"
+                      value={quickForm.plate}
+                      onChange={(e) => setQuickForm({ ...quickForm, plate: e.target.value.toUpperCase() })}
+                      maxLength={7}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Botão de Ação */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setFlowType("select")}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateQuickOS} disabled={isLoading}>
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                  )}
+                  Abrir OS
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Etapa 2B: Cliente Existente */}
+        {flowType === "existing" && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-green-600" />
+                    Cliente Existente
+                  </CardTitle>
+                  <CardDescription>Busque por telefone ou placa do veículo</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setFlowType("select")}>
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Voltar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Campo de Busca */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Digite telefone ou placa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="flex-1"
+                />
+                <Button onClick={handleSearch} disabled={isSearching}>
+                  {isSearching ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+
+              {/* Resultados da Busca */}
+              {searchResults.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    {searchResults.length} cliente(s) encontrado(s)
+                  </h3>
+                  {searchResults.map((client) => (
+                    <Card 
+                      key={client.id}
+                      className={`cursor-pointer transition-colors ${
+                        selectedClient?.id === client.id ? "border-primary bg-primary/5" : "hover:border-muted-foreground/50"
+                      }`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-muted-foreground" />
+                              <span className="font-medium">{client.name}</span>
+                              {selectedClient?.id === client.id && (
+                                <CheckCircle className="w-4 h-4 text-primary" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <Phone className="w-3 h-3" />
+                              {client.phone}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Veículos do cliente */}
+                        <div className="mt-3 space-y-2">
+                          <p className="text-xs text-muted-foreground">Veículos:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {client.vehicles.map((vehicle) => (
+                              <Badge
+                                key={vehicle.id}
+                                variant={selectedVehicle?.id === vehicle.id ? "default" : "outline"}
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectClient(client, vehicle);
+                                }}
+                              >
+                                <Car className="w-3 h-3 mr-1" />
+                                {vehicle.brand} {vehicle.model} - {vehicle.plate}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Cliente e Veículo Selecionados */}
+              {selectedClient && selectedVehicle && (
+                <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+                  <h3 className="font-medium text-green-700 dark:text-green-400 mb-2">
+                    ✓ Selecionado para nova OS:
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Cliente</p>
+                      <p className="font-medium">{selectedClient.name}</p>
+                      <p className="text-muted-foreground">{selectedClient.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Veículo</p>
+                      <p className="font-medium">{selectedVehicle.brand} {selectedVehicle.model}</p>
+                      <p className="text-muted-foreground">{selectedVehicle.plate}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botão de Ação */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setFlowType("select")}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleCreateExistingOS} 
+                  disabled={isLoading || !selectedClient || !selectedVehicle}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                  )}
+                  Abrir OS
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
-      {/* Etapa 1: Seleção do tipo */}
-      {flowType === "select" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card 
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => setFlowType("quick")}
-          >
-            <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Zap className="w-8 h-8 text-primary" />
-              </div>
-              <CardTitle className="text-xl">Cliente Rápido</CardTitle>
-              <CardDescription>
-                Cadastro rápido para novos clientes. Preencha apenas nome, veículo e placa.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button className="w-full">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Novo Cliente
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => setFlowType("existing")}
-          >
-            <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-                <Users className="w-8 h-8 text-green-600" />
-              </div>
-              <CardTitle className="text-xl">Cliente Existente</CardTitle>
-              <CardDescription>
-                Busque por telefone ou placa para clientes já cadastrados.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button variant="outline" className="w-full">
-                <Search className="w-4 h-4 mr-2" />
-                Buscar Cliente
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Etapa 2A: Cliente Rápido */}
-      {flowType === "quick" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-primary" />
-                  Cliente Rápido
-                </CardTitle>
-                <CardDescription>Preencha os dados básicos para abrir a OS</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setFlowType("select")}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Voltar
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Dados do Cliente */}
-            <div className="space-y-4">
-              <h3 className="font-medium flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Dados do Cliente
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Nome do cliente"
-                    value={quickForm.name}
-                    onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    placeholder="(11) 99999-9999"
-                    value={quickForm.phone}
-                    onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Dados do Veículo */}
-            <div className="space-y-4">
-              <h3 className="font-medium flex items-center gap-2">
-                <Car className="w-4 h-4" />
-                Dados do Veículo
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="brand">Marca</Label>
-                  <Input
-                    id="brand"
-                    placeholder="Ex: Honda"
-                    value={quickForm.brand}
-                    onChange={(e) => setQuickForm({ ...quickForm, brand: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="model">Modelo *</Label>
-                  <Input
-                    id="model"
-                    placeholder="Ex: Civic"
-                    value={quickForm.model}
-                    onChange={(e) => setQuickForm({ ...quickForm, model: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="plate">Placa *</Label>
-                  <Input
-                    id="plate"
-                    placeholder="ABC1D23"
-                    value={quickForm.plate}
-                    onChange={(e) => setQuickForm({ ...quickForm, plate: e.target.value.toUpperCase() })}
-                    maxLength={7}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Botão de Ação */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setFlowType("select")}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateQuickOS} disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                )}
-                Abrir OS
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Etapa 2B: Cliente Existente */}
-      {flowType === "existing" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-green-600" />
-                  Cliente Existente
-                </CardTitle>
-                <CardDescription>Busque por telefone ou placa do veículo</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setFlowType("select")}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Voltar
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Campo de Busca */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Digite telefone ou placa..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} disabled={isSearching}>
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Search className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-
-            {/* Resultados da Busca */}
-            {searchResults.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  {searchResults.length} cliente(s) encontrado(s)
-                </h3>
-                {searchResults.map((client) => (
-                  <Card 
-                    key={client.id}
-                    className={`cursor-pointer transition-colors ${
-                      selectedClient?.id === client.id ? "border-primary bg-primary/5" : "hover:border-muted-foreground/50"
-                    }`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{client.name}</span>
-                            {selectedClient?.id === client.id && (
-                              <CheckCircle className="w-4 h-4 text-primary" />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <Phone className="w-3 h-3" />
-                            {client.phone}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Veículos do cliente */}
-                      <div className="mt-3 space-y-2">
-                        <p className="text-xs text-muted-foreground">Veículos:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {client.vehicles.map((vehicle) => (
-                            <Badge
-                              key={vehicle.id}
-                              variant={selectedVehicle?.id === vehicle.id ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelectClient(client, vehicle);
-                              }}
-                            >
-                              <Car className="w-3 h-3 mr-1" />
-                              {vehicle.brand} {vehicle.model} - {vehicle.plate}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {/* Cliente e Veículo Selecionados */}
-            {selectedClient && selectedVehicle && (
-              <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
-                <h3 className="font-medium text-green-700 dark:text-green-400 mb-2">
-                  ✓ Selecionado para nova OS:
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Cliente</p>
-                    <p className="font-medium">{selectedClient.name}</p>
-                    <p className="text-muted-foreground">{selectedClient.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Veículo</p>
-                    <p className="font-medium">{selectedVehicle.brand} {selectedVehicle.model}</p>
-                    <p className="text-muted-foreground">{selectedVehicle.plate}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Botão de Ação */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setFlowType("select")}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleCreateExistingOS} 
-                disabled={isLoading || !selectedClient || !selectedVehicle}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                )}
-                Abrir OS
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    </AdminLayout>
   );
 }
