@@ -98,7 +98,7 @@ export function useClientData() {
     return data || [];
   }, []);
 
-  // Fetch service history from the VIEW
+  // Fetch service history from the VIEW - ONLY delivered orders (entregue)
   const fetchServiceHistory = useCallback(async () => {
     if (!user) return [];
 
@@ -106,6 +106,7 @@ export function useClientData() {
       .from('client_service_history')
       .select('*')
       .eq('user_id', user.id)
+      .eq('order_status', 'entregue') // Apenas ordens entregues
       .order('order_date', { ascending: false });
 
     if (error) {
