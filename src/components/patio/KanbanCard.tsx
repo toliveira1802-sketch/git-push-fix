@@ -9,7 +9,8 @@ import {
   Clock,
   DollarSign,
   Tag,
-  ExternalLink
+  ExternalLink,
+  MapPin
 } from "lucide-react";
 import { type VeiculoKanban } from "@/hooks/usePatioKanban";
 import { cn } from "@/lib/utils";
@@ -117,13 +118,31 @@ export function KanbanCard({ veiculo, isDragging, onDragStart, onDragEnd, onUpda
           <span className="text-xs truncate">{veiculo.cliente}</span>
         </div>
 
-        {/* Mecânico */}
-        {veiculo.mecanico && (
-          <div className="flex items-center gap-1.5 mb-2">
-            <Wrench className="w-3 h-3 text-muted-foreground" />
-            <span className="text-xs truncate text-muted-foreground">{veiculo.mecanico}</span>
-          </div>
-        )}
+        {/* Mecânico e Recurso */}
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          {veiculo.mecanico ? (
+            <Badge variant="secondary" className="text-[10px] gap-1 py-0.5">
+              <Wrench className="w-2.5 h-2.5" />
+              {veiculo.mecanico}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] gap-1 py-0.5 text-muted-foreground border-dashed">
+              <Wrench className="w-2.5 h-2.5" />
+              Sem mecânico
+            </Badge>
+          )}
+          {veiculo.recurso ? (
+            <Badge variant="secondary" className="text-[10px] gap-1 py-0.5 bg-primary/10 text-primary">
+              <MapPin className="w-2.5 h-2.5" />
+              {veiculo.recurso}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] gap-1 py-0.5 text-muted-foreground border-dashed">
+              <MapPin className="w-2.5 h-2.5" />
+              Sem local
+            </Badge>
+          )}
+        </div>
 
         {/* Datas */}
         <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-2">

@@ -21,6 +21,7 @@ export interface VeiculoKanban {
   emTerceiros: boolean;
   mecanico: string | null;
   mecanicoId: string | null;
+  recurso: string | null;
 }
 
 export interface EtapaWorkflow {
@@ -94,6 +95,7 @@ export function usePatioKanban() {
           priority,
           mechanic_id,
           em_terceiros,
+          recurso,
           vehicles!inner(plate, model, brand, year, color),
           clients!inner(name, phone),
           mechanics(name)
@@ -163,6 +165,7 @@ export function usePatioKanban() {
             emTerceiros: os.em_terceiros || false,
             mecanico: os.mechanics?.name || null,
             mecanicoId: os.mechanic_id || null,
+            recurso: os.recurso || null,
           };
           
           novasEtapas[etapaIndex].veiculos.push(veiculo);
