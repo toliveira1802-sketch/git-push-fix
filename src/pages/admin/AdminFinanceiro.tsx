@@ -6,22 +6,26 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   DollarSign, TrendingUp, Car, Calendar, 
   Target, RefreshCw, Settings, AlertTriangle, Clock, CheckCircle2, LayoutDashboard
 } from "lucide-react";
-import { useFinanceiroDashboard } from "@/hooks/useFinanceiroDashboard";
+import { useFinanceiroDashboard, VehicleFinanceInfo } from "@/hooks/useFinanceiroDashboard";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type PeriodFilter = 'ultimos7' | 'ultimos30' | 'mes' | 'ano';
+type ModalType = 'preso' | 'atrasado' | 'saidaHoje' | null;
 
 export default function AdminFinanceiro() {
   const { metrics, metaConfig, loading, lastUpdate, refetch, saveMetaConfig } = useFinanceiroDashboard();
   const [period, setPeriod] = useState<PeriodFilter>('ultimos30');
   const [showMetaModal, setShowMetaModal] = useState(false);
   const [showPainelMetas, setShowPainelMetas] = useState(false);
+  const [vehicleModal, setVehicleModal] = useState<ModalType>(null);
   const [tempMeta, setTempMeta] = useState(metaConfig.metaMensal);
   const [tempDias, setTempDias] = useState(metaConfig.diasUteis);
 
@@ -43,10 +47,24 @@ export default function AdminFinanceiro() {
     }
   };
 
-  // Calcular percentual "se tudo aprovado sair"
   const percentualPotencial = metrics.metaMensal > 0 
     ? ((metrics.realizado + metrics.aprovadoPatio) / metrics.metaMensal) * 100 
     : 0;
+
+  const getVehicleList = (): { title: string; vehicles: VehicleFinanceInfo[]; color: string } => {
+    switch (vehicleModal) {
+      case 'preso':
+        return { title: 'Veículos no Pátio (Preso)', vehicles: metrics.vehiclesPreso, color: 'amber' };
+      case 'atrasado':
+        return { title: 'Veículos Atrasados', vehicles: metrics.vehiclesAtrasado, color: 'red' };
+      case 'saidaHoje':
+        return { title: 'Saída Prevista Hoje', vehicles: metrics.vehiclesSaidaHoje, color: 'emerald' };
+      default:
+        return { title: '', vehicles: [], color: 'primary' };
+    }
+  };
+
+  const modalData = getVehicleList();
 
   if (loading) {
     return (
@@ -242,7 +260,10 @@ export default function AdminFinanceiro() {
           </Card>
 
           {/* Atrasado */}
-          <Card className="bg-card border hover:shadow-md transition-shadow">
+          <Card 
+            className="bg-card border hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setVehicleModal('atrasado')}
+          >
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center">
@@ -251,14 +272,17 @@ export default function AdminFinanceiro() {
                 <div className="flex-1">
                   <p className="text-xs text-destructive font-medium uppercase tracking-wide">ATRASADO</p>
                   <p className="text-2xl font-bold mt-1">{formatCurrency(metrics.atrasado)}</p>
-                  <p className="text-xs text-muted-foreground">Previsão vencida</p>
+                  <p className="text-xs text-muted-foreground">{metrics.vehiclesAtrasado.length} veículos</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Preso */}
-          <Card className="bg-card border hover:shadow-md transition-shadow">
+          <Card 
+            className="bg-card border hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setVehicleModal('preso')}
+          >
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
@@ -267,11 +291,13 @@ export default function AdminFinanceiro() {
                 <div className="flex-1">
                   <p className="text-xs text-amber-500 font-medium uppercase tracking-wide">PRESO</p>
                   <p className="text-2xl font-bold mt-1">{formatCurrency(metrics.preso)}</p>
-                  <p className="text-xs text-muted-foreground">No pátio</p>
+                  <p className="text-xs text-muted-foreground">{metrics.vehiclesPreso.length} veículos</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Preso já movido acima */}
 
           {/* Entregues */}
           <Card className="bg-card border hover:shadow-md transition-shadow">
@@ -284,6 +310,25 @@ export default function AdminFinanceiro() {
                   <p className="text-xs text-emerald-500 font-medium uppercase tracking-wide">ENTREGUES</p>
                   <p className="text-2xl font-bold mt-1">{metrics.entregues}</p>
                   <p className="text-xs text-muted-foreground">Veículos finalizados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Saída Hoje */}
+          <Card 
+            className="bg-card border hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setVehicleModal('saidaHoje')}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-emerald-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-emerald-500 font-medium uppercase tracking-wide">SAÍDA HOJE</p>
+                  <p className="text-2xl font-bold mt-1">{formatCurrency(metrics.saidaHoje)}</p>
+                  <p className="text-xs text-muted-foreground">{metrics.vehiclesSaidaHoje.length} veículos</p>
                 </div>
               </div>
             </CardContent>
@@ -355,6 +400,59 @@ export default function AdminFinanceiro() {
               <p className="text-center text-sm text-muted-foreground">
                 {metrics.percentualMeta.toFixed(1)}% da meta atingida
               </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Veículos */}
+        <Dialog open={vehicleModal !== null} onOpenChange={() => setVehicleModal(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Car className="w-5 h-5" />
+                {modalData.title}
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2">
+                {modalData.vehicles.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum veículo encontrado
+                  </p>
+                ) : (
+                  modalData.vehicles.map((vehicle) => (
+                    <div
+                      key={vehicle.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Car className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-mono font-bold">{vehicle.plate}</p>
+                          <p className="text-xs text-muted-foreground">{vehicle.model}</p>
+                          <p className="text-xs text-muted-foreground">{vehicle.clientName}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">{formatCurrency(vehicle.valorAprovado)}</p>
+                        <Badge variant="outline" className="text-[10px]">
+                          {vehicle.daysInYard} dias
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+            <div className="pt-4 border-t">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total:</span>
+                <span className="font-bold">
+                  {formatCurrency(modalData.vehicles.reduce((sum, v) => sum + v.valorAprovado, 0))}
+                </span>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
