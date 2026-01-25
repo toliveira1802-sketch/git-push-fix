@@ -16,7 +16,9 @@ import {
   Home,
   Building2,
   Layers,
-  FolderOpen
+  FolderOpen,
+  Lightbulb,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -73,6 +75,10 @@ const systemMenuItems: MenuItem[] = [
     icon: Settings, 
     label: 'Configurações', 
     path: '/admin/configuracoes',
+    subItems: [
+      { icon: Lightbulb, label: 'Melhorias', path: '/admin/melhorias' },
+      { icon: SlidersHorizontal, label: 'Parâmetros', path: '/admin/configuracoes' },
+    ]
   },
 ];
 
@@ -138,18 +144,25 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     path => location.pathname.startsWith(path)
   );
   const isOnCadastrosRoute = location.pathname === '/admin/cadastros' || isOnCadastrosSubRoute;
+  
+  const isOnConfigSubRoute = ['/admin/melhorias', '/admin/configuracoes'].some(
+    path => location.pathname === path
+  );
 
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
     '/admin/cadastros': isOnCadastrosRoute,
-    '/admin/configuracoes': false,
+    '/admin/configuracoes': isOnConfigSubRoute,
   });
 
-  // Keep Cadastros expanded when navigating to sub-routes
+  // Keep parent menus expanded when navigating to sub-routes
   useEffect(() => {
     if (isOnCadastrosRoute && !expandedItems['/admin/cadastros']) {
       setExpandedItems(prev => ({ ...prev, '/admin/cadastros': true }));
     }
-  }, [location.pathname, isOnCadastrosRoute]);
+    if (isOnConfigSubRoute && !expandedItems['/admin/configuracoes']) {
+      setExpandedItems(prev => ({ ...prev, '/admin/configuracoes': true }));
+    }
+  }, [location.pathname, isOnCadastrosRoute, isOnConfigSubRoute]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));
