@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
-  CalendarIcon, Plus, Save, RefreshCw, X, Check, 
-  ChevronLeft, ChevronRight, MessageSquare
+  CalendarIcon, Plus, RefreshCw, X, Check, 
+  ChevronLeft, ChevronRight, Car
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,29 +33,34 @@ interface ScheduleSlot {
   isNew?: boolean;
 }
 
+interface NextService {
+  mechanic_id: string;
+  order_number: string;
+  vehicle_plate: string;
+  vehicle_model: string;
+  problem: string;
+}
+
 interface DaySchedule {
   [mechanicId: string]: {
     [hora: string]: ScheduleSlot;
   };
 }
 
-const HORARIOS_SEMANA = ['08:00', '09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30'];
-const HORARIOS_SABADO = ['08:00', '09:00', '10:00', '11:00'];
-const HORARIOS_ENCAIXE = ['E1', 'E2', 'E3'];
+// Horários conforme screenshot
+const HORARIOS_PADRAO = ['08h00', '09h00', '10h00', '11h00'];
+const ALMOCO = 'ALMOÇO';
+const HORARIOS_TARDE = ['13h30', '14h30', '15h30', '16h30'];
+const HORARIOS_EXTRA = ['EXTRA 1', 'EXTRA 2', 'EXTRA 3'];
 
 export default function AdminAgendaMecanicos() {
-  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [schedule, setSchedule] = useState<DaySchedule>({});
+  const [nextServices, setNextServices] = useState<NextService[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [editingCell, setEditingCell] = useState<{ mechanicId: string; hora: string } | null>(null);
   const [inputValue, setInputValue] = useState("");
-
-  const isSaturday = selectedDate.getDay() === 6;
-  const horarios = isSaturday ? HORARIOS_SABADO : HORARIOS_SEMANA;
 
   const fetchData = async () => {
     setLoading(true);
@@ -84,7 +88,7 @@ export default function AdminAgendaMecanicos() {
       });
 
       agendaData?.forEach((item: any) => {
-        const hora = item.hora_inicio?.slice(0, 5) || '';
+        const hora = item.hora_inicio?.slice(0, 5)?.replace(':', 'h') + '0' || '';
         if (scheduleMap[item.mechanic_id]) {
           scheduleMap[item.mechanic_id][hora] = {
             id: item.id,
@@ -98,7 +102,58 @@ export default function AdminAgendaMecanicos() {
       });
 
       setSchedule(scheduleMap);
-      setHasChanges(false);
+
+      // Fetch próximos serviços (OSs ativas por mecânico)
+      const { data: ossAtivas } = await supabase
+        .from('service_orders')
+        .select(`
+          id,
+          order_number,
+          mechanic_id,
+          problem_description,
+          vehicles(plate, model)
+        `)
+        .neq('status', 'entregue')
+        .not('mechanic_id', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(20);
+
+      // Agrupar por mecânico (máx 3 por mecânico)
+      const servicesByMechanic: Record<string, NextService[]> = {};
+      (ossAtivas || []).forEach(os => {
+        if (!os.mechanic_id) return;
+        if (!servicesByMechanic[os.mechanic_id]) {
+          servicesByMechanic[os.mechanic_id] = [];
+        }
+        if (servicesByMechanic[os.mechanic_id].length < 3) {
+          servicesByMechanic[os.mechanic_id].push({
+            mechanic_id: os.mechanic_id,
+            order_number: os.order_number,
+            vehicle_plate: os.vehicles?.plate || '',
+            vehicle_model: os.vehicles?.model || '',
+            problem: os.problem_description || 'FALAR COM CONSULTOR',
+          });
+        }
+      });
+
+      // Criar lista flat
+      const allServices: NextService[] = [];
+      mechanicsData?.forEach(m => {
+        const services = servicesByMechanic[m.id] || [];
+        // Preencher até 3
+        for (let i = 0; i < 3; i++) {
+          allServices.push(services[i] || {
+            mechanic_id: m.id,
+            order_number: '',
+            vehicle_plate: '',
+            vehicle_model: '',
+            problem: 'FALAR COM CONSULTOR',
+          });
+        }
+      });
+
+      setNextServices(allServices);
+
     } catch (error) {
       console.error('Error fetching schedule:', error);
       toast.error("Erro ao carregar agenda");
@@ -113,7 +168,7 @@ export default function AdminAgendaMecanicos() {
 
   const handleCellClick = (mechanicId: string, hora: string) => {
     const slot = schedule[mechanicId]?.[hora];
-    if (!slot) {
+    if (!slot && hora !== ALMOCO) {
       setEditingCell({ mechanicId, hora });
       setInputValue("");
     }
@@ -126,7 +181,7 @@ export default function AdminAgendaMecanicos() {
     }
 
     const plate = inputValue.trim().toUpperCase();
-    const isEncaixe = editingCell.hora.startsWith('E');
+    const isEncaixe = editingCell.hora.startsWith('EXTRA');
     
     setSchedule(prev => ({
       ...prev,
@@ -144,12 +199,37 @@ export default function AdminAgendaMecanicos() {
       },
     }));
 
-    setHasChanges(true);
+    // Save to database
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const horaDb = editingCell.hora.replace('h', ':').replace('EXTRA ', '17:0');
+    
+    const { error } = await supabase
+      .from('agenda_mecanicos')
+      .insert({
+        mechanic_id: editingCell.mechanicId,
+        data: dateStr,
+        hora_inicio: horaDb.slice(0, 5),
+        tipo: isEncaixe ? 'encaixe' : 'normal',
+        status: 'agendado',
+      });
+
+    if (error) {
+      console.error('Error saving:', error);
+      toast.error("Erro ao salvar");
+    } else {
+      toast.success("Agendamento salvo!");
+    }
+
     setEditingCell(null);
     setInputValue("");
   };
 
-  const handleRemoveSlot = (mechanicId: string, hora: string) => {
+  const handleRemoveSlot = async (mechanicId: string, hora: string) => {
+    const slot = schedule[mechanicId]?.[hora];
+    if (slot?.id) {
+      await supabase.from('agenda_mecanicos').delete().eq('id', slot.id);
+    }
+    
     setSchedule(prev => {
       const newSchedule = { ...prev };
       if (newSchedule[mechanicId]) {
@@ -157,61 +237,10 @@ export default function AdminAgendaMecanicos() {
       }
       return newSchedule;
     });
-    setHasChanges(true);
+    toast.success("Removido!");
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-
-      // Get all new slots
-      const newSlots: any[] = [];
-
-      Object.entries(schedule).forEach(([mechanicId, slots]) => {
-        Object.entries(slots).forEach(([hora, slot]) => {
-          if (slot.isNew) {
-            newSlots.push({
-              mechanic_id: mechanicId,
-              data: dateStr,
-              hora_inicio: hora.startsWith('E') ? '17:00' : hora,
-              vehicle_id: slot.vehicle_id,
-              tipo: slot.tipo,
-              status: slot.status,
-            });
-          }
-        });
-      });
-
-      if (newSlots.length > 0) {
-        const { error } = await supabase
-          .from('agenda_mecanicos')
-          .insert(newSlots);
-
-        if (error) throw error;
-      }
-
-      toast.success("Agenda salva com sucesso!");
-      setHasChanges(false);
-      fetchData();
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-      toast.error("Erro ao salvar agenda");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const getSlotStatusColor = (status: string, tipo: string) => {
-    if (tipo === 'encaixe') return 'bg-amber-500/80 hover:bg-amber-500';
-    switch (status) {
-      case 'agendado': return 'bg-primary/80 hover:bg-primary';
-      case 'em_andamento': return 'bg-violet-500/80 hover:bg-violet-500';
-      case 'concluido': return 'bg-emerald-500/80 hover:bg-emerald-500';
-      case 'cancelado': return 'bg-destructive/50';
-      default: return 'bg-primary/80';
-    }
-  };
+  const allHorarios = [...HORARIOS_PADRAO, ALMOCO, ...HORARIOS_TARDE, ...HORARIOS_EXTRA];
 
   if (loading) {
     return (
@@ -229,26 +258,13 @@ export default function AdminAgendaMecanicos() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
+            <CalendarIcon className="w-6 h-6 text-primary" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">Agenda dos Mecânicos</h1>
-              <p className="text-muted-foreground">
-                Gerencie os agendamentos diários
+              <p className="text-sm text-muted-foreground">
+                Passe o mouse nas células para ver detalhes
               </p>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => navigate("/admin/feedback-mecanicos")}
-                >
-                  <MessageSquare className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Feedback Diário</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -261,9 +277,9 @@ export default function AdminAgendaMecanicos() {
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2 min-w-[200px]">
+                <Button variant="outline" className="gap-2 min-w-[150px]">
                   <CalendarIcon className="w-4 h-4" />
-                  {format(selectedDate, "EEEE, dd/MM", { locale: ptBR })}
+                  {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="center">
@@ -284,45 +300,10 @@ export default function AdminAgendaMecanicos() {
               <ChevronRight className="w-4 h-4" />
             </Button>
 
-            <Button
-              variant="outline"
-              onClick={fetchData}
-            >
+            <Button variant="outline" onClick={fetchData} className="gap-2">
               <RefreshCw className="w-4 h-4" />
+              Atualizar
             </Button>
-
-            <Button
-              onClick={handleSave}
-              disabled={!hasChanges || saving}
-              className="gap-2"
-            >
-              <Save className="w-4 h-4" />
-              {saving ? 'Salvando...' : 'Salvar'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-primary" />
-            <span>Agendado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-violet-500" />
-            <span>Em Andamento</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-emerald-500" />
-            <span>Concluído</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-amber-500" />
-            <span>Encaixe</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-muted border border-dashed" />
-            <span>Almoço</span>
           </div>
         </div>
 
@@ -332,34 +313,24 @@ export default function AdminAgendaMecanicos() {
             {mechanics.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <p>Nenhum mecânico cadastrado.</p>
-                <p className="text-sm">Adicione mecânicos para gerenciar a agenda.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[800px]">
+              <table className="w-full min-w-[1200px] border-collapse">
                 <thead>
-                  <tr className="border-b">
-                    <th className="p-3 text-left font-medium text-muted-foreground w-32">
+                  <tr className="bg-primary text-primary-foreground">
+                    <th className="p-3 text-left font-medium border-r border-primary-foreground/20 w-28">
                       Mecânico
                     </th>
-                    {horarios.map(hora => (
+                    {allHorarios.map(hora => (
                       <th 
                         key={hora} 
                         className={cn(
-                          "p-3 text-center font-medium text-sm",
-                          hora === '12:00' ? 'bg-muted/50' : ''
+                          "p-2 text-center font-medium text-xs border-r border-primary-foreground/20",
+                          hora === ALMOCO && 'bg-sky-200 text-sky-800',
+                          hora.startsWith('EXTRA') && 'bg-amber-500 text-white'
                         )}
                       >
                         {hora}
-                      </th>
-                    ))}
-                    {!isSaturday && (
-                      <th className="p-3 text-center font-medium text-sm bg-muted/30">
-                        12:15
-                      </th>
-                    )}
-                    {HORARIOS_ENCAIXE.map(e => (
-                      <th key={e} className="p-3 text-center font-medium text-sm text-amber-500">
-                        {e}
                       </th>
                     ))}
                   </tr>
@@ -367,15 +338,25 @@ export default function AdminAgendaMecanicos() {
                 <tbody>
                   {mechanics.map((mechanic) => (
                     <tr key={mechanic.id} className="border-b hover:bg-muted/20">
-                      <td className="p-3 font-medium">
+                      <td className="p-3 font-medium border-r text-sm">
                         {mechanic.name.split(' ')[0]}
                       </td>
-                      {horarios.map(hora => {
+                      {allHorarios.map(hora => {
                         const slot = schedule[mechanic.id]?.[hora];
                         const isEditing = editingCell?.mechanicId === mechanic.id && editingCell?.hora === hora;
+                        const isLunch = hora === ALMOCO;
+                        const isExtra = hora.startsWith('EXTRA');
+
+                        if (isLunch) {
+                          return (
+                            <td key={hora} className="p-1 border-r">
+                              <div className="h-10 bg-sky-100 border border-sky-200" />
+                            </td>
+                          );
+                        }
 
                         return (
-                          <td key={hora} className="p-1">
+                          <td key={hora} className="p-1 border-r">
                             {isEditing ? (
                               <div className="flex items-center gap-1">
                                 <Input
@@ -394,79 +375,34 @@ export default function AdminAgendaMecanicos() {
                                 </Button>
                               </div>
                             ) : slot ? (
-                              <div 
-                                className={cn(
-                                  "relative group h-12 rounded flex items-center justify-center text-xs font-bold text-white cursor-pointer",
-                                  getSlotStatusColor(slot.status, slot.tipo)
-                                )}
-                                title={`${slot.vehicle_plate} - ${slot.vehicle_model}`}
-                              >
-                                {slot.vehicle_plate?.slice(-4) || '???'}
-                                <button
-                                  onClick={() => handleRemoveSlot(mechanic.id, hora)}
-                                  className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <X className="w-2 h-2" />
-                                </button>
-                              </div>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div 
+                                    className={cn(
+                                      "relative group h-10 rounded flex items-center justify-center text-xs font-bold text-white cursor-pointer",
+                                      isExtra ? 'bg-amber-500' : 'bg-primary'
+                                    )}
+                                  >
+                                    <Car className="w-3 h-3 mr-1" />
+                                    {slot.vehicle_plate?.slice(-4) || '???'}
+                                    <button
+                                      onClick={() => handleRemoveSlot(mechanic.id, hora)}
+                                      className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <X className="w-2 h-2" />
+                                    </button>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{slot.vehicle_plate}</p>
+                                </TooltipContent>
+                              </Tooltip>
                             ) : (
                               <div 
-                                className="h-12 rounded bg-muted/30 hover:bg-muted/50 flex items-center justify-center cursor-pointer transition-colors"
+                                className="h-10 rounded bg-muted/30 hover:bg-muted/50 flex items-center justify-center cursor-pointer transition-colors border border-dashed border-muted-foreground/20"
                                 onClick={() => handleCellClick(mechanic.id, hora)}
                               >
-                                <Plus className="w-4 h-4 text-muted-foreground/50" />
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                      {/* Lunch column */}
-                      {!isSaturday && (
-                        <td className="p-1">
-                          <div className="h-12 rounded bg-muted/50 border border-dashed border-muted-foreground/30" />
-                        </td>
-                      )}
-                      {/* Encaixe columns */}
-                      {HORARIOS_ENCAIXE.map(e => {
-                        const slot = schedule[mechanic.id]?.[e];
-                        const isEditing = editingCell?.mechanicId === mechanic.id && editingCell?.hora === e;
-
-                        return (
-                          <td key={e} className="p-1">
-                            {isEditing ? (
-                              <div className="flex items-center gap-1">
-                                <Input
-                                  value={inputValue}
-                                  onChange={(e) => setInputValue(e.target.value)}
-                                  onKeyDown={(ev) => {
-                                    if (ev.key === 'Enter') handleInputSubmit();
-                                    if (ev.key === 'Escape') setEditingCell(null);
-                                  }}
-                                  placeholder="Placa"
-                                  className="h-8 text-xs w-20"
-                                  autoFocus
-                                />
-                              </div>
-                            ) : slot ? (
-                              <div 
-                                className={cn(
-                                  "relative group h-12 rounded flex items-center justify-center text-xs font-bold text-white cursor-pointer bg-amber-500/80 hover:bg-amber-500"
-                                )}
-                              >
-                                {slot.vehicle_plate?.slice(-4) || '???'}
-                                <button
-                                  onClick={() => handleRemoveSlot(mechanic.id, e)}
-                                  className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <X className="w-2 h-2" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div 
-                                className="h-12 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-dashed border-amber-500/30 flex items-center justify-center cursor-pointer transition-colors"
-                                onClick={() => handleCellClick(mechanic.id, e)}
-                              >
-                                <Plus className="w-4 h-4 text-amber-500/50" />
+                                <Plus className="w-4 h-4 text-muted-foreground/30" />
                               </div>
                             )}
                           </td>
@@ -480,15 +416,85 @@ export default function AdminAgendaMecanicos() {
           </CardContent>
         </Card>
 
-        {hasChanges && (
-          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg flex items-center gap-3">
-            <span>Você tem alterações não salvas</span>
-            <Button size="sm" variant="secondary" onClick={handleSave} disabled={saving}>
-              <Save className="w-4 h-4 mr-2" />
-              Salvar
-            </Button>
+        {/* Legend */}
+        <div className="flex flex-wrap gap-6 text-sm px-2">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-primary flex items-center justify-center">
+              <Car className="w-3 h-3 text-white" />
+            </div>
+            <span>Agendado</span>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-amber-500 flex items-center justify-center">
+              <Car className="w-3 h-3 text-white" />
+            </div>
+            <span>Encaixe</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-sky-100 border border-sky-200" />
+            <span>Almoço</span>
+          </div>
+          <span className="text-muted-foreground italic">⚠️ Passe o mouse sobre os ícones para ver detalhes e ações</span>
+        </div>
+
+        {/* Info */}
+        <p className="text-center text-xs text-muted-foreground">
+          Horários: 8h-16h30 • Almoço: 12h15-13h30 • 3 slots extras para encaixes
+        </p>
+        <p className="text-center text-xs text-destructive">
+          ⚡ Produtividade monitorada - Registros de tempo salvos automaticamente
+        </p>
+
+        {/* Próximos Serviços */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Car className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold">Próximos Serviços</h2>
+              <span className="text-sm text-muted-foreground">Próximos 3 serviços de cada mecânico</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="bg-primary text-primary-foreground">
+                    {mechanics.map(m => (
+                      <th key={m.id} className="p-2 text-center text-sm font-medium">
+                        {m.name.split(' ')[0]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[0, 1, 2].map(index => (
+                    <tr key={index} className="border-b">
+                      {mechanics.map(m => {
+                        const service = nextServices.find(
+                          (s, i) => s.mechanic_id === m.id && 
+                          nextServices.filter((ss, ii) => ss.mechanic_id === m.id && ii < i).length === index
+                        );
+                        return (
+                          <td key={m.id} className="p-2 text-center text-xs">
+                            {service?.order_number ? (
+                              <div>
+                                <p className="font-medium">{service.vehicle_plate}</p>
+                                <p className="text-muted-foreground truncate max-w-[150px]">
+                                  {service.problem || service.vehicle_model}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">FALAR COM CONSULTOR</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
