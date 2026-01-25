@@ -26,77 +26,52 @@ import {
 import { LayoutPatio, type Area as LayoutArea } from "@/components/patio/LayoutPatio";
 import { usePatioKanban, type VeiculoKanban } from "@/hooks/usePatioKanban";
 
-interface VeiculoNaoAlocado {
-  id: string;
-  placa: string;
-  modelo: string;
-  cliente: string;
-  servico: string;
-  entrada: string;
-  previsaoSaida: string;
-}
 
-// Mock veículos não alocados
-const mockVeiculosNaoAlocados: VeiculoNaoAlocado[] = [
-  { id: 'v1', placa: 'MNO-7890', modelo: 'Fiat Argo 2023', cliente: 'Roberto Lima', servico: 'Troca de pastilhas', entrada: '11:30', previsaoSaida: '14:00' },
-  { id: 'v2', placa: 'PQR-1234', modelo: 'VW Polo 2022', cliente: 'Fernanda Costa', servico: 'Revisão 20.000km', entrada: '12:00', previsaoSaida: '17:00' },
-  { id: 'v3', placa: 'STU-5678', modelo: 'Hyundai Creta 2024', cliente: 'Lucas Mendes', servico: 'Diagnóstico', entrada: '13:00', previsaoSaida: '15:00' },
+// Layout da oficina - estrutura fixa (sem veículos mockados)
+const layoutAreas: LayoutArea[] = [
+  // Elevadores (coluna esquerda)
+  { id: "elev-7", nome: "Elevador 7", tipo: "elevador", status: "livre", x: 0, y: 33, width: 3, height: 2 },
+  { id: "elev-6", nome: "Elevador 6", tipo: "elevador", status: "livre", x: 0, y: 30, width: 3, height: 2 },
+  { id: "elev-5", nome: "Elevador 5", tipo: "elevador", status: "livre", x: 0, y: 27, width: 3, height: 2 },
+  { id: "elev-4", nome: "Elevador 4", tipo: "elevador", status: "livre", x: 0, y: 24, width: 3, height: 2 },
+  { id: "elev-3", nome: "Elevador 3", tipo: "elevador", status: "manutencao", x: 0, y: 21, width: 3, height: 2 },
+  { id: "elev-2", nome: "Elevador 2", tipo: "elevador", status: "livre", x: 0, y: 18, width: 3, height: 2 },
+  { id: "elev-1", nome: "Elevador 1", tipo: "elevador", status: "livre", x: 0, y: 15, width: 3, height: 2 },
+  { id: "box-ar", nome: "Box Ar-cond.", tipo: "box", status: "livre", x: 0, y: 10, width: 3, height: 4 },
+  
+  // Boxes (centro superior)
+  { id: "box-d", nome: "Box D", tipo: "box", status: "livre", x: 5, y: 33, width: 4, height: 3 },
+  { id: "box-e", nome: "Box E", tipo: "box", status: "livre", x: 10, y: 33, width: 4, height: 3 },
+  
+  // Boxes A, B, C (direita - mesmo tamanho de D e E)
+  { id: "box-a", nome: "Box A", tipo: "box", status: "livre", x: 15, y: 29, width: 4, height: 3 },
+  { id: "box-b", nome: "Box B", tipo: "box", status: "livre", x: 15, y: 22, width: 4, height: 3 },
+  { id: "box-c", nome: "Box C", tipo: "box", status: "livre", x: 15, y: 19, width: 4, height: 3 },
+  
+  // Elevadores (direita superior)
+  { id: "elev-8", nome: "Elevador 8", tipo: "elevador", status: "livre", x: 15, y: 33, width: 5, height: 3 },
+  
+  // Elevador Diagnóstico
+  { id: "elev-diag", nome: "Elevador Diagnóstico", tipo: "elevador", status: "livre", x: 15, y: 25, width: 5, height: 3 },
+  
+  // REMAP e VCDS
+  { id: "remap", nome: "REMAP/VCDS", tipo: "area", status: "livre", x: 8, y: 10, width: 4, height: 7 },
+  
+  // Dinamômetro
+  { id: "dinamometro", nome: "Dinamômetro", tipo: "area", status: "livre", x: 13, y: 10, width: 5, height: 7 },
+  
+  // Rampa de Alinhamento
+  { id: "rampa", nome: "Rampa Alinhamento", tipo: "area", status: "livre", x: 13, y: 0, width: 5, height: 9 },
+  
+  // Recepção (menor)
+  { id: "loja", nome: "Recepção", tipo: "area", status: "livre", x: 0, y: 0, width: 7, height: 7 }
 ];
 
 export default function MonitoramentoPatio() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'kanban' | 'mapa'>('kanban');
-  const [veiculosNaoAlocados, setVeiculosNaoAlocados] = useState<VeiculoNaoAlocado[]>(mockVeiculosNaoAlocados);
-  const [draggedVeiculo, setDraggedVeiculo] = useState<VeiculoNaoAlocado | null>(null);
   const [showGrid, setShowGrid] = useState(true);
-  
-  // Estado das áreas (layout original da oficina)
-  const [areas, setAreas] = useState<LayoutArea[]>([
-    // Elevadores (coluna esquerda)
-    { id: "elev-7", nome: "Elevador 7", tipo: "elevador", status: "livre", x: 0, y: 33, width: 3, height: 2 },
-    { id: "elev-6", nome: "Elevador 6", tipo: "elevador", status: "ocupado", x: 0, y: 30, width: 3, height: 2,
-      veiculo: { placa: "ABC-1234", modelo: "Gol 2020", cliente: "João Silva", servico: "Troca de óleo", entrada: "08:30", previsaoSaida: "10:00" }
-    },
-    { id: "elev-5", nome: "Elevador 5", tipo: "elevador", status: "ocupado", x: 0, y: 27, width: 3, height: 2,
-      veiculo: { placa: "XYZ-5678", modelo: "Civic 2019", cliente: "Maria Santos", servico: "Revisão completa", entrada: "09:15", previsaoSaida: "16:00" }
-    },
-    { id: "elev-4", nome: "Elevador 4", tipo: "elevador", status: "livre", x: 0, y: 24, width: 3, height: 2 },
-    { id: "elev-3", nome: "Elevador 3", tipo: "elevador", status: "manutencao", x: 0, y: 21, width: 3, height: 2 },
-    { id: "elev-2", nome: "Elevador 2", tipo: "elevador", status: "livre", x: 0, y: 18, width: 3, height: 2 },
-    { id: "elev-1", nome: "Elevador 1", tipo: "elevador", status: "livre", x: 0, y: 15, width: 3, height: 2 },
-    { id: "box-ar", nome: "Box Ar-cond.", tipo: "box", status: "livre", x: 0, y: 10, width: 3, height: 4 },
-    
-    // Boxes (centro superior)
-    { id: "box-d", nome: "Box D", tipo: "box", status: "livre", x: 5, y: 33, width: 4, height: 3 },
-    { id: "box-e", nome: "Box E", tipo: "box", status: "reservado", x: 10, y: 33, width: 4, height: 3 },
-    
-    // Boxes A, B, C (direita - mesmo tamanho de D e E)
-    { id: "box-a", nome: "Box A", tipo: "box", status: "livre", x: 15, y: 29, width: 4, height: 3 },
-    { id: "box-b", nome: "Box B", tipo: "box", status: "livre", x: 15, y: 22, width: 4, height: 3 },
-    { id: "box-c", nome: "Box C", tipo: "box", status: "livre", x: 15, y: 19, width: 4, height: 3 },
-    
-    // Elevadores (direita superior)
-    { id: "elev-8", nome: "Elevador 8", tipo: "elevador", status: "ocupado", x: 15, y: 33, width: 5, height: 3,
-      veiculo: { placa: "DEF-9012", modelo: "Corolla 2021", cliente: "Pedro Costa", servico: "Alinhamento", entrada: "10:00", previsaoSaida: "11:30" }
-    },
-    
-    // Elevador Diagnóstico
-    { id: "elev-diag", nome: "Elevador Diagnóstico", tipo: "elevador", status: "livre", x: 15, y: 25, width: 5, height: 3 },
-    
-    // REMAP e VCDS
-    { id: "remap", nome: "REMAP/VCDS", tipo: "area", status: "reservado", x: 8, y: 10, width: 4, height: 7 },
-    
-    // Dinamômetro
-    { id: "dinamometro", nome: "Dinamômetro", tipo: "area", status: "livre", x: 13, y: 10, width: 5, height: 7 },
-    
-    // Rampa de Alinhamento
-    { id: "rampa", nome: "Rampa Alinhamento", tipo: "area", status: "ocupado", x: 13, y: 0, width: 5, height: 9,
-      veiculo: { placa: "GHI-3456", modelo: "HB20 2022", cliente: "Ana Lima", servico: "Alinhamento 3D", entrada: "07:00", previsaoSaida: "08:00" }
-    },
-    
-    // Recepção (menor)
-    { id: "loja", nome: "Recepção", tipo: "area", status: "livre", x: 0, y: 0, width: 7, height: 7 }
-  ]);
+  const [areas] = useState<LayoutArea[]>(layoutAreas);
   
   const [autoRefresh, setAutoRefresh] = useState(true);
   const { etapas: etapasWorkflow, loading, totalEntreguesMes, moverVeiculo, refetch } = usePatioKanban();
@@ -239,6 +214,11 @@ export default function MonitoramentoPatio() {
     );
   };
 
+  // Veículos não alocados no mapa = veículos que não estão em "entregue" (ainda no pátio)
+  const veiculosNaoAlocados = etapasWorkflow
+    .filter(e => e.id !== 'entregue')
+    .flatMap(e => e.veiculos);
+
   // Componente Mapa com lista lateral
   const MapaView = () => (
     <div className="flex gap-4 flex-col lg:flex-row">
@@ -251,13 +231,13 @@ export default function MonitoramentoPatio() {
         />
       </div>
       
-      {/* Lista de veículos não alocados */}
+      {/* Lista de veículos no pátio */}
       <div className="w-full lg:w-72">
         <Card className="h-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Car className="w-4 h-4" />
-              Aguardando Alocação ({veiculosNaoAlocados.length})
+              Veículos no Pátio ({veiculosNaoAlocados.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -265,31 +245,23 @@ export default function MonitoramentoPatio() {
               <div className="space-y-2 pr-2">
                 {veiculosNaoAlocados.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    Todos os veículos alocados
+                    Nenhum veículo no pátio
                   </p>
                 ) : (
                   veiculosNaoAlocados.map((veiculo) => (
                     <div
                       key={veiculo.id}
-                      draggable
-                      onDragStart={() => setDraggedVeiculo(veiculo)}
-                      onDragEnd={() => setDraggedVeiculo(null)}
-                      className="p-3 rounded-lg border bg-card cursor-grab active:cursor-grabbing hover:border-primary hover:shadow-md transition-all"
+                      className="p-3 rounded-lg border bg-card hover:border-primary hover:shadow-md transition-all"
                     >
                       <div className="flex items-start gap-2">
-                        <GripVertical className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <Car className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="font-mono font-bold text-sm">{veiculo.placa}</p>
                           <p className="text-xs text-muted-foreground truncate">{veiculo.modelo}</p>
                           <p className="text-xs text-muted-foreground truncate">{veiculo.cliente}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-[10px]">
-                              {veiculo.entrada}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground truncate">
-                              {veiculo.servico}
-                            </span>
-                          </div>
+                          <Badge variant="outline" className="text-[10px] mt-1">
+                            {veiculo.servico}
+                          </Badge>
                         </div>
                       </div>
                     </div>
