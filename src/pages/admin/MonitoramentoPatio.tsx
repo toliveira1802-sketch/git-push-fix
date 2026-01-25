@@ -68,27 +68,32 @@ export default function MonitoramentoPatio() {
     { id: "box-d", nome: "Box D", tipo: "box", status: "livre", x: 5, y: 33, width: 4, height: 3 },
     { id: "box-e", nome: "Box E", tipo: "box", status: "reservado", x: 10, y: 33, width: 4, height: 3 },
     
+    // Boxes A, B, C (direita - mesmo tamanho de D e E)
+    { id: "box-a", nome: "Box A", tipo: "box", status: "livre", x: 15, y: 29, width: 4, height: 3 },
+    { id: "box-b", nome: "Box B", tipo: "box", status: "livre", x: 15, y: 22, width: 4, height: 3 },
+    { id: "box-c", nome: "Box C", tipo: "box", status: "livre", x: 15, y: 19, width: 4, height: 3 },
+    
     // Elevadores (direita superior)
     { id: "elev-8", nome: "Elevador 8", tipo: "elevador", status: "ocupado", x: 15, y: 33, width: 5, height: 3,
       veiculo: { placa: "DEF-9012", modelo: "Corolla 2021", cliente: "Pedro Costa", servico: "Alinhamento", entrada: "10:00", previsaoSaida: "11:30" }
     },
     
     // Elevador Diagnóstico
-    { id: "elev-diag", nome: "Elevador Diagnóstico", tipo: "elevador", status: "livre", x: 15, y: 24, width: 5, height: 4 },
+    { id: "elev-diag", nome: "Elevador Diagnóstico", tipo: "elevador", status: "livre", x: 15, y: 25, width: 5, height: 3 },
     
     // REMAP e VCDS
-    { id: "remap", nome: "REMAP/VCDS", tipo: "area", status: "reservado", x: 11, y: 10, width: 4, height: 7 },
+    { id: "remap", nome: "REMAP/VCDS", tipo: "area", status: "reservado", x: 8, y: 10, width: 4, height: 7 },
     
     // Dinamômetro
-    { id: "dinamometro", nome: "Dinamômetro", tipo: "area", status: "livre", x: 15, y: 10, width: 5, height: 7 },
+    { id: "dinamometro", nome: "Dinamômetro", tipo: "area", status: "livre", x: 13, y: 10, width: 5, height: 7 },
     
     // Rampa de Alinhamento
-    { id: "rampa", nome: "Rampa Alinhamento", tipo: "area", status: "ocupado", x: 15, y: 0, width: 5, height: 9,
+    { id: "rampa", nome: "Rampa Alinhamento", tipo: "area", status: "ocupado", x: 13, y: 0, width: 5, height: 9,
       veiculo: { placa: "GHI-3456", modelo: "HB20 2022", cliente: "Ana Lima", servico: "Alinhamento 3D", entrada: "07:00", previsaoSaida: "08:00" }
     },
     
-    // Loja/Sala
-    { id: "loja", nome: "Recepção", tipo: "area", status: "livre", x: 0, y: 0, width: 10, height: 9 }
+    // Recepção (menor)
+    { id: "loja", nome: "Recepção", tipo: "area", status: "livre", x: 0, y: 0, width: 7, height: 7 }
   ]);
   
   const [autoRefresh, setAutoRefresh] = useState(true);
