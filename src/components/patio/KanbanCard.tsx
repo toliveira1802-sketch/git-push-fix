@@ -7,7 +7,8 @@ import {
   Calendar,
   Clock,
   DollarSign,
-  Tag
+  Tag,
+  ExternalLink
 } from "lucide-react";
 import { type VeiculoKanban } from "@/hooks/usePatioKanban";
 import { cn } from "@/lib/utils";
@@ -41,10 +42,20 @@ export function KanbanCard({ veiculo, isDragging, onDragStart, onDragEnd }: Kanb
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        "p-3 rounded-lg border bg-card hover:shadow-md transition-all cursor-grab active:cursor-grabbing",
-        isDragging && "opacity-50 scale-95"
+        "p-3 rounded-lg border bg-card hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative",
+        isDragging && "opacity-50 scale-95",
+        veiculo.emTerceiros && "border-amber-500/50 bg-amber-500/5"
       )}
     >
+      {/* Indicador Em Terceiros */}
+      {veiculo.emTerceiros && (
+        <div className="absolute -top-2 -right-2 z-10">
+          <Badge className="bg-amber-500 text-white text-[9px] gap-1 px-1.5 py-0.5 shadow-md">
+            <ExternalLink className="w-2.5 h-2.5" />
+            Em Terceiros
+          </Badge>
+        </div>
+      )}
       {/* Header: Placa + OS */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
