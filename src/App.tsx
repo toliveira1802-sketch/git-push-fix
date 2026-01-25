@@ -31,6 +31,12 @@ import AdminIAs from "./pages/admin/AdminIAs";
 import NovaPromocao from "./pages/admin/NovaPromocao";
 import Pendencias from "./pages/admin/Pendencias";
 import MonitoramentoPatio from "./pages/admin/MonitoramentoPatio";
+import AdminOperacional from "./pages/admin/AdminOperacional";
+import AdminAgendaMecanicos from "./pages/admin/AdminAgendaMecanicos";
+import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
+import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
+import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
+import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 
 // Gestão pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -77,6 +83,12 @@ const App = () => (
             <Route path="/admin/ias" element={<AdminIAs />} />
             <Route path="/admin/nova-promocao" element={<NovaPromocao />} />
             <Route path="/admin/patio" element={<MonitoramentoPatio />} />
+            <Route path="/admin/operacional" element={<AdminOperacional />} />
+            <Route path="/admin/agenda-mecanicos" element={<AdminAgendaMecanicos />} />
+            <Route path="/admin/feedback-mecanicos" element={<AdminMechanicFeedback />} />
+            <Route path="/admin/analytics-mecanicos" element={<AdminMechanicAnalytics />} />
+            <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
+            <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
             
             {/* Gestão Routes */}
             <Route path="/gestao" element={<GestaoDashboards />} />
