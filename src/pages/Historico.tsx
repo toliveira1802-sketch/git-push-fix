@@ -1,58 +1,14 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Wrench, CheckCircle2, XCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, Wrench, CheckCircle2, XCircle, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
-
-interface ServiceItem {
-  id: string;
-  date: string;
-  vehicleModel: string;
-  plate: string;
-  services: string[];
-  total: number;
-  status: "completed" | "cancelled";
-  cashback: number;
-}
-
-// Mock data
-const mockHistory: ServiceItem[] = [
-  {
-    id: "1",
-    date: "2024-01-15",
-    vehicleModel: "Honda Civic",
-    plate: "ABC-1234",
-    services: ["Troca de Óleo", "Filtro de Ar", "Filtro de Cabine"],
-    total: 450,
-    status: "completed",
-    cashback: 67.5,
-  },
-  {
-    id: "2",
-    date: "2024-01-02",
-    vehicleModel: "Toyota Corolla",
-    plate: "XYZ-5678",
-    services: ["Revisão de Freios"],
-    total: 280,
-    status: "completed",
-    cashback: 42,
-  },
-  {
-    id: "3",
-    date: "2023-12-20",
-    vehicleModel: "Honda Civic",
-    plate: "ABC-1234",
-    services: ["Alinhamento e Balanceamento"],
-    total: 120,
-    status: "cancelled",
-    cashback: 0,
-  },
-];
+import { useClientData } from "@/hooks/useClientData";
 
 export default function Historico() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [history] = useState<ServiceItem[]>(mockHistory);
+  const { serviceHistory, loading } = useClientData();
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -63,28 +19,53 @@ export default function Historico() {
     });
   };
 
-  const completedServices = history.filter(s => s.status === "completed");
-  const totalCashback = completedServices.reduce((acc, item) => acc + item.cashback, 0);
+  const getStatusConfig = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (['fechada', 'concluida', 'entregue'].includes(statusLower)) {
+      return { label: 'Concluído', variant: 'default' as const, icon: CheckCircle2, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-100' };
+    }
+    if (['cancelada'].includes(statusLower)) {
+      return { label: 'Cancelado', variant: 'destructive' as const, icon: XCircle, iconColor: 'text-destructive', bgColor: 'bg-destructive/10' };
+    }
+    return { label: 'Em andamento', variant: 'secondary' as const, icon: Clock, iconColor: 'text-amber-600', bgColor: 'bg-amber-100' };
+  };
+
+  // Calculate total spent (only completed orders)
+  const completedOrders = serviceHistory.filter(s => 
+    ['fechada', 'concluida', 'entregue'].includes(s.order_status.toLowerCase())
+  );
+  const totalSpent = completedOrders.reduce((acc, item) => acc + (item.total || 0), 0);
+  const estimatedCashback = totalSpent * 0.15;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center pb-24">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 pt-12 pb-8">
-        <h1 className="text-2xl font-bold text-white">Histórico</h1>
-        <p className="text-white/80 mt-1">Seus serviços realizados</p>
+      <div className="bg-gradient-to-r from-primary to-primary/80 p-6 pt-12 pb-8">
+        <h1 className="text-2xl font-bold text-primary-foreground">Histórico</h1>
+        <p className="text-primary-foreground/80 mt-1">Seus serviços realizados</p>
         
         {/* Cashback Card */}
         <div className="mt-6 bg-white/10 backdrop-blur-sm rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/70 text-sm">Seu cashback disponível</p>
-              <p className="text-white text-2xl font-bold">R$ {totalCashback.toFixed(2).replace('.', ',')}</p>
+              <p className="text-primary-foreground/70 text-sm">Seu cashback estimado</p>
+              <p className="text-primary-foreground text-2xl font-bold">
+                R$ {estimatedCashback.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
             </div>
             <div className="text-right">
-              <Badge className="bg-white/20 text-white border-0">
+              <Badge className="bg-white/20 text-primary-foreground border-0">
                 15% de volta
               </Badge>
-              <p className="text-white/70 text-xs mt-1">para usar em serviços</p>
+              <p className="text-primary-foreground/70 text-xs mt-1">para usar em serviços</p>
             </div>
           </div>
         </div>
@@ -95,81 +76,135 @@ export default function Historico() {
         <Card className="shadow-lg border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-red-500" />
-              Serviços Realizados
+              <Wrench className="h-5 w-5 text-primary" />
+              Serviços ({serviceHistory.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {history.map((item) => (
-              <Collapsible
-                key={item.id}
-                open={expandedId === item.id}
-                onOpenChange={(open) => setExpandedId(open ? item.id : null)}
-              >
-                <CollapsibleTrigger asChild>
-                  <div
-                    className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-colors ${
-                      item.status === "completed" 
-                        ? "bg-muted/50 hover:bg-muted" 
-                        : "bg-destructive/5 hover:bg-destructive/10"
-                    }`}
-                  >
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      item.status === "completed" ? "bg-green-100" : "bg-red-100"
-                    }`}>
-                      {item.status === "completed" ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold">{item.vehicleModel}</p>
-                        <Badge variant={item.status === "completed" ? "default" : "destructive"}>
-                          {item.status === "completed" ? "Concluído" : "Cancelado"}
-                        </Badge>
+            {serviceHistory.map((item) => {
+              const statusConfig = getStatusConfig(item.order_status);
+              const StatusIcon = statusConfig.icon;
+              
+              return (
+                <Collapsible
+                  key={item.service_order_id}
+                  open={expandedId === item.service_order_id}
+                  onOpenChange={(open) => setExpandedId(open ? item.service_order_id : null)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <div
+                      className="flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-colors bg-muted/50 hover:bg-muted"
+                    >
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${statusConfig.bgColor}`}>
+                        <StatusIcon className={`h-5 w-5 ${statusConfig.iconColor}`} />
                       </div>
-                      <p className="text-sm text-muted-foreground">{item.plate}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{formatDate(item.date)}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-semibold">{item.vehicle_brand} {item.vehicle_model}</p>
+                          <Badge variant={statusConfig.variant}>
+                            {statusConfig.label}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground font-mono">{item.vehicle_plate}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-muted-foreground">{formatDate(item.order_date)}</p>
+                          <Badge variant="outline" className="text-[10px]">{item.order_number}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-primary">
+                          R$ {(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                        {expandedId === item.service_order_id ? (
+                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-red-500">R$ {item.total}</p>
-                      {expandedId === item.id ? (
-                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <div className="ml-13 pl-4 border-l-2 border-muted mt-2 mb-2 space-y-3">
+                      {/* Problem description */}
+                      {item.problem_description && (
+                        <div>
+                          <p className="text-sm font-medium">Problema relatado:</p>
+                          <p className="text-sm text-muted-foreground">{item.problem_description}</p>
+                        </div>
+                      )}
+                      
+                      {/* Diagnosis */}
+                      {item.diagnosis && (
+                        <div>
+                          <p className="text-sm font-medium">Diagnóstico:</p>
+                          <p className="text-sm text-muted-foreground">{item.diagnosis}</p>
+                        </div>
+                      )}
+                      
+                      {/* Service items */}
+                      {item.items && item.items.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium">Itens do serviço:</p>
+                          <ul className="text-sm text-muted-foreground space-y-1 mt-1">
+                            {item.items.map((serviceItem, idx) => (
+                              <li key={serviceItem.id || idx} className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                  <span className="truncate">{serviceItem.description}</span>
+                                  {serviceItem.status === 'aprovado' && (
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                  )}
+                                  {serviceItem.status === 'recusado' && (
+                                    <XCircle className="h-3 w-3 text-destructive" />
+                                  )}
+                                </div>
+                                <span className="text-xs font-medium shrink-0">
+                                  R$ {(serviceItem.total_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* Payment info */}
+                      {item.payment_status && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground">Pagamento:</span>
+                          <Badge variant="outline" className="text-xs">
+                            {item.payment_status === 'pago' ? 'Pago' : 'Pendente'}
+                          </Badge>
+                          {item.payment_method && (
+                            <span className="text-muted-foreground">({item.payment_method})</span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Totals breakdown */}
+                      {(item.total_parts || item.total_labor) && (
+                        <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-muted">
+                          {item.total_parts && (
+                            <div>
+                              <span className="text-muted-foreground">Peças: </span>
+                              <span className="font-medium">R$ {item.total_parts.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          )}
+                          {item.total_labor && (
+                            <div>
+                              <span className="text-muted-foreground">Mão de obra: </span>
+                              <span className="font-medium">R$ {item.total_labor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <div className="ml-13 pl-4 border-l-2 border-muted mt-2 mb-2 space-y-2">
-                    {item.services.length > 0 && (
-                      <>
-                        <p className="text-sm font-medium">Serviços:</p>
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          {item.services.map((service, idx) => (
-                            <li key={idx} className="flex items-center gap-2">
-                              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                              {service}
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                    {item.status === "completed" && item.cashback > 0 && (
-                      <p className="text-sm text-green-600 font-medium">
-                        +R$ {item.cashback.toFixed(2).replace('.', ',')} de cashback
-                      </p>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
 
-            {history.length === 0 && (
+            {serviceHistory.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Wrench className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p>Nenhum serviço realizado ainda</p>
