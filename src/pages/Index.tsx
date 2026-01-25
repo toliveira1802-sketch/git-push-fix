@@ -157,23 +157,40 @@ const Index = () => {
         </Card>
 
         {/* Lembretes e Avisos */}
-        <Card
-          className="bg-[#111] border-gray-800 p-4 mb-4 cursor-pointer hover:bg-[#151515] transition-colors"
-          onClick={() => navigate("/avisos")}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-yellow-600/20 rounded-full flex items-center justify-center">
-                <Bell className="w-6 h-6 text-yellow-500" />
+        {(() => {
+          // Mock: verificar se há avisos ou agendamentos pendentes
+          const temAvisos = true; // mock: tem aviso
+          const temAgendamento = true; // mock: tem agendamento
+          const destino = temAvisos ? "/avisos" : temAgendamento ? "/agenda" : "/avisos";
+          const descricao = temAvisos 
+            ? "1 aviso novo" 
+            : temAgendamento 
+              ? "1 agendamento pendente" 
+              : "Nenhum pendente";
+          
+          return (
+            <Card
+              className="bg-[#111] border-gray-800 p-4 mb-4 cursor-pointer hover:bg-[#151515] transition-colors"
+              onClick={() => navigate(destino)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-yellow-600/20 rounded-full flex items-center justify-center relative">
+                    <Bell className="w-6 h-6 text-yellow-500" />
+                    {(temAvisos || temAgendamento) && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Lembretes e Avisos</h3>
+                    <p className="text-sm text-gray-400">{descricao}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">Lembretes e Avisos</h3>
-                <p className="text-sm text-gray-400">Nenhum pendente</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </div>
-        </Card>
+            </Card>
+          );
+        })()}
 
         {/* Promoções */}
         <Card
