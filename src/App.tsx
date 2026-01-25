@@ -31,6 +31,15 @@ import AdminIAs from "./pages/admin/AdminIAs";
 import NovaPromocao from "./pages/admin/NovaPromocao";
 import Pendencias from "./pages/admin/Pendencias";
 
+// Gestão pages
+import GestaoDashboards from "./pages/gestao/GestaoDashboards";
+import GestaoRH from "./pages/gestao/GestaoRH";
+import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
+import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
+import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
+import GestaoComercial from "./pages/gestao/GestaoComercial";
+import GestaoMelhorias from "./pages/gestao/GestaoMelhorias";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -66,6 +75,15 @@ const App = () => (
             <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
             <Route path="/admin/ias" element={<AdminIAs />} />
             <Route path="/admin/nova-promocao" element={<NovaPromocao />} />
+            
+            {/* Gestão Routes */}
+            <Route path="/gestao" element={<GestaoDashboards />} />
+            <Route path="/gestao/rh" element={<GestaoRH />} />
+            <Route path="/gestao/operacoes" element={<GestaoOperacoes />} />
+            <Route path="/gestao/financeiro" element={<GestaoFinanceiro />} />
+            <Route path="/gestao/tecnologia" element={<GestaoTecnologia />} />
+            <Route path="/gestao/comercial" element={<GestaoComercial />} />
+            <Route path="/gestao/melhorias" element={<GestaoMelhorias />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
