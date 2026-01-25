@@ -54,6 +54,16 @@ interface HistoricoEvento {
   descricao: string;
 }
 
+interface OrcamentoVersao {
+  id: string;
+  versao: number;
+  data_criacao: string;
+  itens: OrdemServicoItem[];
+  total: number;
+  status: 'rascunho' | 'enviado' | 'aprovado' | 'recusado';
+  observacoes?: string;
+}
+
 const prioridadeConfig: Record<string, { label: string; borderColor: string; bgColor: string }> = {
   verde: { label: "Tranquilo", borderColor: "border-emerald-500", bgColor: "bg-emerald-500/5" },
   amarelo: { label: "Médio", borderColor: "border-amber-500", bgColor: "bg-amber-500/5" },
@@ -159,7 +169,33 @@ const mockItens: OrdemServicoItem[] = [
 const mockHistorico: HistoricoEvento[] = [
   { id: 'h1', data: '2024-01-20T10:00:00Z', tipo: 'criacao', descricao: 'OS criada' },
   { id: 'h2', data: '2024-01-20T11:30:00Z', tipo: 'diagnostico', descricao: 'Diagnóstico realizado' },
-  { id: 'h3', data: '2024-01-20T14:00:00Z', tipo: 'orcamento', descricao: 'Orçamento enviado ao cliente' },
+  { id: 'h3', data: '2024-01-20T14:00:00Z', tipo: 'orcamento', descricao: 'Orçamento V1 enviado ao cliente' },
+  { id: 'h4', data: '2024-01-21T09:00:00Z', tipo: 'orcamento', descricao: 'Orçamento V2 criado com novos itens' },
+];
+
+// Mock versões do orçamento
+const mockVersoes: OrcamentoVersao[] = [
+  {
+    id: 'v1',
+    versao: 1,
+    data_criacao: '2024-01-20T14:00:00Z',
+    itens: [
+      { id: 'v1-item-1', descricao: 'Pastilhas de freio dianteiras', tipo: 'peca', quantidade: 1, valor_unitario: 320, valor_total: 320, status: 'recusado', prioridade: 'vermelho', motivo_recusa: 'Preço alto' },
+      { id: 'v1-item-2', descricao: 'Mão de obra - Troca de freios', tipo: 'mao_de_obra', quantidade: 1, valor_unitario: 180, valor_total: 180, status: 'aprovado', prioridade: 'amarelo' },
+    ],
+    total: 500,
+    status: 'recusado',
+    observacoes: 'Cliente achou o valor das pastilhas alto'
+  },
+  {
+    id: 'v2',
+    versao: 2,
+    data_criacao: '2024-01-21T09:00:00Z',
+    itens: mockItens,
+    total: mockItens.reduce((acc, item) => acc + item.valor_total, 0),
+    status: 'enviado',
+    observacoes: 'Versão com desconto nas pastilhas'
+  },
 ];
 
 const checklistItems = [
@@ -180,12 +216,19 @@ export default function AdminOSDetalhes() {
   const navigate = useNavigate();
 
   const [os, setOS] = useState<OrdemServico>(mockOS);
-  const [itens, setItens] = useState<OrdemServicoItem[]>(mockItens);
-  const [historico] = useState<HistoricoEvento[]>(mockHistorico);
+  const [versoes, setVersoes] = useState<OrcamentoVersao[]>(mockVersoes);
+  const [versaoAtual, setVersaoAtual] = useState<number>(2); // Versão atual selecionada
+  const [historico, setHistorico] = useState<HistoricoEvento[]>(mockHistorico);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedOS, setEditedOS] = useState<Partial<OrdemServico>>({});
   const [activeTab, setActiveTab] = useState("orcamento");
+  const [showCompareDialog, setShowCompareDialog] = useState(false);
+  const [compareVersao, setCompareVersao] = useState<number | null>(null);
+
+  // Get current version items
+  const versaoSelecionada = versoes.find(v => v.versao === versaoAtual);
+  const [itens, setItens] = useState<OrdemServicoItem[]>(versaoSelecionada?.itens || mockItens);
 
   // Collapsible sections
   const [checklistOpen, setChecklistOpen] = useState(isNewOS);
@@ -269,6 +312,49 @@ export default function AdminOSDetalhes() {
     setMotivoRecusa('');
   };
 
+  // ========== VERSÕES DO ORÇAMENTO ==========
+  const handleNovaVersao = () => {
+    const novaVersao = versoes.length + 1;
+    const novaVersaoObj: OrcamentoVersao = {
+      id: `v${novaVersao}`,
+      versao: novaVersao,
+      data_criacao: new Date().toISOString(),
+      itens: itens.map(item => ({ ...item, id: `v${novaVersao}-${item.id}` })),
+      total: totalOrcado,
+      status: 'rascunho',
+    };
+    setVersoes([...versoes, novaVersaoObj]);
+    setVersaoAtual(novaVersao);
+    setHistorico([...historico, {
+      id: `h${Date.now()}`,
+      data: new Date().toISOString(),
+      tipo: 'orcamento',
+      descricao: `Orçamento V${novaVersao} criado`
+    }]);
+    toast.success(`Versão ${novaVersao} criada!`);
+  };
+
+  const handleSelecionarVersao = (versao: number) => {
+    const versaoSelecionada = versoes.find(v => v.versao === versao);
+    if (versaoSelecionada) {
+      setVersaoAtual(versao);
+      setItens(versaoSelecionada.itens);
+    }
+  };
+
+  const getVersaoStatusConfig = (status: string) => {
+    switch (status) {
+      case 'aprovado':
+        return { label: 'Aprovado', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' };
+      case 'recusado':
+        return { label: 'Recusado', color: 'bg-red-500/10 text-red-600 border-red-500/20' };
+      case 'enviado':
+        return { label: 'Enviado', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
+      default:
+        return { label: 'Rascunho', color: 'bg-muted text-muted-foreground border-border' };
+    }
+  };
+
   const handleEnviarOrcamento = () => {
     const phone = os.client_phone?.replace(/\D/g, '');
     if (!phone) {
@@ -276,15 +362,20 @@ export default function AdminOSDetalhes() {
       return;
     }
     
-    const linkOrcamento = `${window.location.origin}/orcamento/${os.id}`;
-    const mensagem = `Olá ${os.client_name}! 🚗\n\nSeu orçamento da OS ${os.numero_os} está pronto.\n\nVeículo: ${os.vehicle}\nPlaca: ${os.plate}\n\nValor Total: ${formatCurrency(totalOrcado)}\n\nAcesse o link para aprovar ou recusar os itens:\n${linkOrcamento}\n\nDoctor Auto Prime`;
+    // Atualiza status da versão para enviado
+    setVersoes(versoes.map(v => 
+      v.versao === versaoAtual ? { ...v, status: 'enviado' } : v
+    ));
+    
+    const linkOrcamento = `${window.location.origin}/orcamento/${os.id}?v=${versaoAtual}`;
+    const mensagem = `Olá ${os.client_name}! 🚗\n\nSeu orçamento da OS ${os.numero_os} (V${versaoAtual}) está pronto.\n\nVeículo: ${os.vehicle}\nPlaca: ${os.plate}\n\nValor Total: ${formatCurrency(totalOrcado)}\n\nAcesse o link para aprovar ou recusar os itens:\n${linkOrcamento}\n\nDoctor Auto Prime`;
     
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(mensagem)}`, '_blank');
     toast.success("Abrindo WhatsApp...");
   };
 
   const handleCopyLink = () => {
-    const linkOrcamento = `${window.location.origin}/orcamento/${os.id}`;
+    const linkOrcamento = `${window.location.origin}/orcamento/${os.id}?v=${versaoAtual}`;
     navigator.clipboard.writeText(linkOrcamento);
     toast.success("Link copiado!");
   };
@@ -412,6 +503,62 @@ export default function AdminOSDetalhes() {
 
           {/* Tab: Orçamento */}
           <TabsContent value="orcamento" className="space-y-4">
+            {/* Versões do Orçamento */}
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <History className="w-4 h-4" />
+                    Versões do Orçamento
+                  </CardTitle>
+                  <Button size="sm" variant="outline" onClick={handleNovaVersao}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Nova Versão
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {versoes.map((versao) => {
+                    const statusVersao = getVersaoStatusConfig(versao.status);
+                    const isActive = versao.versao === versaoAtual;
+                    return (
+                      <button
+                        key={versao.id}
+                        onClick={() => handleSelecionarVersao(versao.versao)}
+                        className={cn(
+                          "flex flex-col items-start p-3 rounded-lg border min-w-[140px] transition-all",
+                          isActive 
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
+                            : "border-border hover:border-primary/50 hover:bg-accent/50"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <span className={cn("font-bold", isActive && "text-primary")}>
+                            V{versao.versao}
+                          </span>
+                          <Badge variant="outline" className={cn("text-xs", statusVersao.color)}>
+                            {statusVersao.label}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {new Date(versao.data_criacao).toLocaleDateString('pt-BR')}
+                        </span>
+                        <span className="text-sm font-medium mt-1">
+                          {formatCurrency(versao.total)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {versaoSelecionada?.observacoes && (
+                  <div className="mt-3 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
+                    <strong>Obs:</strong> {versaoSelecionada.observacoes}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Status Filter */}
             <div className="flex gap-2 overflow-x-auto pb-2">
               <Badge 
