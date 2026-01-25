@@ -18,7 +18,8 @@ import {
   Layers,
   FolderOpen,
   Lightbulb,
-  SlidersHorizontal
+  SlidersHorizontal,
+  CalendarClock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -54,7 +55,14 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { icon: Home, label: 'Visão Geral', path: '/admin' },
+  { 
+    icon: Home, 
+    label: 'Visão Geral', 
+    path: '/admin',
+    subItems: [
+      { icon: CalendarClock, label: 'Agenda Mecânicos', path: '/admin/agenda-mecanicos' },
+    ]
+  },
   { icon: Plus, label: 'Nova OS', path: '/admin/nova-os', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
@@ -149,20 +157,29 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     path => location.pathname === path
   );
 
+  const isOnVisaoGeralSubRoute = ['/admin/agenda-mecanicos'].some(
+    path => location.pathname.startsWith(path)
+  );
+  const isOnVisaoGeralRoute = location.pathname === '/admin' || isOnVisaoGeralSubRoute;
+
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
+    '/admin': isOnVisaoGeralRoute,
     '/admin/cadastros': isOnCadastrosRoute,
     '/admin/configuracoes': isOnConfigSubRoute,
   });
 
   // Keep parent menus expanded when navigating to sub-routes
   useEffect(() => {
+    if (isOnVisaoGeralRoute && !expandedItems['/admin']) {
+      setExpandedItems(prev => ({ ...prev, '/admin': true }));
+    }
     if (isOnCadastrosRoute && !expandedItems['/admin/cadastros']) {
       setExpandedItems(prev => ({ ...prev, '/admin/cadastros': true }));
     }
     if (isOnConfigSubRoute && !expandedItems['/admin/configuracoes']) {
       setExpandedItems(prev => ({ ...prev, '/admin/configuracoes': true }));
     }
-  }, [location.pathname, isOnCadastrosRoute, isOnConfigSubRoute]);
+  }, [location.pathname, isOnVisaoGeralRoute, isOnCadastrosRoute, isOnConfigSubRoute]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));
