@@ -19,6 +19,12 @@ import Veiculos from "./pages/Veiculos";
 import VisaoGeral from "./pages/VisaoGeral";
 import NotFound from "./pages/NotFound";
 
+// Admin pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import OrdensServico from "./pages/admin/OrdensServico";
+import NovaOS from "./pages/admin/NovaOS";
+import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -42,6 +48,13 @@ const App = () => (
             <Route path="/avisos" element={<Avisos />} />
             <Route path="/veiculos" element={<Veiculos />} />
             <Route path="/visao-geral" element={<VisaoGeral />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/ordens-servico" element={<OrdensServico />} />
+            <Route path="/admin/nova-os" element={<NovaOS />} />
+            <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
