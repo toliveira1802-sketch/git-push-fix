@@ -101,15 +101,8 @@ export default function MonitoramentoPatio() {
     return () => clearInterval(interval);
   }, [autoRefresh]);
   
-  const stats = {
-    total: areas.length,
-    livres: areas.filter(a => a.status === "livre").length,
-    ocupados: areas.filter(a => a.status === "ocupado").length,
-    manutencao: areas.filter(a => a.status === "manutencao").length,
-    reservados: areas.filter(a => a.status === "reservado").length,
-  };
-  
   const veiculosEmAtendimento = areas.filter(a => a.veiculo);
+  const totalVeiculosPatio = veiculosEmAtendimento.length + veiculosNaoAlocados.length;
   
   const handleAreaClick = (area: LayoutArea) => {
     if (area.veiculo) {
@@ -357,7 +350,7 @@ export default function MonitoramentoPatio() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Car className="w-5 h-5 text-primary" />
-            <span className="text-lg font-semibold">{stats.ocupados} veículos no pátio</span>
+            <span className="text-lg font-semibold">{totalVeiculosPatio} veículos no pátio</span>
           </div>
         </div>
 
