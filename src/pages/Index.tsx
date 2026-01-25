@@ -26,39 +26,32 @@ import {
   Wrench,
   Plus,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Loader2 } from "lucide-react";
+import { useClientData } from "@/hooks/useClientData";
 import TikTokIcon from "@/components/icons/TikTokIcon";
 import ForcePasswordChange from "@/components/auth/ForcePasswordChange";
+import logo from "@/assets/logo.png";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading, signOut, mustChangePassword, setMustChangePassword } = useAuth();
   const { canAccessAdmin, canAccessGestao, isLoading: roleLoading } = useUserRole();
+  const { vehicles, loading: clientLoading, getActiveServiceOrder, clientProfile } = useClientData();
   const [userName, setUserName] = useState("...");
   const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
 
-  // Mock veículos
-  const veiculosMock = [
-    { id: "1", marca: "Honda", modelo: "Civic", placa: "ABC-1234", emServico: true },
-    { id: "2", marca: "Toyota", modelo: "Corolla", placa: "XYZ-5678", emServico: false },
-  ];
-
   useEffect(() => {
-    // Get mock profile from localStorage
-    const profile = localStorage.getItem('mock_profile');
-    if (profile) {
-      const parsed = JSON.parse(profile);
-      if (parsed?.full_name) {
-        const firstName = parsed.full_name.split(" ")[0];
-        setUserName(firstName);
-      }
+    // Get name from client profile or fallback to email
+    if (clientProfile?.name) {
+      const firstName = clientProfile.name.split(" ")[0];
+      setUserName(firstName);
     } else if (user?.email) {
       setUserName(user.email.split('@')[0]);
     }
-  }, [user]);
+  }, [user, clientProfile]);
 
   // Redirect to login if not authenticated (after loading completes)
   useEffect(() => {
@@ -67,7 +60,7 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading || roleLoading) {
+  if (loading || roleLoading || clientLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -113,9 +106,7 @@ const Index = () => {
       {/* Header */}
       <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center text-white">
-            <Car className="w-6 h-6" />
-          </div>
+          <img src={logo} alt="Doctor Auto Prime" className="w-10 h-10 object-contain" />
           <h1 className="text-lg font-bold">Doctor Auto Prime</h1>
         </div>
 
@@ -183,14 +174,14 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center relative">
                 <Car className="w-6 h-6 text-red-500" />
-                {veiculosMock.some(v => v.emServico) && (
+                {vehicles.some(v => getActiveServiceOrder(v.plate)) && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                 )}
               </div>
               <div>
                 <h3 className="font-semibold text-lg">MEUS VEÍCULOS</h3>
                 <p className="text-sm text-muted-foreground">
-                  {veiculosMock.length} veículo{veiculosMock.length !== 1 ? 's' : ''}
+                  {vehicles.length} veículo{vehicles.length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
@@ -208,29 +199,38 @@ const Index = () => {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3 mt-4">
-              {veiculosMock.map((veiculo) => (
-                <div 
-                  key={veiculo.id}
-                  className={`p-3 rounded-lg border ${
-                    veiculo.emServico 
-                      ? "bg-red-600/10 border-red-500/30" 
-                      : "bg-muted border-border"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{veiculo.marca} {veiculo.modelo}</p>
-                      <p className="text-sm text-muted-foreground font-mono">{veiculo.placa}</p>
+              {vehicles.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum veículo cadastrado
+                </p>
+              ) : (
+                vehicles.map((veiculo) => {
+                  const activeOS = getActiveServiceOrder(veiculo.plate);
+                  return (
+                    <div 
+                      key={veiculo.id}
+                      className={`p-3 rounded-lg border ${
+                        activeOS 
+                          ? "bg-red-600/10 border-red-500/30" 
+                          : "bg-muted border-border"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{veiculo.brand} {veiculo.model}</p>
+                          <p className="text-sm text-muted-foreground font-mono">{veiculo.plate}</p>
+                        </div>
+                        {activeOS && (
+                          <Badge className="bg-red-600 text-white text-xs">
+                            <Wrench className="w-3 h-3 mr-1" />
+                            Em serviço
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    {veiculo.emServico && (
-                      <Badge className="bg-red-600 text-white text-xs">
-                        <Wrench className="w-3 h-3 mr-1" />
-                        Em serviço
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
               
               <div className="flex gap-2 pt-2">
                 <Button 

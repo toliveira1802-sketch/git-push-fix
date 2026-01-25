@@ -16,12 +16,14 @@ import {
   Plus,
   Stethoscope,
   Gift,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useClientData } from "@/hooks/useClientData";
 
 interface UserVehicle {
   id: string;
@@ -29,12 +31,6 @@ interface UserVehicle {
   plate: string;
   brand: string | null;
 }
-
-// Mock vehicles
-const mockVehicles: UserVehicle[] = [
-  { id: "1", model: "Civic", plate: "ABC-1234", brand: "Honda" },
-  { id: "2", model: "Corolla", plate: "XYZ-5678", brand: "Toyota" },
-];
 
 // Service types
 const serviceTypes = [
@@ -68,6 +64,7 @@ const NovoAgendamento = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const promotion = location.state?.promotion;
+  const { vehicles, loading: vehiclesLoading } = useClientData();
 
   const [step, setStep] = useState(1);
   const [selectedVehicle, setSelectedVehicle] = useState<UserVehicle | null>(null);
@@ -75,6 +72,14 @@ const NovoAgendamento = () => {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  // Map database vehicles to component format
+  const userVehicles: UserVehicle[] = vehicles.map(v => ({
+    id: v.id,
+    model: v.model,
+    plate: v.plate,
+    brand: v.brand,
+  }));
 
   const currentServices = selectedType ? services[selectedType as keyof typeof services] : [];
   const isFullDay = serviceTypes.find(t => t.id === selectedType)?.fullDay || false;
@@ -145,41 +150,53 @@ const NovoAgendamento = () => {
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Selecione o Veículo</h2>
-            <div className="space-y-3">
-              {mockVehicles.map(vehicle => (
+            {vehiclesLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-red-500" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {userVehicles.length === 0 ? (
+                  <p className="text-gray-400 text-center py-4">
+                    Nenhum veículo cadastrado
+                  </p>
+                ) : (
+                  userVehicles.map(vehicle => (
+                    <button
+                      key={vehicle.id}
+                      onClick={() => setSelectedVehicle(vehicle)}
+                      className={cn(
+                        "w-full p-4 rounded-xl border-2 text-left transition-all",
+                        selectedVehicle?.id === vehicle.id
+                          ? "border-red-500 bg-red-500/10"
+                          : "border-gray-700 hover:border-gray-600"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Car className="w-8 h-8 text-red-500" />
+                        <div>
+                          <p className="font-semibold">{vehicle.brand} {vehicle.model}</p>
+                          <p className="text-sm text-gray-400">{vehicle.plate}</p>
+                        </div>
+                        {selectedVehicle?.id === vehicle.id && (
+                          <Check className="w-5 h-5 ml-auto text-red-500" />
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+                
                 <button
-                  key={vehicle.id}
-                  onClick={() => setSelectedVehicle(vehicle)}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    selectedVehicle?.id === vehicle.id
-                      ? "border-red-500 bg-red-500/10"
-                      : "border-gray-700 hover:border-gray-600"
-                  )}
+                  onClick={() => navigate("/veiculos")}
+                  className="w-full p-4 rounded-xl border-2 border-dashed border-gray-700 hover:border-gray-600 text-left"
                 >
-                  <div className="flex items-center gap-3">
-                    <Car className="w-8 h-8 text-red-500" />
-                    <div>
-                      <p className="font-semibold">{vehicle.brand} {vehicle.model}</p>
-                      <p className="text-sm text-gray-400">{vehicle.plate}</p>
-                    </div>
-                    {selectedVehicle?.id === vehicle.id && (
-                      <Check className="w-5 h-5 ml-auto text-red-500" />
-                    )}
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <Plus className="w-8 h-8" />
+                    <span>Adicionar novo veículo</span>
                   </div>
                 </button>
-              ))}
-              
-              <button
-                onClick={() => toast.info("Cadastro de veículo em breve!")}
-                className="w-full p-4 rounded-xl border-2 border-dashed border-gray-700 hover:border-gray-600 text-left"
-              >
-                <div className="flex items-center gap-3 text-gray-400">
-                  <Plus className="w-8 h-8" />
-                  <span>Adicionar novo veículo</span>
-                </div>
-              </button>
-            </div>
+              </div>
+            )}
           </div>
         );
 
