@@ -32,16 +32,10 @@ export default function Configuracoes() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [notifications, setNotifications] = useState(true);
   const [instagramHandle, setInstagramHandle] = useState("");
   const [instagramLinked, setInstagramLinked] = useState(false);
 
   useEffect(() => {
-    const savedNotifications = localStorage.getItem("notifications");
-    if (savedNotifications !== null) {
-      setNotifications(savedNotifications === "true");
-    }
-
     const savedInstagram = localStorage.getItem("instagramHandle");
     if (savedInstagram) {
       setInstagramHandle(savedInstagram);
@@ -52,12 +46,6 @@ export default function Configuracoes() {
   const handleThemeChange = (newTheme: 'light' | 'dark') => {
     setTheme(newTheme);
     toast.success("Tema atualizado!");
-  };
-
-  const handleNotificationsChange = (enabled: boolean) => {
-    setNotifications(enabled);
-    localStorage.setItem("notifications", String(enabled));
-    toast.success(enabled ? "Notificações ativadas" : "Notificações desativadas");
   };
 
   const handleLinkInstagram = () => {
@@ -133,7 +121,7 @@ export default function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Notifications */}
+        {/* Notifications - Info only */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -142,16 +130,12 @@ export default function Configuracoes() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+              <Bell className="h-5 w-5 text-primary" />
               <div>
-                <Label htmlFor="notifications">Receber notificações</Label>
-                <p className="text-sm text-muted-foreground">Lembretes de serviços e promoções</p>
+                <p className="text-sm font-medium">Notificações ativas</p>
+                <p className="text-xs text-muted-foreground">Você receberá lembretes de serviços e promoções</p>
               </div>
-              <Switch
-                id="notifications"
-                checked={notifications}
-                onCheckedChange={handleNotificationsChange}
-              />
             </div>
           </CardContent>
         </Card>

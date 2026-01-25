@@ -177,14 +177,14 @@ const Agenda = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-24">
-      <Header title="Agenda" />
+    <div className="min-h-screen bg-background text-foreground pb-24">
+      <Header title="Agenda" showHomeButton={true} />
 
       <main className="p-4 space-y-6">
         {/* New Appointment Button */}
         <Button
           onClick={() => navigate("/novo-agendamento")}
-          className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-6 text-lg"
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 py-6 text-lg"
         >
           <Plus className="w-5 h-5 mr-2" />
           Novo Agendamento

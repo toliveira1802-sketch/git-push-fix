@@ -34,12 +34,12 @@ export default function Performance() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-white hover:bg-white/10"
-          onClick={() => navigate(-1)}
+          className="text-primary-foreground hover:bg-primary-foreground/10"
+          onClick={() => navigate("/")}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-lg font-bold">Visão Geral</h1>
+        <h1 className="text-lg font-bold text-primary-foreground">Performance</h1>
       </header>
 
       {/* Main Content */}

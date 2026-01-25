@@ -108,17 +108,17 @@ export default function Avisos() {
   const pastAlerts = alerts.filter(a => a.status === "dismissed" || a.status === "completed");
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-8">
+    <div className="min-h-screen bg-background text-foreground pb-8">
       {/* Header */}
-      <div className="bg-[#111] border-b border-gray-800 px-4 py-3 flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="bg-card border-b border-border px-4 py-3 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">
           <h1 className="font-semibold">Avisos</h1>
-          <p className="text-sm text-gray-400">{activeAlerts.length} pendentes</p>
+          <p className="text-sm text-muted-foreground">{activeAlerts.length} pendentes</p>
         </div>
-        <Bell className="w-5 h-5 text-red-500" />
+        <Bell className="w-5 h-5 text-primary" />
       </div>
 
       <div className="p-4 space-y-6">
