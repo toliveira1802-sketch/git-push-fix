@@ -511,6 +511,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           birthday: string | null
+          company_id: string | null
           created_at: string
           full_name: string | null
           id: string
@@ -524,6 +525,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           birthday?: string | null
+          company_id?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
@@ -537,6 +539,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           birthday?: string | null
+          company_id?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
@@ -547,7 +550,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
