@@ -608,6 +608,7 @@ export type Database = {
           payment_status: string | null
           priority: string | null
           problem_description: string | null
+          recurso: string | null
           status: string
           total: number | null
           total_discount: number | null
@@ -633,6 +634,7 @@ export type Database = {
           payment_status?: string | null
           priority?: string | null
           problem_description?: string | null
+          recurso?: string | null
           status?: string
           total?: number | null
           total_discount?: number | null
@@ -658,6 +660,7 @@ export type Database = {
           payment_status?: string | null
           priority?: string | null
           problem_description?: string | null
+          recurso?: string | null
           status?: string
           total?: number | null
           total_discount?: number | null
