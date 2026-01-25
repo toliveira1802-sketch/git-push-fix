@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { VeiculoPatioStatus, type PatioStatusInfo } from "@/components/veiculos/VeiculoPatioStatus";
+import { OSResumoDialog, type OSResumoData, type OSItem } from "@/components/veiculos/OSResumoDialog";
 
 interface Veiculo {
   id: string;
@@ -31,8 +33,10 @@ interface Veiculo {
   placa: string;
   cor: string;
   emServico: boolean;
+  patioStatus?: PatioStatusInfo;
 }
 
+// Mock data com status do pátio
 const veiculosMock: Veiculo[] = [
   {
     id: "1",
@@ -42,6 +46,15 @@ const veiculosMock: Veiculo[] = [
     placa: "ABC-1234",
     cor: "Preto",
     emServico: true,
+    patioStatus: {
+      etapaId: "em_execucao",
+      local: "Elevador 5",
+      osNumero: "2025-00042",
+      servico: "Revisão Completa + Troca de Óleo",
+      entrada: "09:15",
+      previsaoSaida: "16:00",
+      valorAprovado: 1250.00,
+    },
   },
   {
     id: "2",
@@ -58,6 +71,8 @@ const Veiculos = () => {
   const navigate = useNavigate();
   const [veiculos, setVeiculos] = useState<Veiculo[]>(veiculosMock);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [osResumoOpen, setOsResumoOpen] = useState(false);
+  const [selectedOSResumo, setSelectedOSResumo] = useState<OSResumoData | null>(null);
   const [novoVeiculo, setNovoVeiculo] = useState({
     marca: "",
     modelo: "",
@@ -65,6 +80,42 @@ const Veiculos = () => {
     placa: "",
     cor: "",
   });
+
+  // Mock dados da OS para o resumo
+  const mockOSItens: OSItem[] = [
+    { id: "1", descricao: "Óleo Motor 5W30 Sintético", tipo: "peca", valor: 89.90, quantidade: 4, status: "aprovado" },
+    { id: "2", descricao: "Filtro de Óleo", tipo: "peca", valor: 45.00, quantidade: 1, status: "aprovado" },
+    { id: "3", descricao: "Filtro de Ar", tipo: "peca", valor: 65.00, quantidade: 1, status: "aprovado" },
+    { id: "4", descricao: "Mão de Obra - Revisão", tipo: "servico", valor: 350.00, quantidade: 1, status: "aprovado" },
+    { id: "5", descricao: "Pastilhas de Freio Dianteiras", tipo: "peca", valor: 189.00, quantidade: 1, status: "pendente" },
+    { id: "6", descricao: "Alinhamento e Balanceamento", tipo: "servico", valor: 120.00, quantidade: 1, status: "recusado" },
+  ];
+
+  const handleVerOSResumo = (veiculo: Veiculo) => {
+    if (!veiculo.patioStatus) return;
+    
+    const itensAprovados = mockOSItens.filter(i => i.status === "aprovado");
+    const itensPendentes = mockOSItens.filter(i => i.status === "pendente");
+    const itensRecusados = mockOSItens.filter(i => i.status === "recusado");
+    
+    const resumo: OSResumoData = {
+      osNumero: veiculo.patioStatus.osNumero,
+      veiculo: {
+        placa: veiculo.placa,
+        modelo: `${veiculo.marca} ${veiculo.modelo}`,
+      },
+      servico: veiculo.patioStatus.servico,
+      entrada: veiculo.patioStatus.entrada,
+      previsaoSaida: veiculo.patioStatus.previsaoSaida,
+      itens: mockOSItens,
+      totalAprovado: itensAprovados.reduce((sum, i) => sum + (i.valor * i.quantidade), 0),
+      totalPendente: itensPendentes.reduce((sum, i) => sum + (i.valor * i.quantidade), 0),
+      totalRecusado: itensRecusados.reduce((sum, i) => sum + (i.valor * i.quantidade), 0),
+    };
+    
+    setSelectedOSResumo(resumo);
+    setOsResumoOpen(true);
+  };
 
   const handleAddVeiculo = () => {
     if (!novoVeiculo.marca || !novoVeiculo.modelo || !novoVeiculo.placa) {
@@ -96,7 +147,7 @@ const Veiculos = () => {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="bg-red-600 hover:bg-red-700">
+            <Button size="sm" className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-1" />
               Adicionar
             </Button>
@@ -193,7 +244,7 @@ const Veiculos = () => {
                 />
               </div>
               <Button
-                className="w-full bg-red-600 hover:bg-red-700"
+                className="w-full bg-primary hover:bg-primary/90"
                 onClick={handleAddVeiculo}
               >
                 Adicionar Veículo
@@ -208,15 +259,15 @@ const Veiculos = () => {
         {veiculos.length === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-20 h-20 bg-red-600/20 rounded-full flex items-center justify-center mb-4">
-              <Car className="w-10 h-10 text-red-500" />
+            <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+              <Car className="w-10 h-10 text-primary" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Nenhum veículo cadastrado</h2>
             <p className="text-muted-foreground text-center mb-6">
               Adicione seu primeiro veículo para acompanhar serviços e manutenções.
             </p>
             <Button 
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={() => setDialogOpen(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -229,23 +280,23 @@ const Veiculos = () => {
             <Card 
               key={veiculo.id} 
               className={`relative overflow-hidden ${
-                veiculo.emServico ? "border-red-500/50" : ""
+                veiculo.emServico ? "border-primary/50" : ""
               }`}
             >
               {/* Status indicator */}
               {veiculo.emServico && (
-                <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full m-3 animate-pulse" />
+                <div className="absolute top-0 right-0 w-3 h-3 bg-primary rounded-full m-3 animate-pulse" />
               )}
               
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
                     veiculo.emServico 
-                      ? "bg-red-600/20" 
+                      ? "bg-primary/20" 
                       : "bg-muted"
                   }`}>
                     <Car className={`w-7 h-7 ${
-                      veiculo.emServico ? "text-red-500" : "text-muted-foreground"
+                      veiculo.emServico ? "text-primary" : "text-muted-foreground"
                     }`} />
                   </div>
                   
@@ -255,7 +306,7 @@ const Veiculos = () => {
                         {veiculo.marca} {veiculo.modelo}
                       </h3>
                       {veiculo.emServico && (
-                        <Badge className="bg-red-600 text-white text-xs">
+                        <Badge className="bg-primary text-primary-foreground text-xs">
                           <Wrench className="w-3 h-3 mr-1" />
                           Em serviço
                         </Badge>
@@ -268,12 +319,12 @@ const Veiculos = () => {
                       <span className="font-mono">{veiculo.placa}</span>
                     </div>
                     
-                    {veiculo.emServico && (
-                      <div className="mt-3 p-2 bg-red-500/10 rounded-lg">
-                        <p className="text-xs text-red-400">
-                          🔧 Lavagem Completa • Previsão: Hoje às 16:00
-                        </p>
-                      </div>
+                    {/* Status do Pátio - Novo componente */}
+                    {veiculo.emServico && veiculo.patioStatus && (
+                      <VeiculoPatioStatus 
+                        status={veiculo.patioStatus} 
+                        onVerOS={() => handleVerOSResumo(veiculo)}
+                      />
                     )}
                   </div>
                   
@@ -286,6 +337,13 @@ const Veiculos = () => {
           ))
         )}
       </main>
+
+      {/* Dialog de Resumo da OS */}
+      <OSResumoDialog 
+        open={osResumoOpen} 
+        onOpenChange={setOsResumoOpen} 
+        data={selectedOSResumo} 
+      />
 
       <BottomNavigation />
     </div>
