@@ -67,7 +67,7 @@ export default function AdminOSDetalhes() {
   
   // Determina se é modo criação: osId é "nova" ou não existe
   const isCreateMode = !osId || osId === "nova";
-  const [currentOsId, setCurrentOsId] = useState<string | undefined>(isCreateMode ? undefined : osId);
+  const currentOsId = isCreateMode ? undefined : osId;
   const isNewOS = searchParams.get("new") === "true";
 
   // Hooks for data - MUST be called before any conditional returns
@@ -140,7 +140,6 @@ export default function AdminOSDetalhes() {
       <AdminLayout>
         <OSSearchCreate 
           onOSCreated={(newOsId) => {
-            setCurrentOsId(newOsId);
             navigate(`/admin/os/${newOsId}?new=true`, { replace: true });
           }} 
         />
