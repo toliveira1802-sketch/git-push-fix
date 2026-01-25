@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Calendar, Clock, Car, User, Phone, Wrench, 
   Plus, Filter, Search, CalendarDays, RefreshCw,
-  X, MessageSquare, ExternalLink, Check
+  X, MessageSquare, ExternalLink, Check, ClipboardCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -125,6 +126,7 @@ const timeSlots = [
 ];
 
 export default function AdminAgendamentos() {
+  const navigate = useNavigate();
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>(mockAgendamentos);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOrigem, setFilterOrigem] = useState<string>("todos");
@@ -265,10 +267,16 @@ export default function AdminAgendamentos() {
             <h1 className="text-2xl font-bold text-foreground">Agendamentos</h1>
             <p className="text-muted-foreground text-sm">Gerencie os agendamentos da oficina</p>
           </div>
-          <Button onClick={() => setShowNovoDialog(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Agendamento
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate('/admin/checklist')}>
+              <ClipboardCheck className="w-4 h-4 mr-2" />
+              Checklist
+            </Button>
+            <Button onClick={() => setShowNovoDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Agendamento
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
