@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Car,
   Bell,
@@ -17,6 +24,8 @@ import {
   BookOpen,
   User,
   LogOut,
+  Wrench,
+  Plus,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -26,6 +35,13 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const [userName, setUserName] = useState("...");
   const [activeTab, setActiveTab] = useState("cliente");
+  const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
+
+  // Mock veículos
+  const veiculosMock = [
+    { id: "1", marca: "Honda", modelo: "Civic", placa: "ABC-1234", emServico: true },
+    { id: "2", marca: "Toyota", modelo: "Corolla", placa: "XYZ-5678", emServico: false },
+  ];
 
   useEffect(() => {
     // Get mock profile from localStorage
@@ -137,24 +153,89 @@ const Index = () => {
           </h2>
         </div>
 
-        {/* Meus Veículos */}
+        {/* Meus Veículos - Modal */}
         <Card
           className="bg-[#111] border-gray-800 p-4 mb-4 cursor-pointer hover:bg-[#151515] transition-colors"
-          onClick={() => navigate("/veiculos")}
+          onClick={() => setVeiculosModalOpen(true)}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center relative">
                 <Car className="w-6 h-6 text-red-500" />
+                {veiculosMock.some(v => v.emServico) && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                )}
               </div>
               <div>
                 <h3 className="font-semibold text-lg">MEUS VEÍCULOS</h3>
-                <p className="text-sm text-gray-400">Nenhum veículo</p>
+                <p className="text-sm text-gray-400">
+                  {veiculosMock.length} veículo{veiculosMock.length !== 1 ? 's' : ''}
+                </p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </div>
         </Card>
+
+        {/* Modal de Veículos */}
+        <Dialog open={veiculosModalOpen} onOpenChange={setVeiculosModalOpen}>
+          <DialogContent className="max-w-[90%] rounded-xl bg-[#111] border-gray-800 text-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Car className="w-5 h-5 text-red-500" />
+                Meus Veículos
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-4">
+              {veiculosMock.map((veiculo) => (
+                <div 
+                  key={veiculo.id}
+                  className={`p-3 rounded-lg border ${
+                    veiculo.emServico 
+                      ? "bg-red-600/10 border-red-500/30" 
+                      : "bg-[#1a1a1a] border-gray-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{veiculo.marca} {veiculo.modelo}</p>
+                      <p className="text-sm text-gray-400 font-mono">{veiculo.placa}</p>
+                    </div>
+                    {veiculo.emServico && (
+                      <Badge className="bg-red-600 text-white text-xs">
+                        <Wrench className="w-3 h-3 mr-1" />
+                        Em serviço
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                  onClick={() => {
+                    setVeiculosModalOpen(false);
+                    navigate("/veiculos");
+                  }}
+                >
+                  Ver todos
+                </Button>
+                <Button 
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  onClick={() => {
+                    setVeiculosModalOpen(false);
+                    navigate("/veiculos");
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Lembretes e Avisos */}
         {(() => {
