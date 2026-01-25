@@ -168,18 +168,30 @@ export type Database = {
           city: string | null
           cpf: string | null
           created_at: string
+          data_aniversario: string | null
           email: string | null
           id: string
+          indicacoes_feitas: number | null
+          indicado_por: string | null
           last_service_date: string | null
+          motivo_contato: string | null
           name: string
+          nivel_satisfacao: number | null
           notes: string | null
+          origem: string | null
           pending_review: boolean
           phone: string
+          preferencias: string | null
+          proximo_contato: string | null
+          reclamacoes: number | null
           registration_source: string
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
+          status_crm: string | null
+          tags: string[] | null
           total_spent: number | null
+          ultima_interacao: string | null
           updated_at: string
           user_id: string | null
         }
@@ -188,18 +200,30 @@ export type Database = {
           city?: string | null
           cpf?: string | null
           created_at?: string
+          data_aniversario?: string | null
           email?: string | null
           id?: string
+          indicacoes_feitas?: number | null
+          indicado_por?: string | null
           last_service_date?: string | null
+          motivo_contato?: string | null
           name: string
+          nivel_satisfacao?: number | null
           notes?: string | null
+          origem?: string | null
           pending_review?: boolean
           phone: string
+          preferencias?: string | null
+          proximo_contato?: string | null
+          reclamacoes?: number | null
           registration_source?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          status_crm?: string | null
+          tags?: string[] | null
           total_spent?: number | null
+          ultima_interacao?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -208,22 +232,49 @@ export type Database = {
           city?: string | null
           cpf?: string | null
           created_at?: string
+          data_aniversario?: string | null
           email?: string | null
           id?: string
+          indicacoes_feitas?: number | null
+          indicado_por?: string | null
           last_service_date?: string | null
+          motivo_contato?: string | null
           name?: string
+          nivel_satisfacao?: number | null
           notes?: string | null
+          origem?: string | null
           pending_review?: boolean
           phone?: string
+          preferencias?: string | null
+          proximo_contato?: string | null
+          reclamacoes?: number | null
           registration_source?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          status_crm?: string | null
+          tags?: string[] | null
           total_spent?: number | null
+          ultima_interacao?: string | null
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_indicado_por_fkey"
+            columns: ["indicado_por"]
+            isOneToOne: false
+            referencedRelation: "client_service_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "clients_indicado_por_fkey"
+            columns: ["indicado_por"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       companies: {
         Row: {
