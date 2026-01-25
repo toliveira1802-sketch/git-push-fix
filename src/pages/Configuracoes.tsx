@@ -5,28 +5,17 @@ import {
   Instagram, 
   Palette, 
   Bell, 
-  Shield, 
-  Trash2, 
   Moon, 
   Sun,
   Smartphone,
   ExternalLink,
-  ChevronRight,
-  AlertTriangle
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -47,8 +36,6 @@ export default function Configuracoes() {
   const [notifications, setNotifications] = useState(true);
   const [instagramHandle, setInstagramHandle] = useState("");
   const [instagramLinked, setInstagramLinked] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   useEffect(() => {
     // Load saved preferences
@@ -109,16 +96,10 @@ export default function Configuracoes() {
     toast.success("Instagram desvinculado");
   };
 
-  const handleDeleteAccount = async () => {
-    if (deleteConfirmation !== "EXCLUIR") {
-      toast.error("Digite EXCLUIR para confirmar");
-      return;
-    }
-
-    // Mock delete
-    toast.success("Conta excluída com sucesso");
+  const handleLogout = async () => {
     await signOut();
     navigate("/login");
+    toast.success("Você saiu da sua conta");
   };
 
   return (
@@ -239,61 +220,20 @@ export default function Configuracoes() {
 
         <Separator />
 
-        {/* Danger Zone */}
-        <Card className="border-destructive/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-              <Shield className="h-5 w-5" />
-              Zona de Perigo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Logout */}
+        <Card>
+          <CardContent className="pt-6">
             <Button
-              variant="destructive"
-              className="w-full"
-              onClick={() => setDeleteDialogOpen(true)}
+              variant="outline"
+              className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              onClick={handleLogout}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir Minha Conta
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair da Conta
             </Button>
           </CardContent>
         </Card>
       </div>
-
-      {/* Delete Account Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Excluir Conta
-            </DialogTitle>
-            <DialogDescription>
-              Esta ação é irreversível. Todos os seus dados serão permanentemente excluídos.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <p className="text-sm">
-              Digite <strong>EXCLUIR</strong> para confirmar:
-            </p>
-            <Input
-              value={deleteConfirmation}
-              onChange={(e) => setDeleteConfirmation(e.target.value)}
-              placeholder="EXCLUIR"
-            />
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteAccount}>
-              Excluir Conta
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
