@@ -9,7 +9,6 @@ import {
   Megaphone,
   Lightbulb,
   ArrowRight,
-  Brain,
 } from "lucide-react";
 
 const modules = [
@@ -36,7 +35,7 @@ const modules = [
   },
   {
     title: "Tecnologia",
-    description: "Dados do sistema, usuários e métricas de uso",
+    description: "Dados do sistema, usuários e Assistentes IA",
     url: "/gestao/tecnologia",
     icon: Laptop,
     color: "from-purple-500 to-purple-600"
@@ -54,13 +53,6 @@ const modules = [
     url: "/gestao/melhorias",
     icon: Lightbulb,
     color: "from-cyan-500 to-cyan-600"
-  },
-  {
-    title: "Assistentes IA",
-    description: "Configure e monitore os assistentes de IA",
-    url: "/admin/ias",
-    icon: Brain,
-    color: "from-violet-500 to-violet-600"
   },
 ];
 
