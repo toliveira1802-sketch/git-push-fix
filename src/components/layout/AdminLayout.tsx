@@ -55,17 +55,10 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { 
-    icon: Home, 
-    label: 'Visão Geral', 
-    path: '/admin',
-    subItems: [
-      { icon: CalendarClock, label: 'Agenda Mecânicos', path: '/admin/agenda-mecanicos' },
-    ]
-  },
+  { icon: Home, label: 'Visão Geral', path: '/admin' },
   { icon: Plus, label: 'Nova OS', path: '/admin/nova-os', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
-  { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
+  { icon: CalendarClock, label: 'Agenda Mecânicos', path: '/admin/agenda-mecanicos' },
   { 
     icon: FolderOpen, 
     label: 'Cadastros', 
@@ -157,29 +150,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     path => location.pathname === path
   );
 
-  const isOnVisaoGeralSubRoute = ['/admin/agenda-mecanicos'].some(
-    path => location.pathname.startsWith(path)
-  );
-  const isOnVisaoGeralRoute = location.pathname === '/admin' || isOnVisaoGeralSubRoute;
-
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    '/admin': isOnVisaoGeralRoute,
     '/admin/cadastros': isOnCadastrosRoute,
     '/admin/configuracoes': isOnConfigSubRoute,
   });
 
   // Keep parent menus expanded when navigating to sub-routes
   useEffect(() => {
-    if (isOnVisaoGeralRoute && !expandedItems['/admin']) {
-      setExpandedItems(prev => ({ ...prev, '/admin': true }));
-    }
     if (isOnCadastrosRoute && !expandedItems['/admin/cadastros']) {
       setExpandedItems(prev => ({ ...prev, '/admin/cadastros': true }));
     }
     if (isOnConfigSubRoute && !expandedItems['/admin/configuracoes']) {
       setExpandedItems(prev => ({ ...prev, '/admin/configuracoes': true }));
     }
-  }, [location.pathname, isOnVisaoGeralRoute, isOnCadastrosRoute, isOnConfigSubRoute]);
+  }, [location.pathname, isOnCadastrosRoute, isOnConfigSubRoute]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));
