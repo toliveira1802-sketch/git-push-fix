@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDashboardOrcamentos from "./pages/admin/AdminDashboardOrcamentos";
 import OrdensServico from "./pages/admin/OrdensServico";
 
 import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
@@ -108,6 +109,7 @@ const App = () => (
                 <Route path="/admin/metas" element={<AdminMetas />} />
                 <Route path="/admin/cadastros" element={<Cadastros />} />
                 <Route path="/admin/monitoramento-kommo" element={<AdminMonitoramentoKommo />} />
+                <Route path="/admin/orcamentos" element={<AdminDashboardOrcamentos />} />
                 
                 {/* Gestão Routes */}
                 <Route path="/gestao" element={<GestaoDashboards />} />
