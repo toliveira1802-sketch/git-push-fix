@@ -10,16 +10,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Car,
-  CheckCircle,
-  Clock,
-  BarChart3,
+  Calendar,
   RefreshCw,
   Wrench,
   MapPin,
   ArrowLeft,
   LayoutGrid,
   Map,
-  GripVertical
+  GripVertical,
+  CalendarClock,
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 import { LayoutPatio, type Area as LayoutArea } from "@/components/patio/LayoutPatio";
 
@@ -289,28 +290,75 @@ export default function MonitoramentoPatio() {
           </div>
         </div>
 
-        {/* Stats compacto */}
-        <div className="flex items-center gap-4 flex-wrap">
+        {/* Indicadores */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Agendamentos do Dia */}
+          <Card className="border bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-500">3</p>
+                  <p className="text-xs text-muted-foreground">Agendamentos do Dia</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Reagendados */}
+          <Card className="border bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                  <CalendarClock className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-500">1</p>
+                  <p className="text-xs text-muted-foreground">Reagendados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Cancelados */}
+          <Card className="border bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-500">0</p>
+                  <p className="text-xs text-muted-foreground">Cancelados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gargalo */}
+          <Card className="border bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-orange-500">Aguard. APV</p>
+                  <p className="text-xs text-muted-foreground">Gargalo</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Total no pátio */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm">{stats.total} posições</span>
+            <Car className="w-5 h-5 text-primary" />
+            <span className="text-lg font-semibold">{stats.ocupados} veículos no pátio</span>
           </div>
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
-            {stats.livres} livres
-          </Badge>
-          <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
-            {stats.ocupados} ocupados
-          </Badge>
-          {stats.manutencao > 0 && (
-            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
-              {stats.manutencao} manutenção
-            </Badge>
-          )}
-          {stats.reservados > 0 && (
-            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
-              {stats.reservados} reservados
-            </Badge>
-          )}
         </div>
 
         {/* Tabs de visualização */}
