@@ -156,10 +156,10 @@ const Index = () => {
           </div>
         </Card>
 
-        {/* Lembretes */}
+        {/* Lembretes e Avisos */}
         <Card
           className="bg-[#111] border-gray-800 p-4 mb-4 cursor-pointer hover:bg-[#151515] transition-colors"
-          onClick={() => navigate("/agenda")}
+          onClick={() => navigate("/avisos")}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ const Index = () => {
                 <Bell className="w-6 h-6 text-yellow-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Lembretes</h3>
+                <h3 className="font-semibold text-lg">Lembretes e Avisos</h3>
                 <p className="text-sm text-gray-400">Nenhum pendente</p>
               </div>
             </div>
