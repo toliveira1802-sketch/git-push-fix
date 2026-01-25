@@ -191,7 +191,7 @@ export default function NovaOS() {
       if (error) throw error
       
       toast.success(`OS ${orderNumber} criada!`)
-      navigate(`/admin/os/${data.id}?new=true`)
+      navigate(`/admin/nova-os/${data.id}?new=true`)
     } catch (error) {
       console.error('Erro ao criar OS:', error)
       toast.error('Erro ao criar ordem de serviço')
@@ -257,7 +257,7 @@ export default function NovaOS() {
       
       toast.success(`Cliente, veículo e OS ${orderNumber} criados!`)
       setShowQuickRegister(false)
-      navigate(`/admin/os/${osData.id}?new=true`)
+      navigate(`/admin/nova-os/${osData.id}?new=true`)
     } catch (error) {
       console.error('Erro ao criar:', error)
       toast.error('Erro ao criar cliente/veículo')
