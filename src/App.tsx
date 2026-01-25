@@ -16,6 +16,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Performance from "./pages/Performance";
 import Avisos from "./pages/Avisos";
 import Veiculos from "./pages/Veiculos";
+import VisaoGeral from "./pages/VisaoGeral";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/performance" element={<Performance />} />
             <Route path="/avisos" element={<Avisos />} />
             <Route path="/veiculos" element={<Veiculos />} />
+            <Route path="/visao-geral" element={<VisaoGeral />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
