@@ -23,7 +23,10 @@ import {
   ShoppingCart,
   Wrench,
   Eye,
+  Lightbulb,
+  ArrowRight,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -73,6 +76,7 @@ const defaultMetas: Meta[] = [
 ];
 
 export default function AdminConfiguracoes() {
+  const navigate = useNavigate();
   const [config, setConfig] = useState<SystemConfig>({
     capacidadeMaxima: 20,
     horarioFuncionamento: {
@@ -578,6 +582,24 @@ export default function AdminConfiguracoes() {
                   notificacoesAtivas: checked
                 }))}
               />
+            </div>
+
+            <Separator />
+
+            <div 
+              className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => navigate("/gestao/melhorias")}
+            >
+              <div className="flex items-center gap-3">
+                <Lightbulb className="w-5 h-5 text-cyan-500" />
+                <div>
+                  <Label className="font-medium cursor-pointer">Sugestões e Melhorias</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Ideias e sugestões para o sistema
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
