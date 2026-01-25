@@ -30,6 +30,7 @@ import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
 import AdminIAs from "./pages/admin/AdminIAs";
 import NovaPromocao from "./pages/admin/NovaPromocao";
 import Pendencias from "./pages/admin/Pendencias";
+import MonitoramentoPatio from "./pages/admin/MonitoramentoPatio";
 
 // Gestão pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
             <Route path="/admin/ias" element={<AdminIAs />} />
             <Route path="/admin/nova-promocao" element={<NovaPromocao />} />
+            <Route path="/admin/patio" element={<MonitoramentoPatio />} />
             
             {/* Gestão Routes */}
             <Route path="/gestao" element={<GestaoDashboards />} />

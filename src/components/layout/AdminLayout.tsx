@@ -10,7 +10,8 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
-  Plus
+  Plus,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -24,6 +25,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: Plus, label: 'Nova OS', path: '/admin/nova-os', highlight: true },
   { icon: ClipboardList, label: 'Ordens de Serviço', path: '/admin/ordens-servico' },
+  { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Users, label: 'Clientes', path: '/admin/clientes' },
   { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
