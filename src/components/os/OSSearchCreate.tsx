@@ -51,6 +51,8 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [showQuickRegister, setShowQuickRegister] = useState(false)
+  const [showAddVehicle, setShowAddVehicle] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   
@@ -58,7 +60,7 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
   const [clients, setClients] = useState<Client[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   
-  // Quick register form
+  // Quick register form (new client + vehicle)
   const [newClient, setNewClient] = useState({
     name: '',
     phone: '',
@@ -68,6 +70,15 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     vehicleYear: '',
     vehiclePlate: '',
     vehicleColor: ''
+  })
+
+  // Add vehicle form (for existing client)
+  const [newVehicle, setNewVehicle] = useState({
+    brand: '',
+    model: '',
+    year: '',
+    plate: '',
+    color: ''
   })
 
   // Fetch clients and vehicles
@@ -169,11 +180,18 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
   }
 
   const handleSelectResult = async (result: SearchResult) => {
+    // Se cliente não tem veículo, abrir diálogo para adicionar
     if (!result.vehicle) {
-      toast.error('Selecione um veículo para criar a OS')
+      setSelectedClient(result.client)
+      setNewVehicle({ brand: '', model: '', year: '', plate: '', color: '' })
+      setShowAddVehicle(true)
       return
     }
     
+    await createOS(result.client.id, result.vehicle.id)
+  }
+
+  const createOS = async (clientId: string, vehicleId: string) => {
     setIsCreating(true)
     try {
       const orderNumber = await generateOrderNumber()
@@ -183,8 +201,8 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
         .from('service_orders')
         .insert({
           order_number: orderNumber,
-          client_id: result.client.id,
-          vehicle_id: result.vehicle.id,
+          client_id: clientId,
+          vehicle_id: vehicleId,
           status: 'orcamento',
         })
         .select('id')
@@ -203,6 +221,41 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
       console.error('Erro ao criar OS:', error)
       toast.error('Erro ao criar ordem de serviço')
     } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const handleAddVehicleAndCreateOS = async () => {
+    if (!selectedClient || !newVehicle.plate || !newVehicle.brand || !newVehicle.model) {
+      toast.error('Preencha todos os campos obrigatórios')
+      return
+    }
+    
+    setIsCreating(true)
+    try {
+      // 1. Create vehicle
+      const { data: vehicleData, error: vehicleError } = await supabase
+        .from('vehicles')
+        .insert({
+          client_id: selectedClient.id,
+          plate: newVehicle.plate.toUpperCase(),
+          brand: newVehicle.brand,
+          model: newVehicle.model,
+          year: newVehicle.year ? parseInt(newVehicle.year) : null,
+          color: newVehicle.color || null,
+          is_active: true
+        })
+        .select('id')
+        .single()
+      
+      if (vehicleError) throw vehicleError
+      
+      // 2. Create OS
+      setShowAddVehicle(false)
+      await createOS(selectedClient.id, vehicleData.id)
+    } catch (error) {
+      console.error('Erro ao criar veículo:', error)
+      toast.error('Erro ao criar veículo')
       setIsCreating(false)
     }
   }
@@ -545,6 +598,96 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
                 <Plus className="h-4 w-4" />
               )}
               Criar Cliente e OS
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Vehicle Dialog (for existing client) */}
+      <Dialog open={showAddVehicle} onOpenChange={setShowAddVehicle}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Adicionar Veículo
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {selectedClient && (
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-sm text-muted-foreground">Cliente</p>
+                <p className="font-medium">{selectedClient.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>
+              </div>
+            )}
+
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="vBrand">Marca *</Label>
+                  <Input
+                    id="vBrand"
+                    placeholder="Ex: Volkswagen"
+                    value={newVehicle.brand}
+                    onChange={(e) => setNewVehicle(prev => ({ ...prev, brand: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vModel">Modelo *</Label>
+                  <Input
+                    id="vModel"
+                    placeholder="Ex: Golf GTI"
+                    value={newVehicle.model}
+                    onChange={(e) => setNewVehicle(prev => ({ ...prev, model: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="vPlate">Placa *</Label>
+                  <Input
+                    id="vPlate"
+                    placeholder="ABC-1234"
+                    value={newVehicle.plate}
+                    onChange={(e) => setNewVehicle(prev => ({ ...prev, plate: e.target.value.toUpperCase() }))}
+                    maxLength={8}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vYear">Ano</Label>
+                  <Input
+                    id="vYear"
+                    type="number"
+                    placeholder="2024"
+                    value={newVehicle.year}
+                    onChange={(e) => setNewVehicle(prev => ({ ...prev, year: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vColor">Cor</Label>
+                  <Input
+                    id="vColor"
+                    placeholder="Preto"
+                    value={newVehicle.color}
+                    onChange={(e) => setNewVehicle(prev => ({ ...prev, color: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddVehicle(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddVehicleAndCreateOS} disabled={isCreating} className="gap-2">
+              {isCreating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Criar Veículo e OS
             </Button>
           </DialogFooter>
         </DialogContent>
