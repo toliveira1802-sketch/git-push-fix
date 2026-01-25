@@ -54,7 +54,7 @@ import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
 import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import GestaoComercial from "./pages/gestao/GestaoComercial";
-import GestaoMelhorias from "./pages/gestao/GestaoMelhorias";
+
 
 const queryClient = new QueryClient();
 
@@ -115,7 +115,7 @@ const App = () => (
                 <Route path="/gestao/financeiro" element={<GestaoFinanceiro />} />
                 <Route path="/gestao/tecnologia" element={<GestaoTecnologia />} />
                 <Route path="/gestao/comercial" element={<GestaoComercial />} />
-                <Route path="/gestao/melhorias" element={<GestaoMelhorias />} />
+                
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
