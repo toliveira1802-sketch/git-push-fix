@@ -133,10 +133,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
+  // Auto-expand parent menus when on child routes
+  const isOnCadastrosSubRoute = ['/admin/clientes', '/admin/ordens-servico', '/admin/veiculos'].some(
+    path => location.pathname.startsWith(path)
+  );
+  const isOnCadastrosRoute = location.pathname === '/admin/cadastros' || isOnCadastrosSubRoute;
+
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    '/admin/cadastros': false,
+    '/admin/cadastros': isOnCadastrosRoute,
     '/admin/configuracoes': false,
   });
+
+  // Keep Cadastros expanded when navigating to sub-routes
+  useEffect(() => {
+    if (isOnCadastrosRoute && !expandedItems['/admin/cadastros']) {
+      setExpandedItems(prev => ({ ...prev, '/admin/cadastros': true }));
+    }
+  }, [location.pathname, isOnCadastrosRoute]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));
