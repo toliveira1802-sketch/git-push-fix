@@ -33,6 +33,7 @@ export interface EtapaWorkflow {
 }
 
 const etapasConfig = [
+  { id: 'agendamento-confirmado', titulo: 'Agendamento Confirmado', color: 'bg-teal-500/10 border-teal-500/30', dbStatus: 'agendamento_confirmado', isSeparate: true },
   { id: 'diagnostico', titulo: 'Diagnóstico', color: 'bg-purple-500/10 border-purple-500/30', dbStatus: 'diagnostico' },
   { id: 'orcamento', titulo: 'Orçamento', color: 'bg-blue-500/10 border-blue-500/30', dbStatus: 'orcamento' },
   { id: 'aguardando-apv', titulo: 'Aguardando Aprovação', color: 'bg-amber-500/10 border-amber-500/30', dbStatus: 'aguardando_aprovacao' },
@@ -46,6 +47,7 @@ const etapasConfig = [
 
 // Mapeamento de status do banco para etapa do kanban
 const statusToEtapa: Record<string, string> = {
+  'agendamento_confirmado': 'agendamento-confirmado',
   'diagnostico': 'diagnostico',
   'orcamento': 'orcamento',
   'aguardando_aprovacao': 'aguardando-apv',
@@ -59,6 +61,7 @@ const statusToEtapa: Record<string, string> = {
 
 // Mapeamento inverso: etapa do kanban para status do banco
 const etapaToStatus: Record<string, string> = {
+  'agendamento-confirmado': 'agendamento_confirmado',
   'diagnostico': 'diagnostico',
   'orcamento': 'orcamento',
   'aguardando-apv': 'aguardando_aprovacao',
@@ -138,6 +141,24 @@ export function usePatioKanban() {
         .order('completed_at', { ascending: false });
 
       if (errorEntregues) throw errorEntregues;
+
+      // Buscar agendamentos confirmados (ainda não chegaram)
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const { data: agendamentosConfirmados } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          scheduled_date,
+          scheduled_time,
+          service_type,
+          description,
+          status,
+          clients!inner(name, phone),
+          vehicles(plate, model, brand, year, color)
+        `)
+        .eq('status', 'confirmado')
+        .gte('scheduled_date', hoje.toISOString().split('T')[0]);
 
       // Combinar OSs ativas + entregues do mês
       const oss = [...(ossAtivas || []), ...(ossEntregues || [])];
@@ -228,6 +249,44 @@ export function usePatioKanban() {
           novasEtapas[etapaIndex].veiculos.push(veiculo);
         }
       });
+
+      // Adicionar agendamentos confirmados à etapa separada
+      const etapaAgendamento = novasEtapas.find(e => e.id === 'agendamento-confirmado');
+      if (etapaAgendamento) {
+        (agendamentosConfirmados || []).forEach(ag => {
+          const scheduledDate = new Date(ag.scheduled_date + 'T' + (ag.scheduled_time || '08:00'));
+          
+          const veiculo: VeiculoKanban = {
+            id: `ag-${ag.id}`, // Prefixo para diferenciar de OSs
+            orderNumber: `AG-${scheduledDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`,
+            placa: ag.vehicles?.plate || 'A definir',
+            modelo: ag.vehicles?.model || '',
+            marca: ag.vehicles?.brand || '',
+            ano: ag.vehicles?.year || null,
+            cor: ag.vehicles?.color || null,
+            cliente: ag.clients?.name || '',
+            clienteTelefone: ag.clients?.phone || '',
+            servico: ag.service_type || ag.description || 'Agendamento',
+            categoria: 'Agendamento',
+            entrada: scheduledDate.toLocaleString('pt-BR', { 
+              day: '2-digit', 
+              month: '2-digit',
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            entradaData: scheduledDate,
+            previsaoEntrega: scheduledDate.toLocaleDateString('pt-BR'),
+            total: 0,
+            valorAprovado: 0,
+            emTerceiros: false,
+            mecanico: null,
+            mecanicoId: null,
+            recurso: null,
+          };
+          
+          etapaAgendamento.veiculos.push(veiculo);
+        });
+      }
 
       setEtapas(novasEtapas);
       setTotalEntreguesMes(totalMes);

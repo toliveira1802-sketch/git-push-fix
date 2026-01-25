@@ -16,6 +16,12 @@ import { cn } from "@/lib/utils";
 
 // Configuração das etapas do workflow
 const workflowConfig: Record<string, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
+  agendamento_confirmado: {
+    label: "Agendamento Confirmado",
+    icon: Clock,
+    color: "text-teal-600",
+    bgColor: "bg-teal-500/10 border-teal-500/30"
+  },
   diagnostico: { 
     label: "Diagnóstico", 
     icon: Search, 
@@ -43,8 +49,8 @@ const workflowConfig: Record<string, { label: string; icon: React.ElementType; c
   pronto_iniciar: { 
     label: "Pronto para Iniciar", 
     icon: CheckCircle, 
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10 border-blue-500/30"
+    color: "text-lime-600",
+    bgColor: "bg-lime-500/10 border-lime-500/30"
   },
   em_execucao: { 
     label: "Em Execução", 

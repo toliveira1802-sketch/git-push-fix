@@ -7,14 +7,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   CalendarIcon, Plus, RefreshCw, X, Check, 
-  ChevronLeft, ChevronRight, Car
+  ChevronLeft, ChevronRight, Car, CalendarCheck
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { SlotDetailModal, SlotDetail } from "@/components/agenda/SlotDetailModal";
 
 interface Mechanic {
   id: string;
@@ -27,18 +27,15 @@ interface ScheduleSlot {
   hora: string;
   vehicle_plate?: string;
   vehicle_model?: string;
+  vehicle_brand?: string;
   vehicle_id?: string;
+  cliente?: string;
+  servico?: string;
+  osNumber?: string;
+  origem: 'patio' | 'agendamento';
   tipo: 'normal' | 'encaixe';
-  status: 'agendado' | 'em_andamento' | 'concluido' | 'cancelado';
+  status: string;
   isNew?: boolean;
-}
-
-interface NextService {
-  mechanic_id: string;
-  order_number: string;
-  vehicle_plate: string;
-  vehicle_model: string;
-  problem: string;
 }
 
 interface DaySchedule {
@@ -57,10 +54,13 @@ export default function AdminAgendaMecanicos() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [schedule, setSchedule] = useState<DaySchedule>({});
-  const [nextServices, setNextServices] = useState<NextService[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCell, setEditingCell] = useState<{ mechanicId: string; hora: string } | null>(null);
   const [inputValue, setInputValue] = useState("");
+  
+  // Modal state
+  const [selectedSlot, setSelectedSlot] = useState<SlotDetail | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -81,12 +81,45 @@ export default function AdminAgendaMecanicos() {
         .select('id, mechanic_id, hora_inicio, tipo, status, vehicle_id')
         .eq('data', dateStr);
 
+      // Fetch OSs ativas (veículos no pátio) com mecânico atribuído
+      const { data: ossAtivas } = await supabase
+        .from('service_orders')
+        .select(`
+          id,
+          order_number,
+          mechanic_id,
+          problem_description,
+          status,
+          estimated_completion,
+          vehicles(plate, model, brand),
+          clients(name)
+        `)
+        .neq('status', 'entregue')
+        .not('mechanic_id', 'is', null);
+
+      // Fetch agendamentos confirmados para a data
+      const { data: agendamentosConfirmados } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          scheduled_date,
+          scheduled_time,
+          service_type,
+          description,
+          status,
+          clients(name),
+          vehicles(plate, model, brand)
+        `)
+        .eq('scheduled_date', dateStr)
+        .eq('status', 'confirmado');
+
       // Build schedule map
       const scheduleMap: DaySchedule = {};
       mechanicsData?.forEach(m => {
         scheduleMap[m.id] = {};
       });
 
+      // Adicionar agenda_mecanicos
       agendaData?.forEach((item: any) => {
         const hora = item.hora_inicio?.slice(0, 5)?.replace(':', 'h') + '0' || '';
         if (scheduleMap[item.mechanic_id]) {
@@ -95,65 +128,66 @@ export default function AdminAgendaMecanicos() {
             mechanic_id: item.mechanic_id,
             hora,
             vehicle_id: item.vehicle_id,
+            origem: 'patio',
             tipo: item.tipo,
             status: item.status,
           };
         }
       });
 
+      // Distribuir OSs do pátio nos slots disponíveis
+      ossAtivas?.forEach(os => {
+        if (!os.mechanic_id || !scheduleMap[os.mechanic_id]) return;
+        
+        // Encontrar primeiro slot disponível para este mecânico
+        const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
+        for (const hora of allHoras) {
+          if (!scheduleMap[os.mechanic_id][hora]) {
+            scheduleMap[os.mechanic_id][hora] = {
+              mechanic_id: os.mechanic_id,
+              hora,
+              vehicle_plate: os.vehicles?.plate,
+              vehicle_model: os.vehicles?.model,
+              vehicle_brand: os.vehicles?.brand,
+              cliente: os.clients?.name,
+              servico: os.problem_description || 'Serviço',
+              osNumber: os.order_number,
+              origem: 'patio',
+              tipo: 'normal',
+              status: os.status,
+            };
+            break;
+          }
+        }
+      });
+
+      // Adicionar agendamentos confirmados nos slots disponíveis
+      agendamentosConfirmados?.forEach(ag => {
+        // Distribuir para primeiro mecânico com slot disponível
+        for (const m of mechanicsData || []) {
+          const hora = ag.scheduled_time?.slice(0, 5)?.replace(':', 'h') + '0' || '08h00';
+          const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
+          const horaMatch = allHoras.find(h => h.startsWith(hora.slice(0, 3))) || allHoras[0];
+          
+          if (!scheduleMap[m.id][horaMatch]) {
+            scheduleMap[m.id][horaMatch] = {
+              mechanic_id: m.id,
+              hora: horaMatch,
+              vehicle_plate: ag.vehicles?.plate,
+              vehicle_model: ag.vehicles?.model,
+              vehicle_brand: ag.vehicles?.brand,
+              cliente: ag.clients?.name,
+              servico: ag.service_type,
+              origem: 'agendamento',
+              tipo: 'normal',
+              status: 'confirmado',
+            };
+            break;
+          }
+        }
+      });
+
       setSchedule(scheduleMap);
-
-      // Fetch próximos serviços (OSs ativas por mecânico)
-      const { data: ossAtivas } = await supabase
-        .from('service_orders')
-        .select(`
-          id,
-          order_number,
-          mechanic_id,
-          problem_description,
-          vehicles(plate, model)
-        `)
-        .neq('status', 'entregue')
-        .not('mechanic_id', 'is', null)
-        .order('created_at', { ascending: true })
-        .limit(20);
-
-      // Agrupar por mecânico (máx 3 por mecânico)
-      const servicesByMechanic: Record<string, NextService[]> = {};
-      (ossAtivas || []).forEach(os => {
-        if (!os.mechanic_id) return;
-        if (!servicesByMechanic[os.mechanic_id]) {
-          servicesByMechanic[os.mechanic_id] = [];
-        }
-        if (servicesByMechanic[os.mechanic_id].length < 3) {
-          servicesByMechanic[os.mechanic_id].push({
-            mechanic_id: os.mechanic_id,
-            order_number: os.order_number,
-            vehicle_plate: os.vehicles?.plate || '',
-            vehicle_model: os.vehicles?.model || '',
-            problem: os.problem_description || 'FALAR COM CONSULTOR',
-          });
-        }
-      });
-
-      // Criar lista flat
-      const allServices: NextService[] = [];
-      mechanicsData?.forEach(m => {
-        const services = servicesByMechanic[m.id] || [];
-        // Preencher até 3
-        for (let i = 0; i < 3; i++) {
-          allServices.push(services[i] || {
-            mechanic_id: m.id,
-            order_number: '',
-            vehicle_plate: '',
-            vehicle_model: '',
-            problem: 'FALAR COM CONSULTOR',
-          });
-        }
-      });
-
-      setNextServices(allServices);
-
     } catch (error) {
       console.error('Error fetching schedule:', error);
       toast.error("Erro ao carregar agenda");
@@ -168,7 +202,17 @@ export default function AdminAgendaMecanicos() {
 
   const handleCellClick = (mechanicId: string, hora: string) => {
     const slot = schedule[mechanicId]?.[hora];
-    if (!slot && hora !== ALMOCO) {
+    
+    if (slot) {
+      // Abrir modal com detalhes
+      const mechanic = mechanics.find(m => m.id === mechanicId);
+      setSelectedSlot({
+        ...slot,
+        mechanicName: mechanic?.name || 'Desconhecido',
+      });
+      setModalOpen(true);
+    } else if (hora !== ALMOCO) {
+      // Abrir edição para novo slot
       setEditingCell({ mechanicId, hora });
       setInputValue("");
     }
@@ -191,7 +235,7 @@ export default function AdminAgendaMecanicos() {
           mechanic_id: editingCell.mechanicId,
           hora: editingCell.hora,
           vehicle_plate: plate,
-          vehicle_model: '',
+          origem: 'patio',
           tipo: isEncaixe ? 'encaixe' : 'normal',
           status: 'agendado',
           isNew: true,
@@ -224,9 +268,11 @@ export default function AdminAgendaMecanicos() {
     setInputValue("");
   };
 
-  const handleRemoveSlot = async (mechanicId: string, hora: string) => {
-    const slot = schedule[mechanicId]?.[hora];
-    if (slot?.id) {
+  const handleRemoveSlot = async (slot: SlotDetail) => {
+    const mechanicId = slot.mechanic_id;
+    const hora = slot.hora;
+    
+    if (slot.id) {
       await supabase.from('agenda_mecanicos').delete().eq('id', slot.id);
     }
     
@@ -262,7 +308,7 @@ export default function AdminAgendaMecanicos() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Agenda dos Mecânicos</h1>
               <p className="text-sm text-muted-foreground">
-                Passe o mouse nas células para ver detalhes
+                Clique nas células para ver detalhes ou adicionar
               </p>
             </div>
           </div>
@@ -282,7 +328,7 @@ export default function AdminAgendaMecanicos() {
                   {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
+              <PopoverContent className="w-auto p-0 bg-popover" align="center">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -307,7 +353,7 @@ export default function AdminAgendaMecanicos() {
           </div>
         </div>
 
-        {/* Schedule Table */}
+        {/* Schedule Table - COMPACTA */}
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             {mechanics.length === 0 ? (
@@ -318,14 +364,14 @@ export default function AdminAgendaMecanicos() {
               <table className="w-full min-w-[1200px] border-collapse">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
-                    <th className="p-3 text-left font-medium border-r border-primary-foreground/20 w-28">
+                    <th className="p-2 text-left font-medium border-r border-primary-foreground/20 w-24 text-xs">
                       Mecânico
                     </th>
                     {allHorarios.map(hora => (
                       <th 
                         key={hora} 
                         className={cn(
-                          "p-2 text-center font-medium text-xs border-r border-primary-foreground/20",
+                          "p-1.5 text-center font-medium text-[10px] border-r border-primary-foreground/20",
                           hora === ALMOCO && 'bg-sky-200 text-sky-800',
                           hora.startsWith('EXTRA') && 'bg-amber-500 text-white'
                         )}
@@ -338,7 +384,7 @@ export default function AdminAgendaMecanicos() {
                 <tbody>
                   {mechanics.map((mechanic) => (
                     <tr key={mechanic.id} className="border-b hover:bg-muted/20">
-                      <td className="p-3 font-medium border-r text-sm">
+                      <td className="p-2 font-medium border-r text-xs">
                         {mechanic.name.split(' ')[0]}
                       </td>
                       {allHorarios.map(hora => {
@@ -346,19 +392,20 @@ export default function AdminAgendaMecanicos() {
                         const isEditing = editingCell?.mechanicId === mechanic.id && editingCell?.hora === hora;
                         const isLunch = hora === ALMOCO;
                         const isExtra = hora.startsWith('EXTRA');
+                        const isAgendamento = slot?.origem === 'agendamento';
 
                         if (isLunch) {
                           return (
-                            <td key={hora} className="p-1 border-r">
-                              <div className="h-10 bg-sky-100 border border-sky-200" />
+                            <td key={hora} className="p-0.5 border-r">
+                              <div className="h-8 bg-sky-100 dark:bg-sky-900/30" />
                             </td>
                           );
                         }
 
                         return (
-                          <td key={hora} className="p-1 border-r">
+                          <td key={hora} className="p-0.5 border-r">
                             {isEditing ? (
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5">
                                 <Input
                                   value={inputValue}
                                   onChange={(e) => setInputValue(e.target.value)}
@@ -367,42 +414,35 @@ export default function AdminAgendaMecanicos() {
                                     if (e.key === 'Escape') setEditingCell(null);
                                   }}
                                   placeholder="Placa"
-                                  className="h-8 text-xs w-20"
+                                  className="h-7 text-[10px] w-16 px-1"
                                   autoFocus
                                 />
-                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleInputSubmit}>
-                                  <Check className="w-3 h-3" />
+                                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleInputSubmit}>
+                                  <Check className="w-2.5 h-2.5" />
                                 </Button>
                               </div>
                             ) : slot ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div 
-                                    className={cn(
-                                      "relative group h-10 rounded flex items-center justify-center text-xs font-bold text-white cursor-pointer",
-                                      isExtra ? 'bg-amber-500' : 'bg-primary'
-                                    )}
-                                  >
-                                    <Car className="w-3 h-3 mr-1" />
-                                    {slot.vehicle_plate?.slice(-4) || '???'}
-                                    <button
-                                      onClick={() => handleRemoveSlot(mechanic.id, hora)}
-                                      className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <X className="w-2 h-2" />
-                                    </button>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{slot.vehicle_plate}</p>
-                                </TooltipContent>
-                              </Tooltip>
+                              <div 
+                                onClick={() => handleCellClick(mechanic.id, hora)}
+                                className={cn(
+                                  "h-8 rounded flex items-center justify-center text-[10px] font-bold text-white cursor-pointer transition-all hover:scale-105 hover:shadow-md",
+                                  isAgendamento ? 'bg-teal-500' : isExtra ? 'bg-amber-500' : 'bg-primary'
+                                )}
+                                title={`${slot.vehicle_plate} - ${slot.cliente || 'Clique para detalhes'}`}
+                              >
+                                {isAgendamento ? (
+                                  <CalendarCheck className="w-2.5 h-2.5 mr-0.5" />
+                                ) : (
+                                  <Car className="w-2.5 h-2.5 mr-0.5" />
+                                )}
+                                {slot.vehicle_plate?.slice(-4) || '???'}
+                              </div>
                             ) : (
                               <div 
-                                className="h-10 rounded bg-muted/30 hover:bg-muted/50 flex items-center justify-center cursor-pointer transition-colors border border-dashed border-muted-foreground/20"
+                                className="h-8 rounded bg-muted/30 hover:bg-muted/50 flex items-center justify-center cursor-pointer transition-colors border border-dashed border-muted-foreground/20"
                                 onClick={() => handleCellClick(mechanic.id, hora)}
                               >
-                                <Plus className="w-4 h-4 text-muted-foreground/30" />
+                                <Plus className="w-3 h-3 text-muted-foreground/30" />
                               </div>
                             )}
                           </td>
@@ -417,85 +457,44 @@ export default function AdminAgendaMecanicos() {
         </Card>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-6 text-sm px-2">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-primary flex items-center justify-center">
-              <Car className="w-3 h-3 text-white" />
+        <div className="flex flex-wrap gap-4 text-xs px-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-primary flex items-center justify-center">
+              <Car className="w-2.5 h-2.5 text-white" />
             </div>
-            <span>Agendado</span>
+            <span>Veículo no Pátio</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-amber-500 flex items-center justify-center">
-              <Car className="w-3 h-3 text-white" />
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-teal-500 flex items-center justify-center">
+              <CalendarCheck className="w-2.5 h-2.5 text-white" />
+            </div>
+            <span>Agendamento Confirmado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-amber-500 flex items-center justify-center">
+              <Car className="w-2.5 h-2.5 text-white" />
             </div>
             <span>Encaixe</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-sky-100 border border-sky-200" />
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-sky-100 dark:bg-sky-900/30" />
             <span>Almoço</span>
           </div>
-          <span className="text-muted-foreground italic">⚠️ Passe o mouse sobre os ícones para ver detalhes e ações</span>
         </div>
 
         {/* Info */}
         <p className="text-center text-xs text-muted-foreground">
           Horários: 8h-16h30 • Almoço: 12h15-13h30 • 3 slots extras para encaixes
         </p>
-        <p className="text-center text-xs text-destructive">
-          ⚡ Produtividade monitorada - Registros de tempo salvos automaticamente
-        </p>
-
-        {/* Próximos Serviços */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Car className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold">Próximos Serviços</h2>
-              <span className="text-sm text-muted-foreground">Próximos 3 serviços de cada mecânico</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead>
-                  <tr className="bg-primary text-primary-foreground">
-                    {mechanics.map(m => (
-                      <th key={m.id} className="p-2 text-center text-sm font-medium">
-                        {m.name.split(' ')[0]}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[0, 1, 2].map(index => (
-                    <tr key={index} className="border-b">
-                      {mechanics.map(m => {
-                        const service = nextServices.find(
-                          (s, i) => s.mechanic_id === m.id && 
-                          nextServices.filter((ss, ii) => ss.mechanic_id === m.id && ii < i).length === index
-                        );
-                        return (
-                          <td key={m.id} className="p-2 text-center text-xs">
-                            {service?.order_number ? (
-                              <div>
-                                <p className="font-medium">{service.vehicle_plate}</p>
-                                <p className="text-muted-foreground truncate max-w-[150px]">
-                                  {service.problem || service.vehicle_model}
-                                </p>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">FALAR COM CONSULTOR</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Modal de Detalhes */}
+      <SlotDetailModal
+        slot={selectedSlot}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onRemove={handleRemoveSlot}
+      />
     </AdminLayout>
   );
 }
