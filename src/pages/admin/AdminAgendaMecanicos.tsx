@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
-  CalendarIcon, Plus, RefreshCw, X, Check, 
-  ChevronLeft, ChevronRight, Car, CalendarCheck
+  CalendarIcon, Plus, RefreshCw, Check, 
+  ChevronLeft, ChevronRight, Car, CalendarCheck, Save, Star
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,6 +35,7 @@ interface ScheduleSlot {
   cliente?: string;
   servico?: string;
   osNumber?: string;
+  serviceOrderId?: string;
   origem: 'patio' | 'agendamento';
   tipo: 'normal' | 'encaixe';
   status: string;
@@ -61,6 +65,12 @@ export default function AdminAgendaMecanicos() {
   // Modal state
   const [selectedSlot, setSelectedSlot] = useState<SlotDetail | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  
+  // Feedback modal
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackSlot, setFeedbackSlot] = useState<SlotDetail | null>(null);
+  const [feedbackScores, setFeedbackScores] = useState({ quality: 5, punctuality: 5, performance: 5 });
+  const [feedbackNotes, setFeedbackNotes] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
@@ -152,6 +162,7 @@ export default function AdminAgendaMecanicos() {
               cliente: os.clients?.name,
               servico: os.problem_description || 'Serviço',
               osNumber: os.order_number,
+              serviceOrderId: os.id,
               origem: 'patio',
               tipo: 'normal',
               status: os.status,
@@ -196,8 +207,32 @@ export default function AdminAgendaMecanicos() {
     }
   };
 
+  // Setup realtime subscription
   useEffect(() => {
     fetchData();
+    
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('agenda-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'agenda_mecanicos' },
+        () => {
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'service_orders' },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [selectedDate]);
 
   const handleCellClick = (mechanicId: string, hora: string) => {
@@ -286,7 +321,137 @@ export default function AdminAgendaMecanicos() {
     toast.success("Removido!");
   };
 
+  // Handler: Marcar como Pronto
+  const handlePronto = async (slot: SlotDetail) => {
+    if (slot.serviceOrderId) {
+      const { error } = await supabase
+        .from('service_orders')
+        .update({ status: 'pronto' })
+        .eq('id', slot.serviceOrderId);
+      
+      if (error) {
+        toast.error("Erro ao atualizar status");
+      } else {
+        toast.success(`${slot.vehicle_plate} marcado como Pronto!`);
+        fetchData();
+      }
+    } else {
+      toast.info("Sem OS vinculada para atualizar");
+    }
+  };
+
+  // Handler: Marcar como Em Teste
+  const handleEmTeste = async (slot: SlotDetail) => {
+    if (slot.serviceOrderId) {
+      const { error } = await supabase
+        .from('service_orders')
+        .update({ status: 'em_teste' })
+        .eq('id', slot.serviceOrderId);
+      
+      if (error) {
+        toast.error("Erro ao atualizar status");
+      } else {
+        toast.success(`${slot.vehicle_plate} em Teste!`);
+        fetchData();
+      }
+    } else {
+      toast.info("Sem OS vinculada para atualizar");
+    }
+  };
+
+  // Handler: B.O em Peça -> cria pendência automática
+  const handleBOPeca = async (slot: SlotDetail) => {
+    const { error } = await supabase
+      .from('pendencias')
+      .insert({
+        tipo: 'bo_peca',
+        titulo: `B.O em Peça - ${slot.vehicle_plate}`,
+        descricao: `Problema com peça no veículo ${slot.vehicle_plate} (${slot.vehicle_brand} ${slot.vehicle_model}). Mecânico: ${slot.mechanicName}`,
+        service_order_id: slot.serviceOrderId || null,
+        vehicle_plate: slot.vehicle_plate,
+        mechanic_id: slot.mechanic_id,
+        status: 'pendente',
+        prioridade: 'alta',
+      });
+
+    if (error) {
+      console.error('Erro ao criar pendência:', error);
+      toast.error("Erro ao registrar B.O");
+    } else {
+      toast.success("B.O em Peça registrado em Pendências!");
+    }
+  };
+
+  // Handler: Abrir modal de feedback
+  const handleFeedback = (slot: SlotDetail) => {
+    setFeedbackSlot(slot);
+    setFeedbackScores({ quality: 5, punctuality: 5, performance: 5 });
+    setFeedbackNotes("");
+    setFeedbackOpen(true);
+  };
+
+  // Salvar feedback
+  const saveFeedback = async () => {
+    if (!feedbackSlot) return;
+
+    const { error } = await supabase
+      .from('mechanic_daily_feedback')
+      .insert({
+        mechanic_id: feedbackSlot.mechanic_id,
+        feedback_date: format(selectedDate, 'yyyy-MM-dd'),
+        quality_score: feedbackScores.quality,
+        punctuality_score: feedbackScores.punctuality,
+        performance_score: feedbackScores.performance,
+        notes: feedbackNotes || null,
+      });
+
+    if (error) {
+      console.error('Erro ao salvar feedback:', error);
+      toast.error("Erro ao salvar feedback");
+    } else {
+      toast.success("Feedback salvo!");
+      setFeedbackOpen(false);
+    }
+  };
+
+  // Salvar snapshot da agenda
+  const saveSnapshot = async () => {
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    // Construir snapshot
+    const snapshot = {
+      mechanics: mechanics.map(m => ({
+        id: m.id,
+        name: m.name,
+        slots: Object.entries(schedule[m.id] || {}).map(([hora, slot]) => ({
+          hora,
+          ...slot,
+        })),
+      })),
+      savedAt: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from('agenda_snapshots')
+      .insert({
+        data_agenda: dateStr,
+        snapshot: snapshot,
+      });
+
+    if (error) {
+      console.error('Erro ao salvar snapshot:', error);
+      toast.error("Erro ao salvar retrato da agenda");
+    } else {
+      toast.success("Retrato da agenda salvo!");
+    }
+  };
+
   const allHorarios = [...HORARIOS_PADRAO, ALMOCO, ...HORARIOS_TARDE, ...HORARIOS_EXTRA];
+
+  // Corrigir nome Tadeiu -> Tadeu
+  const fixMechanicName = (name: string) => {
+    return name.replace(/Tadeiu/gi, 'Tadeu');
+  };
 
   if (loading) {
     return (
@@ -312,7 +477,7 @@ export default function AdminAgendaMecanicos() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="outline"
               size="icon"
@@ -350,6 +515,11 @@ export default function AdminAgendaMecanicos() {
               <RefreshCw className="w-4 h-4" />
               Atualizar
             </Button>
+
+            <Button variant="default" onClick={saveSnapshot} className="gap-2">
+              <Save className="w-4 h-4" />
+              Salvar Retrato
+            </Button>
           </div>
         </div>
 
@@ -385,7 +555,7 @@ export default function AdminAgendaMecanicos() {
                   {mechanics.map((mechanic) => (
                     <tr key={mechanic.id} className="border-b hover:bg-muted/20">
                       <td className="p-2 font-medium border-r text-xs">
-                        {mechanic.name.split(' ')[0]}
+                        {fixMechanicName(mechanic.name.split(' ')[0])}
                       </td>
                       {allHorarios.map(hora => {
                         const slot = schedule[mechanic.id]?.[hora];
@@ -484,7 +654,7 @@ export default function AdminAgendaMecanicos() {
 
         {/* Info */}
         <p className="text-center text-xs text-muted-foreground">
-          Horários: 8h-16h30 • Almoço: 12h15-13h30 • 3 slots extras para encaixes
+          Horários: 8h-16h30 • Almoço: 12h15-13h30 • 3 slots extras para encaixes • Atualizações em tempo real
         </p>
       </div>
 
@@ -494,7 +664,69 @@ export default function AdminAgendaMecanicos() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         onRemove={handleRemoveSlot}
+        onPronto={handlePronto}
+        onEmTeste={handleEmTeste}
+        onBOPeca={handleBOPeca}
+        onFeedback={handleFeedback}
       />
+
+      {/* Modal de Feedback */}
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500" />
+              Feedback para {feedbackSlot?.mechanicName}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Qualidade (1-10)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={feedbackScores.quality}
+                onChange={(e) => setFeedbackScores(p => ({ ...p, quality: parseInt(e.target.value) || 5 }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Pontualidade (1-10)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={feedbackScores.punctuality}
+                onChange={(e) => setFeedbackScores(p => ({ ...p, punctuality: parseInt(e.target.value) || 5 }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Performance (1-10)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={feedbackScores.performance}
+                onChange={(e) => setFeedbackScores(p => ({ ...p, performance: parseInt(e.target.value) || 5 }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Observações</Label>
+              <Textarea
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+                placeholder="Comentários sobre o trabalho..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeedbackOpen(false)}>Cancelar</Button>
+            <Button onClick={saveFeedback}>Salvar Feedback</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
