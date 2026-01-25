@@ -28,8 +28,11 @@ const listToStatus: Record<string, string> = {
   'orcamento': 'orcamento',
   'aguardando aprovação': 'aguardando_aprovacao',
   'aguardando aprovacao': 'aguardando_aprovacao',
+  'aguardando peças': 'aguardando_peca',
+  'aguardando pecas': 'aguardando_peca',
   'aguardando peça': 'aguardando_peca',
   'aguardando peca': 'aguardando_peca',
+  'pronto para iniciar': 'em_execucao',
   'em execução': 'em_execucao',
   'em execucao': 'em_execucao',
   'execução': 'em_execucao',
@@ -38,12 +41,19 @@ const listToStatus: Record<string, string> = {
   'teste': 'em_teste',
   'pronto': 'pronto',
   'pronto para retirada': 'pronto',
+  'pronto / aguardando retirada': 'pronto',
+  'aguardando retirada': 'pronto',
   'entregue': 'entregue',
   'finalizado': 'entregue',
 };
 
+// Remove emojis e normaliza nome da lista
 function normalizeListName(name: string): string {
-  return name.toLowerCase().trim();
+  // Remove tudo que não é letra, número, espaço, acentos ou /
+  return name
+    .replace(/[^\p{L}\p{N}\s\/]/gu, '')
+    .toLowerCase()
+    .trim();
 }
 
 function extractPlateFromCard(card: TrelloCard): string | null {
