@@ -437,11 +437,12 @@ Deno.serve(async (req) => {
 
         console.log(`Processando: ${extractedData.plate} - Cliente: ${extractedData.clientName} - Veículo: ${extractedData.vehicleBrand} ${extractedData.vehicleModel} - Status: ${status}`);
 
-        // Verificar se o cliente já existe
+        // Verificar se o cliente já existe (busca case-insensitive)
+        const normalizedClientName = extractedData.clientName.trim().toUpperCase();
         let { data: existingClient } = await supabase
           .from('clients')
           .select('id')
-          .eq('name', extractedData.clientName)
+          .ilike('name', normalizedClientName)
           .maybeSingle();
 
         let clientId: string;
@@ -451,7 +452,7 @@ Deno.serve(async (req) => {
           const { data: newClient, error: clientError } = await supabase
             .from('clients')
             .insert({
-              name: extractedData.clientName,
+              name: extractedData.clientName.trim().toUpperCase(),
               phone: '(00) 00000-0000',
               registration_source: 'trello_import',
             })
