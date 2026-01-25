@@ -45,6 +45,7 @@ import AdminParametros from "./pages/admin/AdminParametros";
 import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
 import AdminPatioDetalhes from "./pages/admin/AdminPatioDetalhes";
 import Cadastros from "./pages/admin/Cadastros";
+import AdminMetas from "./pages/admin/AdminMetas";
 
 // Gestão pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -104,6 +105,7 @@ const App = () => (
                 <Route path="/admin/produtividade" element={<AdminProdutividade />} />
                 <Route path="/admin/melhorias" element={<AdminMelhorias />} />
                 <Route path="/admin/parametros" element={<AdminParametros />} />
+                <Route path="/admin/metas" element={<AdminMetas />} />
                 <Route path="/admin/cadastros" element={<Cadastros />} />
                 
                 {/* Gestão Routes */}
