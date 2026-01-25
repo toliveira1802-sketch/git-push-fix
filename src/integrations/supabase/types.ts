@@ -172,6 +172,48 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          code: string
+          created_at: string
+          dias_atendimento: string[]
+          hora_abertura: string
+          hora_fechamento: string
+          id: string
+          is_active: boolean
+          meta_diaria: number | null
+          meta_mensal: number | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          dias_atendimento?: string[]
+          hora_abertura?: string
+          hora_fechamento?: string
+          id?: string
+          is_active?: boolean
+          meta_diaria?: number | null
+          meta_mensal?: number | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          dias_atendimento?: string[]
+          hora_abertura?: string
+          hora_fechamento?: string
+          id?: string
+          is_active?: boolean
+          meta_diaria?: number | null
+          meta_mensal?: number | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mechanic_daily_feedback: {
         Row: {
           created_at: string
