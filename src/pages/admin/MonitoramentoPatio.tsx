@@ -21,8 +21,10 @@ import {
   AlertTriangle,
   DollarSign,
   Loader2,
-  CloudDownload
+  CloudDownload,
+  Search
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { LayoutPatio, type Area as LayoutArea } from "@/components/patio/LayoutPatio";
 import { usePatioKanban, type VeiculoKanban } from "@/hooks/usePatioKanban";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,6 +82,17 @@ export default function MonitoramentoPatio() {
   const [draggedVeiculoKanban, setDraggedVeiculoKanban] = useState<{ veiculo: VeiculoKanban; fromEtapaId: string } | null>(null);
   const [dragOverEtapa, setDragOverEtapa] = useState<string | null>(null);
   const [syncingTrello, setSyncingTrello] = useState(false);
+  const [filtroPlaca, setFiltroPlaca] = useState("");
+
+  // Filtrar etapas por placa
+  const etapasFiltradas = filtroPlaca.trim()
+    ? etapasWorkflow.map(etapa => ({
+        ...etapa,
+        veiculos: etapa.veiculos.filter(v => 
+          v.placa.toLowerCase().includes(filtroPlaca.toLowerCase())
+        )
+      }))
+    : etapasWorkflow;
 
   const syncTrello = async () => {
     setSyncingTrello(true);
@@ -172,18 +185,30 @@ export default function MonitoramentoPatio() {
   // Componente Kanban com Drag and Drop
   const KanbanView = () => {
     return (
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-3 min-w-max">
-          {etapasWorkflow.map((etapa) => (
-            <Card 
-              key={etapa.id} 
-              className={`w-56 shrink-0 border transition-all ${etapa.color} ${
-                dragOverEtapa === etapa.id ? 'ring-2 ring-primary ring-offset-2' : ''
-              }`}
-              onDragOver={(e) => handleDragOver(e, etapa.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, etapa.id)}
-            >
+      <div className="space-y-3">
+        {/* Filtro de placa */}
+        <div className="relative max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por placa..."
+            value={filtroPlaca}
+            onChange={(e) => setFiltroPlaca(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-3 min-w-max">
+            {etapasFiltradas.map((etapa) => (
+              <Card 
+                key={etapa.id} 
+                className={`w-56 shrink-0 border transition-all ${etapa.color} ${
+                  dragOverEtapa === etapa.id ? 'ring-2 ring-primary ring-offset-2' : ''
+                }`}
+                onDragOver={(e) => handleDragOver(e, etapa.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, etapa.id)}
+              >
               <CardHeader className="pb-2 px-3 pt-3">
                 <CardTitle className="text-xs flex items-center justify-between">
                   {etapa.titulo}
@@ -233,6 +258,7 @@ export default function MonitoramentoPatio() {
               </CardContent>
             </Card>
           ))}
+          </div>
         </div>
       </div>
     );
