@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Laptop, Users, Database, Activity, ArrowLeft, Brain, Lock, ArrowRight } from "lucide-react";
+import { Laptop, Users, Database, Activity, ArrowLeft, Brain, Lock, ArrowRight, Receipt } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
 
@@ -165,7 +165,29 @@ export default function GestaoTecnologia() {
           </CardContent>
         </Card>
 
-        {/* Funil de Conversão */}
+        {/* Card de Acesso ao Dashboard de Orçamentos */}
+        <Card className="border-blue-500/30 bg-gradient-to-br from-blue-500/5 to-cyan-500/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                  <Receipt className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Dashboard de Orçamentos</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Análise de conversão, margens e oportunidades
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => navigate("/admin/orcamentos")} className="gap-2">
+                Acessar
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Funil de Conversão</CardTitle>
