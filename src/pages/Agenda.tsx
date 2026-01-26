@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Plus, Clock, Wrench, Gift, ChevronRight, CalendarClock, XCircle, PartyPopper, MapPin } from "lucide-react";
+import { Calendar, Plus, Clock, Gift, ChevronRight, CalendarClock, XCircle, PartyPopper, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
@@ -25,6 +25,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Appointment {
   id: string;
@@ -36,33 +38,6 @@ interface Appointment {
   vehiclePlate?: string;
   isFullDay?: boolean;
 }
-
-interface Promotion {
-  id: string;
-  title: string;
-  description: string | null;
-  discount_label: string;
-  discount_percent: number;
-  valid_to: string;
-}
-
-interface PrimeEvent {
-  id: string;
-  title: string;
-  description: string | null;
-  event_type: "workshop" | "meetup" | "carwash" | "training" | "other";
-  event_date: string;
-  event_time: string | null;
-  location: string | null;
-}
-
-const eventTypeConfig: Record<string, { label: string; color: string; icon: string }> = {
-  workshop: { label: "Workshop", color: "bg-blue-500/20 text-blue-500", icon: "🔧" },
-  meetup: { label: "Encontro", color: "bg-purple-500/20 text-purple-500", icon: "🤝" },
-  carwash: { label: "Car Wash", color: "bg-cyan-500/20 text-cyan-500", icon: "🚿" },
-  training: { label: "Treinamento", color: "bg-amber-500/20 text-amber-500", icon: "📚" },
-  other: { label: "Evento", color: "bg-muted text-muted-foreground", icon: "🎉" },
-};
 
 const statusColors = {
   confirmado: "bg-emerald-500/20 text-emerald-500",
@@ -76,98 +51,94 @@ const statusLabels = {
   concluido: "Concluído",
 };
 
-// Mock data
-const mockAppointments: Appointment[] = [
-  {
-    id: "1",
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    time: "14:00",
-    service: "Troca de Óleo",
-    status: "confirmado",
-    vehicleModel: "Honda Civic",
-    vehiclePlate: "ABC-1234",
-  },
-  {
-    id: "2",
-    date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-    time: null,
-    service: "Revisão Completa",
-    status: "pendente",
-    vehicleModel: "Toyota Corolla",
-    vehiclePlate: "XYZ-5678",
-    isFullDay: true,
-  },
-];
-
-const mockPromotions: Promotion[] = [
-  {
-    id: "1",
-    title: "Troca de Óleo com 20% OFF",
-    description: "Válido para todos os veículos",
-    discount_label: "20% OFF",
-    discount_percent: 20,
-    valid_to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-const mockEvents: PrimeEvent[] = [
-  {
-    id: "1",
-    title: "Workshop de Manutenção Preventiva",
-    description: "Aprenda a cuidar do seu veículo",
-    event_type: "workshop",
-    event_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-    event_time: "10:00",
-    location: "Doctor Auto Prime - Sede",
-  },
-];
-
 const Agenda = () => {
   const navigate = useNavigate();
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
-  const [promotions] = useState<Promotion[]>(mockPromotions);
-  const [events] = useState<PrimeEvent[]>(mockEvents);
+  const { user } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
 
-  const handlePromoClick = (promo: Promotion) => {
-    toast.success("Oferta selecionada!", {
-      description: "Redirecionando para agendamento...",
-    });
-    navigate("/novo-agendamento", { 
-      state: { 
-        promotion: {
-          id: promo.id,
-          title: promo.title,
-          description: promo.description,
-          discount: promo.discount_label,
-        } 
-      } 
-    });
-  };
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-  const handleEventClick = (event: PrimeEvent) => {
-    toast.success("Interesse registrado!", {
-      description: `Você será avisado sobre "${event.title}"`,
-    });
-  };
+      // Get client by user_id
+      const { data: client } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!client) {
+        setLoading(false);
+        return;
+      }
+
+      // Get appointments for this client
+      const { data: appointmentsData } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          scheduled_date,
+          scheduled_time,
+          service_type,
+          status,
+          vehicle_id,
+          vehicles (brand, model, plate)
+        `)
+        .eq('client_id', client.id)
+        .gte('scheduled_date', new Date().toISOString().split('T')[0])
+        .order('scheduled_date', { ascending: true });
+
+      if (appointmentsData) {
+        const mapped: Appointment[] = appointmentsData.map((apt: any) => ({
+          id: apt.id,
+          date: new Date(apt.scheduled_date),
+          time: apt.scheduled_time,
+          service: apt.service_type,
+          status: apt.status === 'confirmado' ? 'confirmado' : apt.status === 'concluido' ? 'concluido' : 'pendente',
+          vehicleModel: apt.vehicles ? `${apt.vehicles.brand} ${apt.vehicles.model}` : undefined,
+          vehiclePlate: apt.vehicles?.plate,
+        }));
+        setAppointments(mapped);
+      }
+      setLoading(false);
+    };
+
+    fetchAppointments();
+  }, [user]);
 
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return;
     
     setIsCancelling(true);
     
-    // Mock cancel
-    setTimeout(() => {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ 
+        status: 'cancelado',
+        cancel_reason: cancelReason || null,
+        cancelled_at: new Date().toISOString()
+      })
+      .eq('id', selectedAppointment.id);
+
+    if (error) {
+      toast.error("Erro ao cancelar agendamento");
+    } else {
       setAppointments(prev => prev.filter(apt => apt.id !== selectedAppointment.id));
       toast.success("Agendamento cancelado");
-      setIsCancelling(false);
-      setCancelDialogOpen(false);
-      setSelectedAppointment(null);
-      setCancelReason("");
-    }, 500);
+    }
+    
+    setIsCancelling(false);
+    setCancelDialogOpen(false);
+    setSelectedAppointment(null);
+    setCancelReason("");
   };
 
   const openCancelDialog = (apt: Appointment, e: React.MouseEvent) => {
@@ -175,6 +146,18 @@ const Agenda = () => {
     setSelectedAppointment(apt);
     setCancelDialogOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground pb-24">
+        <Header title="Agenda" showHomeButton={true} />
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">
@@ -193,30 +176,30 @@ const Agenda = () => {
         {/* Appointments Section */}
         <Accordion type="single" collapsible defaultValue="appointments" className="space-y-4">
           <AccordionItem value="appointments" className="border-0">
-            <AccordionTrigger className="bg-[#111] rounded-xl px-4 py-3 hover:no-underline">
+            <AccordionTrigger className="bg-card rounded-xl px-4 py-3 hover:no-underline border">
               <div className="flex items-center gap-3">
-                <CalendarClock className="w-5 h-5 text-red-500" />
+                <CalendarClock className="w-5 h-5 text-primary" />
                 <span className="font-semibold">Meus Agendamentos</span>
-                <span className="text-sm text-gray-400">({appointments.length})</span>
+                <span className="text-sm text-muted-foreground">({appointments.length})</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="pt-2 space-y-3">
               {appointments.map((apt) => (
                 <div
                   key={apt.id}
-                  className="bg-[#111] rounded-xl p-4 border border-gray-800"
+                  className="bg-card rounded-xl p-4 border"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold">{apt.service}</h3>
-                      <p className="text-sm text-gray-400">{apt.vehicleModel} • {apt.vehiclePlate}</p>
+                      <p className="text-sm text-muted-foreground">{apt.vehicleModel} • {apt.vehiclePlate}</p>
                     </div>
                     <span className={cn("text-xs px-2 py-1 rounded-full", statusColors[apt.status])}>
                       {statusLabels[apt.status]}
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>{format(apt.date, "dd/MM/yyyy", { locale: ptBR })}</span>
@@ -232,104 +215,26 @@ const Agenda = () => {
                     )}
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                    onClick={(e) => openCancelDialog(apt, e)}
-                  >
-                    <XCircle className="w-4 h-4 mr-1" />
-                    Cancelar
-                  </Button>
+                  {apt.status !== 'concluido' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => openCancelDialog(apt, e)}
+                    >
+                      <XCircle className="w-4 h-4 mr-1" />
+                      Cancelar
+                    </Button>
+                  )}
                 </div>
               ))}
 
               {appointments.length === 0 && (
-                <div className="text-center py-8 text-gray-400">
+                <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>Nenhum agendamento</p>
                 </div>
               )}
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Promotions Section */}
-          <AccordionItem value="promotions" className="border-0">
-            <AccordionTrigger className="bg-[#111] rounded-xl px-4 py-3 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <Gift className="w-5 h-5 text-amber-500" />
-                <span className="font-semibold">Promoções para Você</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 space-y-3">
-              {promotions.map((promo) => (
-                <button
-                  key={promo.id}
-                  onClick={() => handlePromoClick(promo)}
-                  className="w-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-xl p-4 text-left hover:border-amber-500/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-amber-500">{promo.title}</h3>
-                      <p className="text-sm text-gray-400 mt-1">{promo.description}</p>
-                    </div>
-                    <span className="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded">
-                      {promo.discount_label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-3 text-sm text-amber-500">
-                    <span>Agendar agora</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
-                </button>
-              ))}
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Events Section */}
-          <AccordionItem value="events" className="border-0">
-            <AccordionTrigger className="bg-[#111] rounded-xl px-4 py-3 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <PartyPopper className="w-5 h-5 text-purple-500" />
-                <span className="font-semibold">Eventos Prime</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 space-y-3">
-              {events.map((event) => {
-                const config = eventTypeConfig[event.event_type];
-                return (
-                  <button
-                    key={event.id}
-                    onClick={() => handleEventClick(event)}
-                    className="w-full bg-[#111] border border-gray-800 rounded-xl p-4 text-left hover:border-purple-500/30 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">{config.icon}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{event.title}</h3>
-                          <span className={cn("text-xs px-2 py-0.5 rounded-full", config.color)}>
-                            {config.label}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-400">{event.description}</p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{format(new Date(event.event_date), "dd/MM", { locale: ptBR })}</span>
-                          </div>
-                          {event.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -337,7 +242,7 @@ const Agenda = () => {
 
       {/* Cancel Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <AlertDialogContent className="bg-[#111] border-gray-800">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar Agendamento?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -348,16 +253,15 @@ const Agenda = () => {
             placeholder="Motivo do cancelamento..."
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
-            className="bg-[#0a0a0a] border-gray-700"
           />
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-gray-700">
+            <AlertDialogCancel>
               Voltar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelAppointment}
               disabled={isCancelling}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               {isCancelling ? "Cancelando..." : "Confirmar Cancelamento"}
             </AlertDialogAction>

@@ -1,23 +1,31 @@
-import { useState } from "react";
-import { Bird, Plus, ArrowLeft, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bird, Plus, ArrowLeft, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-interface Task {
+interface Pendencia {
   id: string;
-  text: string;
-  completed: boolean;
+  titulo: string;
+  status: string;
+  mechanic_id: string | null;
+}
+
+interface Mechanic {
+  id: string;
+  name: string;
 }
 
 interface TeamMember {
   id: string;
   name: string;
   symbol: 'corinthians' | 'pombo';
-  tasks: Task[];
+  tasks: { id: string; text: string; completed: boolean }[];
 }
 
 // Corinthians SVG Symbol - Timão
@@ -33,25 +41,47 @@ const CorinthiansIcon = ({ size = 24 }: { size?: number }) => (
   </svg>
 );
 
-// Initial mock data
-const initialTeamMembers: TeamMember[] = [
-  { id: '1', name: 'THALES', symbol: 'corinthians', tasks: [
-    { id: 't1', text: 'Verificar OS #2024-001', completed: false },
-    { id: 't2', text: 'Ligar para cliente João', completed: true },
-  ]},
-  { id: '2', name: 'PEDRO', symbol: 'pombo', tasks: [
-    { id: 'p1', text: 'Finalizar diagnóstico BMW', completed: false },
-  ]},
-  { id: '3', name: 'JOAO', symbol: 'pombo', tasks: [
-    { id: 'j1', text: 'Trocar óleo do Golf', completed: false },
-    { id: 'j2', text: 'Balanceamento Corolla', completed: false },
-  ]},
-];
-
 export default function Pendencias() {
   const navigate = useNavigate();
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialTeamMembers);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [newTaskInputs, setNewTaskInputs] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Fetch mechanics
+      const { data: mechanics } = await supabase
+        .from('mechanics')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      // Fetch pending tasks
+      const { data: pendencias } = await supabase
+        .from('pendencias')
+        .select('id, titulo, status, mechanic_id')
+        .order('created_at', { ascending: false });
+
+      if (mechanics) {
+        const members: TeamMember[] = mechanics.map((m, index) => ({
+          id: m.id,
+          name: m.name.toUpperCase(),
+          symbol: index === 0 ? 'corinthians' : 'pombo',
+          tasks: (pendencias || [])
+            .filter(p => p.mechanic_id === m.id)
+            .map(p => ({
+              id: p.id,
+              text: p.titulo,
+              completed: p.status === 'resolvido'
+            }))
+        }));
+        setTeamMembers(members);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
 
   // Count pending tasks
   const totalPending = teamMembers.reduce(
@@ -59,59 +89,118 @@ export default function Pendencias() {
     0
   );
 
-  const toggleTask = (memberId: string, taskId: string) => {
-    setTeamMembers(prev => prev.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          tasks: member.tasks.map(task => 
-            task.id === taskId ? { ...task, completed: !task.completed } : task
-          )
-        };
-      }
-      return member;
-    }));
+  const toggleTask = async (memberId: string, taskId: string) => {
+    const member = teamMembers.find(m => m.id === memberId);
+    const task = member?.tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newStatus = task.completed ? 'pendente' : 'resolvido';
+    
+    const { error } = await supabase
+      .from('pendencias')
+      .update({ 
+        status: newStatus,
+        resolved_at: newStatus === 'resolvido' ? new Date().toISOString() : null
+      })
+      .eq('id', taskId);
+
+    if (!error) {
+      setTeamMembers(prev => prev.map(m => {
+        if (m.id === memberId) {
+          return {
+            ...m,
+            tasks: m.tasks.map(t => 
+              t.id === taskId ? { ...t, completed: !t.completed } : t
+            )
+          };
+        }
+        return m;
+      }));
+    }
   };
 
-  const addTask = (memberId: string) => {
+  const addTask = async (memberId: string) => {
     const taskText = newTaskInputs[memberId]?.trim();
     if (!taskText) return;
 
-    setTeamMembers(prev => prev.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          tasks: [...member.tasks, { id: `${memberId}-${Date.now()}`, text: taskText, completed: false }]
-        };
-      }
-      return member;
-    }));
-    setNewTaskInputs(prev => ({ ...prev, [memberId]: '' }));
+    const { data, error } = await supabase
+      .from('pendencias')
+      .insert({
+        titulo: taskText,
+        mechanic_id: memberId,
+        status: 'pendente',
+        tipo: 'tarefa'
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setTeamMembers(prev => prev.map(m => {
+        if (m.id === memberId) {
+          return {
+            ...m,
+            tasks: [...m.tasks, { id: data.id, text: taskText, completed: false }]
+          };
+        }
+        return m;
+      }));
+      setNewTaskInputs(prev => ({ ...prev, [memberId]: '' }));
+      toast.success("Tarefa adicionada");
+    }
   };
 
-  const removeTask = (memberId: string, taskId: string) => {
-    setTeamMembers(prev => prev.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          tasks: member.tasks.filter(task => task.id !== taskId)
-        };
-      }
-      return member;
-    }));
+  const removeTask = async (memberId: string, taskId: string) => {
+    const { error } = await supabase
+      .from('pendencias')
+      .delete()
+      .eq('id', taskId);
+
+    if (!error) {
+      setTeamMembers(prev => prev.map(m => {
+        if (m.id === memberId) {
+          return {
+            ...m,
+            tasks: m.tasks.filter(t => t.id !== taskId)
+          };
+        }
+        return m;
+      }));
+    }
   };
 
-  const clearCompleted = (memberId: string) => {
-    setTeamMembers(prev => prev.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          tasks: member.tasks.filter(task => !task.completed)
-        };
-      }
-      return member;
-    }));
+  const clearCompleted = async (memberId: string) => {
+    const member = teamMembers.find(m => m.id === memberId);
+    const completedIds = member?.tasks.filter(t => t.completed).map(t => t.id) || [];
+    
+    if (completedIds.length === 0) return;
+
+    const { error } = await supabase
+      .from('pendencias')
+      .delete()
+      .in('id', completedIds);
+
+    if (!error) {
+      setTeamMembers(prev => prev.map(m => {
+        if (m.id === memberId) {
+          return {
+            ...m,
+            tasks: m.tasks.filter(t => !t.completed)
+          };
+        }
+        return m;
+      }));
+    }
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -128,99 +217,108 @@ export default function Pendencias() {
         </div>
 
         {/* Team Members with Tasks */}
-        <div className="space-y-4">
-          {teamMembers.map((member) => {
-            const pendingCount = member.tasks.filter(t => !t.completed).length;
-            const completedCount = member.tasks.filter(t => t.completed).length;
+        {teamMembers.length === 0 ? (
+          <Card className="p-8">
+            <div className="text-center text-muted-foreground">
+              <Bird className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>Nenhum mecânico cadastrado</p>
+            </div>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {teamMembers.map((member) => {
+              const pendingCount = member.tasks.filter(t => !t.completed).length;
+              const completedCount = member.tasks.filter(t => t.completed).length;
 
-            return (
-              <Card key={member.id} className="border overflow-hidden">
-                {/* Member header */}
-                <div className="p-4 bg-muted/30 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {member.symbol === 'corinthians' ? (
-                      <CorinthiansIcon size={32} />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                        <Bird className="w-5 h-5 text-muted-foreground" />
+              return (
+                <Card key={member.id} className="border overflow-hidden">
+                  {/* Member header */}
+                  <div className="p-4 bg-muted/30 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {member.symbol === 'corinthians' ? (
+                        <CorinthiansIcon size={32} />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <Bird className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <span className="font-bold text-foreground text-lg">{member.name}</span>
+                        <p className="text-sm text-muted-foreground">
+                          {pendingCount} pendente{pendingCount !== 1 ? 's' : ''} • {completedCount} concluída{completedCount !== 1 ? 's' : ''}
+                        </p>
                       </div>
-                    )}
-                    <div>
-                      <span className="font-bold text-foreground text-lg">{member.name}</span>
-                      <p className="text-sm text-muted-foreground">
-                        {pendingCount} pendente{pendingCount !== 1 ? 's' : ''} • {completedCount} concluída{completedCount !== 1 ? 's' : ''}
-                      </p>
                     </div>
-                  </div>
-                  {completedCount > 0 && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => clearCompleted(member.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Limpar concluídas
-                    </Button>
-                  )}
-                </div>
-                
-                <CardContent className="p-4">
-                  {/* Tasks list */}
-                  <div className="space-y-3">
-                    {member.tasks.map((task) => (
-                      <div 
-                        key={task.id} 
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 group"
+                    {completedCount > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => clearCompleted(member.id)}
+                        className="text-muted-foreground hover:text-destructive"
                       >
-                        <Checkbox
-                          checked={task.completed}
-                          onCheckedChange={() => toggleTask(member.id, task.id)}
-                        />
-                        <span className={`flex-1 ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                          {task.text}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeTask(member.id, task.id)}
-                          className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Limpar concluídas
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <CardContent className="p-4">
+                    {/* Tasks list */}
+                    <div className="space-y-3">
+                      {member.tasks.map((task) => (
+                        <div 
+                          key={task.id} 
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 group"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Checkbox
+                            checked={task.completed}
+                            onCheckedChange={() => toggleTask(member.id, task.id)}
+                          />
+                          <span className={`flex-1 ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                            {task.text}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeTask(member.id, task.id)}
+                            className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      {member.tasks.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nenhuma tarefa. Adicione uma abaixo.
+                        </p>
+                      )}
+                      
+                      {/* Add new task */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-border mt-3">
+                        <Input
+                          placeholder="Nova tarefa..."
+                          value={newTaskInputs[member.id] || ''}
+                          onChange={(e) => setNewTaskInputs(prev => ({ ...prev, [member.id]: e.target.value }))}
+                          onKeyDown={(e) => e.key === 'Enter' && addTask(member.id)}
+                          className="flex-1"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => addTask(member.id)}
+                          className="gap-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Adicionar
                         </Button>
                       </div>
-                    ))}
-                    
-                    {member.tasks.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Nenhuma tarefa. Adicione uma abaixo.
-                      </p>
-                    )}
-                    
-                    {/* Add new task */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-border mt-3">
-                      <Input
-                        placeholder="Nova tarefa..."
-                        value={newTaskInputs[member.id] || ''}
-                        onChange={(e) => setNewTaskInputs(prev => ({ ...prev, [member.id]: e.target.value }))}
-                        onKeyDown={(e) => e.key === 'Enter' && addTask(member.id)}
-                        className="flex-1"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => addTask(member.id)}
-                        className="gap-1"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Adicionar
-                      </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

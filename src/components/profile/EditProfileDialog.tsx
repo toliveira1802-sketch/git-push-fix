@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
   id: string;
@@ -30,21 +31,28 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave }: EditP
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (!profile) return;
+    
     setSaving(true);
     
-    // Mock save - in real app would call Supabase
-    localStorage.setItem('mock_profile', JSON.stringify({
-      full_name: name,
-      phone,
-      birthday,
-    }));
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: name,
+        phone,
+        birthday: birthday || null,
+      })
+      .eq('id', profile.id);
     
-    setTimeout(() => {
-      setSaving(false);
+    if (error) {
+      toast.error("Erro ao atualizar perfil");
+    } else {
       toast.success("Perfil atualizado!");
       onOpenChange(false);
       onSave();
-    }, 500);
+    }
+    
+    setSaving(false);
   };
 
   return (

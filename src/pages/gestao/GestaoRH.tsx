@@ -1,30 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { UserCog, Users, Award, TrendingUp, ArrowLeft, Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data para mecânicos
-const mockMechanics = [
-  { id: "1", name: "Thales", specialty: "Motor", is_active: true, performance: 92, quality: 95 },
-  { id: "2", name: "Pedro", specialty: "Elétrica", is_active: true, performance: 88, quality: 90 },
-  { id: "3", name: "João", specialty: "Suspensão", is_active: true, performance: 85, quality: 88 },
-  { id: "4", name: "Lucas", specialty: "Freios", is_active: false, performance: 78, quality: 82 },
-];
+interface Mechanic {
+  id: string;
+  name: string;
+  specialty: string | null;
+  is_active: boolean;
+}
 
 export default function GestaoRH() {
   const navigate = useNavigate();
-  const [mechanics] = useState(mockMechanics);
+  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMechanics = async () => {
+      const { data, error } = await supabase
+        .from('mechanics')
+        .select('id, name, specialty, is_active')
+        .order('name');
+      
+      if (!error && data) {
+        setMechanics(data);
+      }
+      setLoading(false);
+    };
+
+    fetchMechanics();
+  }, []);
 
   const activeMechanics = mechanics.filter(m => m.is_active);
-  const avgPerformance = Math.round(
-    activeMechanics.reduce((acc, m) => acc + m.performance, 0) / activeMechanics.length
-  );
-  const avgQuality = Math.round(
-    activeMechanics.reduce((acc, m) => acc + m.quality, 0) / activeMechanics.length
-  );
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="p-4 md:p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/gestao")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Skeleton className="h-8 w-48" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -82,7 +118,7 @@ export default function GestaoRH() {
                   <TrendingUp className="h-5 w-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{avgPerformance}%</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-xs text-muted-foreground">Performance Média</p>
                 </div>
               </div>
@@ -96,7 +132,7 @@ export default function GestaoRH() {
                   <Award className="h-5 w-5 text-purple-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{avgQuality}%</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-xs text-muted-foreground">Qualidade Média</p>
                 </div>
               </div>
@@ -110,37 +146,37 @@ export default function GestaoRH() {
             <CardTitle>Equipe Técnica</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {mechanics.map((mechanic) => (
-                <div
-                  key={mechanic.id}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                      {mechanic.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-medium">{mechanic.name}</p>
-                      <p className="text-sm text-muted-foreground">{mechanic.specialty}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                        <span className="font-medium">{mechanic.performance}%</span>
+            {mechanics.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p>Nenhum mecânico cadastrado</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {mechanics.map((mechanic) => (
+                  <div
+                    key={mechanic.id}
+                    className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                        {mechanic.name.charAt(0)}
                       </div>
-                      <p className="text-xs text-muted-foreground">Performance</p>
+                      <div>
+                        <p className="font-medium">{mechanic.name}</p>
+                        <p className="text-sm text-muted-foreground">{mechanic.specialty || "Geral"}</p>
+                      </div>
                     </div>
-                    <Badge variant={mechanic.is_active ? "default" : "secondary"}>
-                      {mechanic.is_active ? "Ativo" : "Inativo"}
-                    </Badge>
+                    
+                    <div className="flex items-center gap-4">
+                      <Badge variant={mechanic.is_active ? "default" : "secondary"}>
+                        {mechanic.is_active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
