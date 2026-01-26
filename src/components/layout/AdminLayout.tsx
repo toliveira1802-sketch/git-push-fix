@@ -58,6 +58,7 @@ interface AdminLayoutProps {
 
 const companyMenuItems: MenuItem[] = [
   { icon: Home, label: 'Visão Geral', path: '/admin' },
+  { icon: Plus, label: 'Nova OS', path: '/admin/os-ultimate', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
   { icon: ClipboardCheck, label: 'Checklist', path: '/admin/checklist' },
@@ -68,7 +69,6 @@ const companyMenuItems: MenuItem[] = [
     subItems: [
       { icon: Users, label: 'Clientes', path: '/admin/clientes' },
       { icon: ClipboardList, label: 'Ordens de Serviço', path: '/admin/ordens-servico' },
-      { icon: FileText, label: 'OS Ultimate', path: '/admin/os-ultimate' },
       { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
     ]
   },
