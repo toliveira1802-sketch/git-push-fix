@@ -12,115 +12,13 @@ import {
   Database,
   Download,
   Copy,
-  CheckCircle2,
-  RefreshCw,
-  ExternalLink,
-  Loader2,
-  Trello
+  CheckCircle2
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-interface TrelloBoard {
-  id: string;
-  name: string;
-  desc: string;
-  url: string;
-  dateLastActivity: string;
-}
-
-interface TrelloCard {
-  id: string;
-  name: string;
-  desc: string;
-  due: string | null;
-  url: string;
-  idList: string;
-  labels: { name: string; color: string }[];
-  dateLastActivity: string;
-}
-
-interface TrelloList {
-  id: string;
-  name: string;
-  pos: number;
-}
 
 const AdminDocumentacao = () => {
   const [copied, setCopied] = useState(false);
-  const [boards, setBoards] = useState<TrelloBoard[]>([]);
-  const [selectedBoard, setSelectedBoard] = useState<TrelloBoard | null>(null);
-  const [lists, setLists] = useState<TrelloList[]>([]);
-  const [cards, setCards] = useState<TrelloCard[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingCards, setLoadingCards] = useState(false);
-
-  const fetchBoards = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('trello-boards', {
-        body: { action: 'getBoards' }
-      });
-      
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-      
-      setBoards(data);
-      toast.success('Boards carregados do Trello!');
-    } catch (err) {
-      console.error('Error fetching boards:', err);
-      toast.error('Erro ao carregar boards do Trello');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBoardDetails = async (board: TrelloBoard) => {
-    setSelectedBoard(board);
-    setLoadingCards(true);
-    try {
-      const [listsRes, cardsRes] = await Promise.all([
-        supabase.functions.invoke('trello-boards', {
-          body: { action: 'getLists', boardId: board.id }
-        }),
-        supabase.functions.invoke('trello-boards', {
-          body: { action: 'getBoardCards', boardId: board.id }
-        })
-      ]);
-      
-      if (listsRes.error) throw listsRes.error;
-      if (cardsRes.error) throw cardsRes.error;
-      
-      setLists(listsRes.data);
-      setCards(cardsRes.data);
-    } catch (err) {
-      console.error('Error fetching board details:', err);
-      toast.error('Erro ao carregar detalhes do board');
-    } finally {
-      setLoadingCards(false);
-    }
-  };
-
-  const getCardsByList = (listId: string) => {
-    return cards.filter(card => card.idList === listId);
-  };
-
-  const getLabelColor = (color: string) => {
-    const colors: Record<string, string> = {
-      green: 'bg-green-500',
-      yellow: 'bg-yellow-500',
-      orange: 'bg-orange-500',
-      red: 'bg-red-500',
-      purple: 'bg-purple-500',
-      blue: 'bg-blue-500',
-      sky: 'bg-sky-500',
-      lime: 'bg-lime-500',
-      pink: 'bg-pink-500',
-      black: 'bg-gray-800',
-    };
-    return colors[color] || 'bg-gray-500';
-  };
 
   const handleCopyMarkdown = async () => {
     const markdown = generateMarkdown();
@@ -203,7 +101,7 @@ const AdminDocumentacao = () => {
             <CardContent>
               <ScrollArea className="h-[200px]">
                 <div className="space-y-4">
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="destructive">admin</Badge>
                     </div>
@@ -211,17 +109,17 @@ const AdminDocumentacao = () => {
                       Acesso completo: financeiro, analytics, configurações
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge className="bg-blue-500">oficina</Badge>
+                      <Badge className="bg-primary">oficina</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Painel operacional sem financeiro/analytics
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge className="bg-green-500">user</Badge>
+                      <Badge className="bg-accent text-accent-foreground">user</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Área do cliente apenas
@@ -357,8 +255,8 @@ const AdminDocumentacao = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
-                  <p className="text-sm font-medium text-green-600">✓ RLS Habilitado</p>
+                <div className="p-2 rounded bg-accent/10 border border-accent/20">
+                  <p className="text-sm font-medium text-accent-foreground">✓ RLS Habilitado</p>
                   <p className="text-xs text-muted-foreground">Todas as tabelas protegidas</p>
                 </div>
                 <Separator />
@@ -393,133 +291,6 @@ const AdminDocumentacao = () => {
                 </code>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Trello Integration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Trello className="h-5 w-5" />
-                Trello - Roadmap do Projeto
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={fetchBoards}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                <span className="ml-2">Carregar Boards</span>
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {boards.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Trello className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Clique em "Carregar Boards" para ver seus boards do Trello</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Board Selection */}
-                <div className="flex flex-wrap gap-2">
-                  {boards.map((board) => (
-                    <Button
-                      key={board.id}
-                      variant={selectedBoard?.id === board.id ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => fetchBoardDetails(board)}
-                    >
-                      {board.name}
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Selected Board Details */}
-                {selectedBoard && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{selectedBoard.name}</h3>
-                        {selectedBoard.desc && (
-                          <p className="text-sm text-muted-foreground">{selectedBoard.desc}</p>
-                        )}
-                      </div>
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={selectedBoard.url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Abrir no Trello
-                        </a>
-                      </Button>
-                    </div>
-
-                    <Separator />
-
-                    {loadingCards ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      </div>
-                    ) : (
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {lists.sort((a, b) => a.pos - b.pos).map((list) => (
-                          <div key={list.id} className="space-y-2">
-                            <h4 className="font-medium text-sm bg-muted px-3 py-2 rounded-t-lg">
-                              {list.name}
-                              <Badge variant="secondary" className="ml-2 text-xs">
-                                {getCardsByList(list.id).length}
-                              </Badge>
-                            </h4>
-                            <ScrollArea className="h-[300px]">
-                              <div className="space-y-2 pr-2">
-                                {getCardsByList(list.id).map((card) => (
-                                  <a
-                                    key={card.id}
-                                    href={card.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block p-3 rounded-lg border bg-card hover:bg-accent transition-colors"
-                                  >
-                                    <p className="text-sm font-medium line-clamp-2">{card.name}</p>
-                                    {card.labels && card.labels.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-2">
-                                        {card.labels.map((label, idx) => (
-                                          <span
-                                            key={idx}
-                                            className={`text-[10px] px-2 py-0.5 rounded text-white ${getLabelColor(label.color)}`}
-                                          >
-                                            {label.name || label.color}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {card.due && (
-                                      <p className="text-xs text-muted-foreground mt-2">
-                                        📅 {new Date(card.due).toLocaleDateString('pt-BR')}
-                                      </p>
-                                    )}
-                                  </a>
-                                ))}
-                                {getCardsByList(list.id).length === 0 && (
-                                  <p className="text-xs text-muted-foreground text-center py-4">
-                                    Nenhum card
-                                  </p>
-                                )}
-                              </div>
-                            </ScrollArea>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

@@ -116,7 +116,6 @@ const AdminPatioDetalhes = () => {
   const queryClient = useQueryClient();
 
   const [notes, setNotes] = useState("");
-  const [trelloWebhook, setTrelloWebhook] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [statusHistory, setStatusHistory] = useState<Array<{ status: string; timestamp: string; user: string }>>([]);
 
@@ -179,24 +178,6 @@ const AdminPatioDetalhes = () => {
       queryClient.invalidateQueries({ queryKey: ["patio", patioId] });
       const timestamp = new Date().toLocaleString("pt-BR");
       setStatusHistory(prev => [...prev, { status: newStatus, timestamp, user: "Admin" }]);
-      
-      // Trigger Trello webhook if configured
-      if (trelloWebhook && patio) {
-        const vehicleInfo = patio.vehicle ? `${patio.vehicle.brand} ${patio.vehicle.model} - ${patio.vehicle.plate}` : 'N/A';
-        fetch(trelloWebhook, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          mode: "no-cors",
-          body: JSON.stringify({
-            patioId: patio.id,
-            newStatus,
-            statusLabel: statusConfig[newStatus].label,
-            vehicle: vehicleInfo,
-            client: patio.client?.name || 'N/A',
-            timestamp,
-          }),
-        }).catch(console.error);
-      }
       
       toast.success("Status atualizado!");
     },
@@ -496,41 +477,6 @@ const AdminPatioDetalhes = () => {
                     </Button>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Trello Integration */}
-            <Card className="glass-card border-none">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ExternalLink className="w-5 h-5 text-primary" />
-                  Integração Trello
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 pt-0 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="trello-webhook">Webhook URL</Label>
-                  <Input
-                    id="trello-webhook"
-                    value={trelloWebhook}
-                    onChange={(e) => setTrelloWebhook(e.target.value)}
-                    placeholder="https://api.trello.com/..."
-                    className="bg-background/50 text-xs"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Cole a URL do Power-Up ou Butler do Trello para sincronizar automaticamente.
-                  </p>
-                </div>
-                <Button 
-                  onClick={handleSaveTrelloWebhook} 
-                  disabled={isSaving}
-                  size="sm"
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Salvar Webhook
-                </Button>
               </CardContent>
             </Card>
 

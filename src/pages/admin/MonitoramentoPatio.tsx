@@ -21,7 +21,6 @@ import {
   AlertTriangle,
   DollarSign,
   Loader2,
-  CloudDownload,
   Search,
   ClipboardCheck
 } from "lucide-react";
@@ -83,7 +82,6 @@ export default function MonitoramentoPatio() {
   const { etapas: etapasWorkflow, loading, totalEntreguesMes, moverVeiculo, refetch } = usePatioKanban();
   const [draggedVeiculoKanban, setDraggedVeiculoKanban] = useState<{ veiculo: VeiculoKanban; fromEtapaId: string } | null>(null);
   const [dragOverEtapa, setDragOverEtapa] = useState<string | null>(null);
-  const [syncingTrello, setSyncingTrello] = useState(false);
   const [filtroPlaca, setFiltroPlaca] = useState("");
 
   // Filtrar etapas por placa
@@ -96,27 +94,6 @@ export default function MonitoramentoPatio() {
       }))
     : etapasWorkflow;
 
-  const syncTrello = async () => {
-    setSyncingTrello(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('sync-trello');
-      
-      if (error) throw error;
-      
-      if (data.success) {
-        toast.success(data.message);
-        refetch();
-      } else {
-        toast.error(data.error || 'Erro ao sincronizar');
-      }
-    } catch (error) {
-      console.error('Erro ao sincronizar Trello:', error);
-      toast.error('Erro ao conectar com o Trello');
-    } finally {
-      setSyncingTrello(false);
-    }
-  };
-  
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
@@ -339,10 +316,6 @@ export default function MonitoramentoPatio() {
             <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/admin/checklist')}>
               <ClipboardCheck className="h-4 w-4" />
               Checklist
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={syncTrello} disabled={syncingTrello}>
-              <CloudDownload className={`h-4 w-4 ${syncingTrello ? 'animate-pulse' : ''}`} />
-              {syncingTrello ? 'Sincronizando...' : 'Sync Trello'}
             </Button>
             <Button variant="outline" size="sm" className="gap-2" onClick={refetch} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
