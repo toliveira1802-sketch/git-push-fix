@@ -17,6 +17,7 @@ import {
   RefreshCw, CheckCheck, Bell
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { NovaPromocaoForm } from "@/components/promocao/NovaPromocaoForm";
 
 interface PendingClient {
   id: string;
@@ -209,8 +210,9 @@ export default function GestaoComercial() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="promocoes">Nova Promoção</TabsTrigger>
             <TabsTrigger value="notifications" className="relative">
               Novos Cadastros
               {pendingClients.length > 0 && (
@@ -333,6 +335,11 @@ export default function GestaoComercial() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Tab: Nova Promoção */}
+          <TabsContent value="promocoes" className="mt-6">
+            <NovaPromocaoForm onSuccess={() => setActiveTab("overview")} />
           </TabsContent>
 
           {/* Tab: Novos Cadastros */}
