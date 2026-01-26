@@ -26,7 +26,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDashboardOrcamentos from "./pages/admin/AdminDashboardOrcamentos";
 import OrdensServico from "./pages/admin/OrdensServico";
-import OSUltimate from ".pages/admin/OSUltimate";
+import OSUltimate from "./pages/admin/OSUltimate";
 
 //import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import Clientes from "./pages/admin/Clientes";
