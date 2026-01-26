@@ -22,12 +22,12 @@ import VisaoGeral from "./pages/VisaoGeral";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
-import AdminNovaOS from "./pages/admin/AdminNovaOS";
+//import AdminNovaOS from "./pages/admin/AdminNovaOS";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDashboardOrcamentos from "./pages/admin/AdminDashboardOrcamentos";
 import OrdensServico from "./pages/admin/OrdensServico";
 
-import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
+//import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
@@ -85,11 +85,11 @@ const App = () => (
                 <Route path="/visao-geral" element={<VisaoGeral />} />
                 
                 {/* Admin Routes */}
-                <Route path="/admin/nova-os" element={<AdminNovaOS />} />
+                {//<Route path="/admin/nova-os" element={<AdminNovaOS />} />}
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/pendencias" element={<Pendencias />} />
                 <Route path="/admin/ordens-servico" element={<OrdensServico />} />
-                <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} />
+                {// <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} />}
                 <Route path="/admin/clientes" element={<Clientes />} />
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
                 <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
