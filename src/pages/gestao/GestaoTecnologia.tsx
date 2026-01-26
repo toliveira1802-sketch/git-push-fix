@@ -3,17 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Laptop, Users, Database, Activity, ArrowLeft, Brain, Lock, ArrowRight, Receipt } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
-
-// Senha para acessar o painel de IA (em produção, isso seria validado no backend)
-const IA_ACCESS_PASSWORD = "doctor2024";
 
 // Mock data
 const mockKpis = {
@@ -33,32 +28,17 @@ const funnelData = [
 export default function GestaoTecnologia() {
   const navigate = useNavigate();
   const [kpis] = useState(mockKpis);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [password, setPassword] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { canAccessAdmin, canAccessGestao, isLoading: roleLoading } = useUserRole();
+
+  // Role-based access check for IA panel
+  const canAccessIA = canAccessAdmin || canAccessGestao;
 
   const handleAccessIA = () => {
-    // Verificar se já está autenticado nesta sessão
-    const storedAuth = sessionStorage.getItem("ia_access_granted");
-    if (storedAuth === "true") {
-      navigate("/admin/ias");
+    if (!canAccessIA) {
+      toast.error("Acesso negado. Apenas admin/gestao/dev podem acessar.");
       return;
     }
-    setShowPasswordDialog(true);
-  };
-
-  const handlePasswordSubmit = () => {
-    if (password === IA_ACCESS_PASSWORD) {
-      sessionStorage.setItem("ia_access_granted", "true");
-      setIsAuthenticated(true);
-      setShowPasswordDialog(false);
-      setPassword("");
-      toast.success("Acesso liberado!");
-      navigate("/admin/ias");
-    } else {
-      toast.error("Senha incorreta");
-      setPassword("");
-    }
+    navigate("/admin/ias");
   };
 
   return (
@@ -257,42 +237,6 @@ export default function GestaoTecnologia() {
         </Card>
       </div>
 
-      {/* Dialog de Senha */}
-      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Acesso Restrito
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Digite a senha para acessar o painel de Assistentes IA.
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
-                autoFocus
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handlePasswordSubmit}>
-              Entrar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 }
