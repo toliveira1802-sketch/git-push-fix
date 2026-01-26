@@ -32,7 +32,7 @@ import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
 import AdminIAs from "./pages/admin/AdminIAs";
-import NovaPromocao from "./pages/admin/NovaPromocao";
+// NovaPromocao movido para GestaoComercial
 import Pendencias from "./pages/admin/Pendencias";
 import MonitoramentoPatio from "./pages/admin/MonitoramentoPatio";
 import AdminOperacional from "./pages/admin/AdminOperacional";
@@ -94,7 +94,7 @@ const App = () => (
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
                 <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
                 <Route path="/admin/ias" element={<AdminIAs />} />
-                <Route path="/admin/nova-promocao" element={<NovaPromocao />} />
+                {/* Nova Promoção movida para /gestao/comercial */}
                 <Route path="/admin/patio" element={<MonitoramentoPatio />} />
                 <Route path="/admin/operacional" element={<AdminOperacional />} />
                 <Route path="/admin/patio/:patioId" element={<AdminPatioDetalhes />} />
