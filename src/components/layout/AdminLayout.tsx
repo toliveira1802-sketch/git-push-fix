@@ -18,6 +18,7 @@ import {
   Layers,
   FolderOpen,
   Lightbulb,
+  FileText,
   SlidersHorizontal,
   CalendarClock,
   ClipboardCheck
@@ -67,6 +68,7 @@ const companyMenuItems: MenuItem[] = [
     subItems: [
       { icon: Users, label: 'Clientes', path: '/admin/clientes' },
       { icon: ClipboardList, label: 'Ordens de Serviço', path: '/admin/ordens-servico' },
+      { icon: FileText, label: 'OS Ultimate', path: '/admin/os-ultimate' },
       { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
     ]
   },
