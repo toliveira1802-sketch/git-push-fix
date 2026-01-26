@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDashboardOrcamentos from "./pages/admin/AdminDashboardOrcamentos";
 import OrdensServico from "./pages/admin/OrdensServico";
+import OSUltimate from ".pages/admin/OSUltimate";
 
 //import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import Clientes from "./pages/admin/Clientes";
@@ -84,7 +85,7 @@ const App = () => (
                 <Route path="/visao-geral" element={<VisaoGeral />} />
 
                 {/* Admin Routes */}
-                <Route path="/admin/nova-os/OSUltimate" element={<OSUltimate />} />
+                {/* <Route path="/admin/nova-os" element={<AdminNovaOS />} /> */}
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/pendencias" element={<Pendencias />} />
                 <Route path="/admin/ordens-servico" element={<OrdensServico />} />
