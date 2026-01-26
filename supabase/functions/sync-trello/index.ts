@@ -40,6 +40,86 @@ interface TrelloList {
   name: string;
 }
 
+// Constantes de validação
+const MAX_NAME_LENGTH = 255;
+const MAX_PLATE_LENGTH = 10;
+const MAX_BRAND_LENGTH = 100;
+const MAX_MODEL_LENGTH = 100;
+const MAX_COLOR_LENGTH = 50;
+const MAX_SERVICE_LENGTH = 1000;
+const MAX_OBSERVATIONS_LENGTH = 2000;
+const MIN_YEAR = 1900;
+const MAX_YEAR = 2100;
+const MAX_KM = 9999999;
+const MAX_TOTAL = 99999999;
+
+// Funções de sanitização
+function sanitizeString(value: string | null | undefined, maxLength: number): string {
+  if (!value) return '';
+  // Remove caracteres de controle e tags HTML
+  const sanitized = value
+    .replace(/<[^>]*>/g, '') // Remove tags HTML
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove caracteres de controle
+    .replace(/javascript:/gi, '') // Remove javascript:
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .trim();
+  return sanitized.slice(0, maxLength);
+}
+
+function sanitizeName(value: string | null | undefined): string {
+  const sanitized = sanitizeString(value, MAX_NAME_LENGTH);
+  // Para nomes, mantém apenas letras, números, espaços e caracteres comuns
+  return sanitized.replace(/[^\p{L}\p{N}\s\-\.,']/gu, '').trim() || 'Nome não informado';
+}
+
+function sanitizePlate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // Valida formato brasileiro (ABC1234 ou ABC1D23)
+  const plateRegex = /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/;
+  if (plateRegex.test(cleaned)) {
+    // Formata com hífen
+    return cleaned.length === 7 ? `${cleaned.slice(0, 3)}-${cleaned.slice(3)}` : cleaned;
+  }
+  return null;
+}
+
+function sanitizeNumber(value: number | null | undefined, min: number, max: number): number | null {
+  if (value === null || value === undefined || isNaN(value)) return null;
+  if (value < min || value > max) return null;
+  return Math.floor(value);
+}
+
+function sanitizePrice(value: number | null | undefined): number | null {
+  if (value === null || value === undefined || isNaN(value)) return null;
+  if (value < 0 || value > MAX_TOTAL) return null;
+  return Math.round(value * 100) / 100; // 2 casas decimais
+}
+
+// Valida e sanitiza ExtractedCardData
+function validateAndSanitize(data: ExtractedCardData): ExtractedCardData | null {
+  const sanitizedPlate = sanitizePlate(data.plate);
+  
+  // Placa é obrigatória
+  if (!sanitizedPlate) {
+    return null;
+  }
+  
+  return {
+    plate: sanitizedPlate,
+    clientName: sanitizeName(data.clientName),
+    vehicleBrand: sanitizeString(data.vehicleBrand, MAX_BRAND_LENGTH) || 'A definir',
+    vehicleModel: sanitizeString(data.vehicleModel, MAX_MODEL_LENGTH) || 'A definir',
+    vehicleYear: sanitizeNumber(data.vehicleYear, MIN_YEAR, MAX_YEAR),
+    vehicleColor: sanitizeString(data.vehicleColor, MAX_COLOR_LENGTH) || null,
+    service: sanitizeString(data.service, MAX_SERVICE_LENGTH) || 'Serviço não especificado',
+    total: sanitizePrice(data.total),
+    km: sanitizeNumber(data.km, 0, MAX_KM),
+    priority: ['alta', 'normal', 'baixa'].includes(data.priority) ? data.priority : 'normal',
+    observations: sanitizeString(data.observations, MAX_OBSERVATIONS_LENGTH) || null,
+  };
+}
+
 interface ExtractedCardData {
   plate: string | null;
   clientName: string;
@@ -446,7 +526,7 @@ Deno.serve(async (req) => {
         const contentData = extractFromCardContent(card);
         
         // Merge dos dados (custom fields tem prioridade)
-        const extractedData: ExtractedCardData = {
+        const rawData: ExtractedCardData = {
           plate: customData.plate || contentData.plate || null,
           clientName: customData.clientName || 'Cliente não identificado',
           vehicleBrand: customData.vehicleBrand || 'A definir',
@@ -460,16 +540,18 @@ Deno.serve(async (req) => {
           observations: customData.observations || null,
         };
 
+        // Validar e sanitizar dados
+        const extractedData = validateAndSanitize(rawData);
+        
+        if (!extractedData) {
+          console.log(`Card "${card.name}" dados inválidos ou sem placa válida, pulando...`);
+          results.skipped++;
+          continue;
+        }
+
         // Log dos custom fields encontrados
         if (Object.keys(customData).length > 0) {
           results.customFieldsFound.push(card.name);
-        }
-
-        // Placa é obrigatória
-        if (!extractedData.plate) {
-          console.log(`Card "${card.name}" sem placa identificável, pulando...`);
-          results.skipped++;
-          continue;
         }
 
         const status = listIdToStatus[card.idList] || 'orcamento';
