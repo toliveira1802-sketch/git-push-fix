@@ -31,7 +31,7 @@ import OrdensServico from "./pages/admin/OrdensServico";
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
-import AdminIAs from "./pages/admin/AdminIAs";
+// AdminIAs movido para GestaoTecnologia
 // NovaPromocao movido para GestaoComercial
 import Pendencias from "./pages/admin/Pendencias";
 import MonitoramentoPatio from "./pages/admin/MonitoramentoPatio";
@@ -93,7 +93,7 @@ const App = () => (
                 <Route path="/admin/clientes" element={<Clientes />} />
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
                 <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
-                <Route path="/admin/ias" element={<AdminIAs />} />
+                {/* IAs movidas para /gestao/tecnologia */}
                 {/* Nova Promoção movida para /gestao/comercial */}
                 <Route path="/admin/patio" element={<MonitoramentoPatio />} />
                 <Route path="/admin/operacional" element={<AdminOperacional />} />
