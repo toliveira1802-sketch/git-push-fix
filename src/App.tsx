@@ -57,7 +57,6 @@ import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import GestaoComercial from "./pages/gestao/GestaoComercial";
 
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -83,13 +82,13 @@ const App = () => (
                 <Route path="/avisos" element={<Avisos />} />
                 <Route path="/veiculos" element={<Veiculos />} />
                 <Route path="/visao-geral" element={<VisaoGeral />} />
-                
+
                 {/* Admin Routes */}
                 {/* <Route path="/admin/nova-os" element={<AdminNovaOS />} /> */}
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/pendencias" element={<Pendencias />} />
                 <Route path="/admin/ordens-servico" element={<OrdensServico />} />
-                {/* <Route path="/admin/os/:osId" element={<AdminOSDetalhes />} /> */}
+
                 <Route path="/admin/clientes" element={<Clientes />} />
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
                 <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
@@ -112,7 +111,7 @@ const App = () => (
                 <Route path="/admin/monitoramento-kommo" element={<AdminMonitoramentoKommo />} />
                 <Route path="/admin/orcamentos" element={<AdminDashboardOrcamentos />} />
                 <Route path="/admin/checklist" element={<AdminChecklist />} />
-                
+
                 {/* Gestão Routes */}
                 <Route path="/gestao" element={<GestaoDashboards />} />
                 <Route path="/gestao/rh" element={<GestaoRH />} />
@@ -120,8 +119,7 @@ const App = () => (
                 <Route path="/gestao/financeiro" element={<GestaoFinanceiro />} />
                 <Route path="/gestao/tecnologia" element={<GestaoTecnologia />} />
                 <Route path="/gestao/comercial" element={<GestaoComercial />} />
-                
-                
+
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
