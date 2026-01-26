@@ -1,34 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Search, 
   Car, 
   User, 
   Star, 
   Megaphone, 
-  Filter,
   ChevronDown,
   ChevronUp,
   Phone,
-  Calendar
+  Calendar,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface Vehicle {
   id: string;
   brand: string;
   model: string;
-  year: number;
+  year: number | null;
   plate: string;
-  color: string;
-  km: number;
-  lastService: string;
+  color: string | null;
+  km: number | null;
+  lastService: string | null;
   interested: boolean;
   selectedForPromo: boolean;
 }
@@ -37,59 +40,68 @@ interface ClientWithVehicles {
   id: string;
   name: string;
   phone: string;
-  email: string;
+  email: string | null;
   vehicles: Vehicle[];
 }
-
-// Mock data - clientes com veículos
-const mockClientsWithVehicles: ClientWithVehicles[] = [
-  {
-    id: 'client-1',
-    name: 'João Silva',
-    phone: '11999887766',
-    email: 'joao.silva@email.com',
-    vehicles: [
-      { id: 'v1', brand: 'Volkswagen', model: 'Golf GTI', year: 2020, plate: 'ABC-1234', color: 'Preto', km: 45000, lastService: '2024-01-15', interested: true, selectedForPromo: false },
-      { id: 'v2', brand: 'Honda', model: 'Civic', year: 2019, plate: 'DEF-5678', color: 'Prata', km: 62000, lastService: '2024-01-10', interested: false, selectedForPromo: false },
-    ]
-  },
-  {
-    id: 'client-2',
-    name: 'Maria Santos',
-    phone: '11988776655',
-    email: 'maria.santos@email.com',
-    vehicles: [
-      { id: 'v3', brand: 'Toyota', model: 'Corolla', year: 2021, plate: 'GHI-9012', color: 'Branco', km: 28000, lastService: '2024-01-20', interested: true, selectedForPromo: false },
-    ]
-  },
-  {
-    id: 'client-3',
-    name: 'Carlos Oliveira',
-    phone: '11977665544',
-    email: 'carlos.oliveira@email.com',
-    vehicles: [
-      { id: 'v4', brand: 'BMW', model: '320i', year: 2022, plate: 'JKL-3456', color: 'Azul', km: 15000, lastService: '2024-01-18', interested: true, selectedForPromo: false },
-      { id: 'v5', brand: 'Mercedes', model: 'C200', year: 2021, plate: 'MNO-7890', color: 'Preto', km: 32000, lastService: '2023-12-20', interested: false, selectedForPromo: false },
-      { id: 'v6', brand: 'Audi', model: 'A4', year: 2020, plate: 'PQR-1234', color: 'Cinza', km: 48000, lastService: '2023-11-15', interested: true, selectedForPromo: false },
-    ]
-  },
-  {
-    id: 'client-4',
-    name: 'Ana Costa',
-    phone: '11966554433',
-    email: 'ana.costa@email.com',
-    vehicles: [
-      { id: 'v7', brand: 'Fiat', model: 'Argo', year: 2023, plate: 'STU-5678', color: 'Vermelho', km: 8000, lastService: '2024-01-22', interested: false, selectedForPromo: false },
-    ]
-  },
-];
 
 export default function AdminVeiculos() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterInterested, setFilterInterested] = useState(false);
-  const [clients, setClients] = useState<ClientWithVehicles[]>(mockClientsWithVehicles);
-  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set(mockClientsWithVehicles.map(c => c.id)));
+  const [clients, setClients] = useState<ClientWithVehicles[]>([]);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchClientsWithVehicles = async () => {
+      const { data: clientsData, error } = await supabase
+        .from('clients')
+        .select(`
+          id,
+          name,
+          phone,
+          email,
+          vehicles (
+            id,
+            brand,
+            model,
+            year,
+            plate,
+            color,
+            km
+          )
+        `)
+        .order('name');
+
+      if (!error && clientsData) {
+        const mapped: ClientWithVehicles[] = clientsData
+          .filter((c: any) => c.vehicles && c.vehicles.length > 0)
+          .map((client: any) => ({
+            id: client.id,
+            name: client.name,
+            phone: client.phone,
+            email: client.email,
+            vehicles: client.vehicles.map((v: any) => ({
+              id: v.id,
+              brand: v.brand,
+              model: v.model,
+              year: v.year,
+              plate: v.plate,
+              color: v.color,
+              km: v.km,
+              lastService: null,
+              interested: false,
+              selectedForPromo: false,
+            }))
+          }));
+        setClients(mapped);
+        setExpandedClients(new Set(mapped.map(c => c.id)));
+      }
+      setLoading(false);
+    };
+
+    fetchClientsWithVehicles();
+  }, []);
 
   // Summary stats
   const totalClients = clients.length;
@@ -154,7 +166,6 @@ export default function AdminVeiculos() {
   };
 
   const handleCreatePromotion = () => {
-    // Get selected vehicles with client info
     const selectedData = clients.flatMap(client => 
       client.vehicles
         .filter(v => v.selectedForPromo)
@@ -165,19 +176,26 @@ export default function AdminVeiculos() {
       return;
     }
 
-    // Navigate to promotion page with selected data
     navigate('/admin/nova-promocao', { 
       state: { selectedVehicles: selectedData }
     });
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  };
-
   const formatPlate = (plate: string) => {
     return plate.toUpperCase();
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -351,23 +369,29 @@ export default function AdminVeiculos() {
                             <span className="font-semibold text-foreground">
                               {vehicle.brand} {vehicle.model}
                             </span>
-                            <Badge variant="outline" className="text-xs">
-                              {vehicle.year}
-                            </Badge>
+                            {vehicle.year && (
+                              <Badge variant="outline" className="text-xs">
+                                {vehicle.year}
+                              </Badge>
+                            )}
                             {vehicle.interested && (
                               <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                             )}
                           </div>
                           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                             <span className="font-mono">{formatPlate(vehicle.plate)}</span>
-                            <span>•</span>
-                            <span>{vehicle.color}</span>
-                            <span>•</span>
-                            <span>{vehicle.km.toLocaleString('pt-BR')} km</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>Último serviço: {formatDate(vehicle.lastService)}</span>
+                            {vehicle.color && (
+                              <>
+                                <span>•</span>
+                                <span>{vehicle.color}</span>
+                              </>
+                            )}
+                            {vehicle.km && (
+                              <>
+                                <span>•</span>
+                                <span>{vehicle.km.toLocaleString('pt-BR')} km</span>
+                              </>
+                            )}
                           </div>
                         </div>
 

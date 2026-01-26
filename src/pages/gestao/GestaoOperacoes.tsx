@@ -1,31 +1,90 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Cog, Car, Clock, CheckCircle, AlertTriangle, ArrowLeft, XCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { startOfMonth, endOfMonth } from "date-fns";
 
-// Mock data
-const mockStats = {
-  total: 45,
-  pending: 8,
-  inProgress: 12,
-  completed: 22,
-  cancelled: 3,
-};
-
-const statusData = [
-  { status: "Pendente", count: 8, fill: "#f59e0b" },
-  { status: "Em Execução", count: 12, fill: "#8b5cf6" },
-  { status: "Concluído", count: 22, fill: "#10b981" },
-  { status: "Cancelado", count: 3, fill: "#ef4444" },
-];
+interface Stats {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+  cancelled: number;
+}
 
 export default function GestaoOperacoes() {
   const navigate = useNavigate();
-  const [stats] = useState(mockStats);
+  const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const hoje = new Date();
+      const inicioMes = startOfMonth(hoje);
+      const fimMes = endOfMonth(hoje);
+
+      const { data: orders, error } = await supabase
+        .from('service_orders')
+        .select('status')
+        .gte('created_at', inicioMes.toISOString())
+        .lte('created_at', fimMes.toISOString());
+
+      if (!error && orders) {
+        const pending = orders.filter(o => ['recebido', 'diagnostico', 'orcamento'].includes(o.status)).length;
+        const inProgress = orders.filter(o => ['em_execucao', 'aguardando_peca', 'terceiros'].includes(o.status)).length;
+        const completed = orders.filter(o => ['pronto_retirada', 'entregue'].includes(o.status)).length;
+        const cancelled = orders.filter(o => o.status === 'cancelado').length;
+
+        setStats({
+          total: orders.length,
+          pending,
+          inProgress,
+          completed,
+          cancelled
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchStats();
+  }, []);
+
+  const statusData = [
+    { status: "Pendente", count: stats.pending, fill: "#f59e0b" },
+    { status: "Em Execução", count: stats.inProgress, fill: "#8b5cf6" },
+    { status: "Concluído", count: stats.completed, fill: "#10b981" },
+    { status: "Cancelado", count: stats.cancelled, fill: "#ef4444" },
+  ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="p-4 md:p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/gestao")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Skeleton className="h-8 w-48" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -154,22 +213,30 @@ export default function GestaoOperacoes() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-amber-500" />
-                  <span className="text-sm">3 OS aguardando peças há mais de 2 dias</span>
-                </div>
-                <Badge variant="outline" className="text-amber-600">Atenção</Badge>
+            {stats.pending > 5 || stats.inProgress > 10 ? (
+              <div className="space-y-3">
+                {stats.pending > 5 && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-amber-500" />
+                      <span className="text-sm">{stats.pending} OS aguardando processamento</span>
+                    </div>
+                    <Badge variant="outline" className="text-amber-600">Atenção</Badge>
+                  </div>
+                )}
+                {stats.inProgress > 10 && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      <span className="text-sm">{stats.inProgress} OS em execução simultânea</span>
+                    </div>
+                    <Badge variant="outline" className="text-red-600">Alto Volume</Badge>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                  <span className="text-sm">2 OS com prazo vencido</span>
-                </div>
-                <Badge variant="outline" className="text-red-600">Urgente</Badge>
-              </div>
-            </div>
+            ) : (
+              <p className="text-center py-4 text-muted-foreground">Nenhum alerta no momento</p>
+            )}
           </CardContent>
         </Card>
       </div>

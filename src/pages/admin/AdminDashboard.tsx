@@ -20,8 +20,6 @@ const CorinthiansIcon = ({ size = 40 }: { size?: number }) => (
   </svg>
 );
 
-// Pending tasks count (mock - pode ser conectado depois)
-const pendingTasksCount = 5;
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -84,82 +82,10 @@ const AdminDashboard = () => {
                   <p className="text-sm text-muted-foreground">Tarefas da equipe</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-3xl font-bold text-primary">{pendingTasksCount}</span>
-                <span className="text-sm text-muted-foreground">pendentes</span>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Cards de Navegação Rápida */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Operacional */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-blue-500/10 to-blue-600/5"
-            onClick={() => navigate('/admin/operacional')}
-          >
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <div className="w-16 h-16 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <span className="text-3xl">⚙️</span>
-                </div>
-                <span className="text-lg font-semibold text-foreground">Operacional</span>
-                <span className="text-xs text-muted-foreground">OSs, Pátio, Agendamentos</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Financeiro */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-green-500/10 to-green-600/5"
-            onClick={() => navigate('/admin/financeiro')}
-          >
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <div className="w-16 h-16 rounded-xl bg-green-500/20 flex items-center justify-center">
-                  <span className="text-3xl">💰</span>
-                </div>
-                <span className="text-lg font-semibold text-foreground">Financeiro</span>
-                <span className="text-xs text-muted-foreground">Faturamento, Despesas</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Produtividade */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-purple-500/10 to-purple-600/5"
-            onClick={() => navigate('/admin/produtividade')}
-          >
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <div className="w-16 h-16 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <span className="text-3xl">📊</span>
-                </div>
-                <span className="text-lg font-semibold text-foreground">Produtividade</span>
-                <span className="text-xs text-muted-foreground">Métricas, Performance</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Agenda Mecânicos */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-orange-500/10 to-orange-600/5"
-            onClick={() => navigate('/admin/agenda-mecanicos')}
-          >
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <div className="w-16 h-16 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                  <span className="text-3xl">📅</span>
-                </div>
-                <span className="text-lg font-semibold text-foreground">Agenda Mecânicos</span>
-                <span className="text-xs text-muted-foreground">Alocação, Feedback</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Indicadores Principais - Pátio e Aguardando APV */}
         <div className="grid grid-cols-2 gap-4">
           {/* Veículos no Pátio */}
           <Card

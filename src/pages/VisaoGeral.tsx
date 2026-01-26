@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, TrendingUp, Calendar, Clock, Award, Target, Sparkles } from "lucide-react";
+import { ArrowLeft, TrendingUp, Calendar, Clock, Award, Target, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -19,84 +19,159 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
-// Mock data para gráficos
-const servicosData = [
-  { mes: "Jan", servicos: 2 },
-  { mes: "Fev", servicos: 1 },
-  { mes: "Mar", servicos: 3 },
-  { mes: "Abr", servicos: 2 },
-  { mes: "Mai", servicos: 4 },
-  { mes: "Jun", servicos: 2 },
-];
-
-const economiaData = [
-  { mes: "Jan", economia: 80 },
-  { mes: "Fev", economia: 40 },
-  { mes: "Mar", economia: 120 },
-  { mes: "Abr", economia: 80 },
-  { mes: "Mai", economia: 160 },
-  { mes: "Jun", economia: 80 },
-];
-
-const tiposServico = [
-  { name: "Lavagem", value: 8, color: "#dc2626" },
-  { name: "Polimento", value: 3, color: "#f59e0b" },
-  { name: "Detalhamento", value: 2, color: "#10b981" },
-  { name: "Outros", value: 1, color: "#6b7280" },
-];
-
-const ultimosServicos = [
-  { id: 1, tipo: "Lavagem Completa", data: "20/01/2026", valor: "R$ 89,90", veiculo: "Honda Civic" },
-  { id: 2, tipo: "Polimento", data: "15/01/2026", valor: "R$ 199,90", veiculo: "Honda Civic" },
-  { id: 3, tipo: "Lavagem Simples", data: "08/01/2026", valor: "R$ 49,90", veiculo: "Toyota Corolla" },
-];
-
-const conquistas = [
-  { id: 1, nome: "Primeiro Serviço", descricao: "Realizou seu primeiro serviço", icon: "🎉", conquistado: true },
-  { id: 2, nome: "Cliente Frequente", descricao: "5 serviços realizados", icon: "⭐", conquistado: true },
-  { id: 3, nome: "Cliente Fiel", descricao: "10 serviços realizados", icon: "🏆", conquistado: true },
-  { id: 4, nome: "Economizador", descricao: "Economizou R$ 200+", icon: "💰", conquistado: true },
-  { id: 5, nome: "VIP", descricao: "Alcançou nível Prata", icon: "👑", conquistado: false },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Header } from "@/components/layout/Header";
+import { BottomNavigation } from "@/components/layout/BottomNavigation";
 
 export default function VisaoGeral() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalServicos: 0,
+    economia: 0,
+    pontos: 0,
+    nivel: "Bronze",
+    mesesCliente: 0
+  });
+  const [servicosData, setServicosData] = useState<{ mes: string; servicos: number }[]>([]);
+  const [ultimosServicos, setUltimosServicos] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // Get client
+      const { data: client } = await supabase
+        .from('clients')
+        .select('id, created_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!client) {
+        setLoading(false);
+        return;
+      }
+
+      // Get profile for loyalty info
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('loyalty_points, loyalty_level')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Get service orders for this client
+      const { data: orders } = await supabase
+        .from('service_orders')
+        .select('id, order_number, total, completed_at, status, vehicles(brand, model)')
+        .eq('client_id', client.id)
+        .order('created_at', { ascending: false });
+
+      if (orders) {
+        const completedOrders = orders.filter(o => o.status === 'entregue');
+        const totalGasto = completedOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+        
+        // Calculate months as client
+        const createdAt = new Date(client.created_at);
+        const now = new Date();
+        const meses = Math.max(1, Math.floor((now.getTime() - createdAt.getTime()) / (30 * 24 * 60 * 60 * 1000)));
+
+        setStats({
+          totalServicos: completedOrders.length,
+          economia: Math.round(totalGasto * 0.1), // Estimate 10% savings
+          pontos: profile?.loyalty_points || 0,
+          nivel: profile?.loyalty_level || "Bronze",
+          mesesCliente: meses
+        });
+
+        // Group orders by month for chart
+        const monthlyData: Record<string, number> = {};
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        
+        completedOrders.forEach(order => {
+          if (order.completed_at) {
+            const date = new Date(order.completed_at);
+            const key = monthNames[date.getMonth()];
+            monthlyData[key] = (monthlyData[key] || 0) + 1;
+          }
+        });
+
+        // Get last 6 months
+        const now2 = new Date();
+        const last6Months = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now2.getFullYear(), now2.getMonth() - i, 1);
+          const key = monthNames[d.getMonth()];
+          last6Months.push({ mes: key, servicos: monthlyData[key] || 0 });
+        }
+        setServicosData(last6Months);
+
+        // Last 3 services
+        setUltimosServicos(completedOrders.slice(0, 3).map(o => ({
+          id: o.id,
+          tipo: "Serviço",
+          data: o.completed_at ? new Date(o.completed_at).toLocaleDateString('pt-BR') : '-',
+          valor: `R$ ${(o.total || 0).toLocaleString('pt-BR')}`,
+          veiculo: o.vehicles ? `${o.vehicles.brand} ${o.vehicles.model}` : '-'
+        })));
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <Header title="Visão Geral" showHomeButton />
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 pt-6">
+      <div className="bg-gradient-to-r from-primary to-primary/80 p-4 pt-6">
         <div className="flex items-center gap-4 mb-4">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-white hover:bg-white/20"
+            className="text-primary-foreground hover:bg-primary-foreground/20"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-semibold text-white">Visão Geral</h1>
+          <h1 className="text-xl font-semibold text-primary-foreground">Visão Geral</h1>
         </div>
         
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mt-4">
-          <Card className="bg-white/10 border-0 backdrop-blur-sm">
+          <Card className="bg-primary-foreground/10 border-0 backdrop-blur-sm">
             <CardContent className="p-3 text-center">
-              <p className="text-white/70 text-xs">Serviços</p>
-              <p className="text-2xl font-bold text-white">14</p>
+              <p className="text-primary-foreground/70 text-xs">Serviços</p>
+              <p className="text-2xl font-bold text-primary-foreground">{stats.totalServicos}</p>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 border-0 backdrop-blur-sm">
+          <Card className="bg-primary-foreground/10 border-0 backdrop-blur-sm">
             <CardContent className="p-3 text-center">
-              <p className="text-white/70 text-xs">Economia</p>
-              <p className="text-2xl font-bold text-white">R$560</p>
+              <p className="text-primary-foreground/70 text-xs">Economia</p>
+              <p className="text-2xl font-bold text-primary-foreground">R${stats.economia}</p>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 border-0 backdrop-blur-sm">
+          <Card className="bg-primary-foreground/10 border-0 backdrop-blur-sm">
             <CardContent className="p-3 text-center">
-              <p className="text-white/70 text-xs">Pontos</p>
-              <p className="text-2xl font-bold text-white">350</p>
+              <p className="text-primary-foreground/70 text-xs">Pontos</p>
+              <p className="text-2xl font-bold text-primary-foreground">{stats.pontos}</p>
             </CardContent>
           </Card>
         </div>
@@ -107,7 +182,7 @@ export default function VisaoGeral() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-red-600" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               Serviços Realizados
             </CardTitle>
           </CardHeader>
@@ -125,99 +200,18 @@ export default function VisaoGeral() {
                       borderRadius: "8px"
                     }} 
                   />
-                  <Bar dataKey="servicos" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="servicos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Gráfico de Economia */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-green-600" />
-              Economia Mensal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={economiaData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "hsl(var(--background))", 
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px"
-                    }}
-                    formatter={(value) => [`R$ ${value}`, "Economia"]}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="economia" 
-                    stroke="#10b981" 
-                    strokeWidth={3}
-                    dot={{ fill: "#10b981", strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tipos de Serviço */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="h-5 w-5 text-amber-600" />
-              Tipos de Serviço
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="h-32 w-32">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={tiposServico}
-                      innerRadius={30}
-                      outerRadius={50}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {tiposServico.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex-1 space-y-2">
-                {tiposServico.map((tipo) => (
-                  <div key={tipo.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: tipo.color }}
-                      />
-                      <span className="text-sm">{tipo.name}</span>
-                    </div>
-                    <span className="text-sm font-medium">{tipo.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Programa de Fidelidade */}
-        <Card className="border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent">
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <Award className="h-5 w-5 text-red-600" />
+              <Award className="h-5 w-5 text-primary" />
               Programa de Fidelidade
             </CardTitle>
           </CardHeader>
@@ -225,58 +219,24 @@ export default function VisaoGeral() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Nível Atual</p>
-                <Badge className="bg-amber-700 text-white mt-1">Bronze</Badge>
+                <Badge className="bg-amber-700 text-primary-foreground mt-1">{stats.nivel}</Badge>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Próximo Nível</p>
-                <Badge variant="outline" className="border-slate-400 text-slate-400 mt-1">Prata</Badge>
+                <Badge variant="outline" className="border-muted-foreground text-muted-foreground mt-1">
+                  {stats.nivel === "Bronze" ? "Prata" : stats.nivel === "Prata" ? "Ouro" : "Platina"}
+                </Badge>
               </div>
             </div>
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span>350 pontos</span>
+                <span>{stats.pontos} pontos</span>
                 <span className="text-muted-foreground">500 pontos</span>
               </div>
-              <Progress value={70} className="h-2" />
+              <Progress value={Math.min((stats.pontos / 500) * 100, 100)} className="h-2" />
               <p className="text-xs text-muted-foreground mt-2">
-                Faltam 150 pontos para o próximo nível
+                Faltam {Math.max(0, 500 - stats.pontos)} pontos para o próximo nível
               </p>
-            </div>
-            <div className="bg-muted/50 rounded-lg p-3">
-              <p className="text-sm font-medium">Benefícios do nível Prata:</p>
-              <ul className="text-xs text-muted-foreground mt-1 space-y-1">
-                <li>• 10% de cashback em todos os serviços</li>
-                <li>• Agendamento prioritário</li>
-                <li>• Brinde exclusivo no aniversário</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Conquistas */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              🏆 Conquistas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 gap-2">
-              {conquistas.map((conquista) => (
-                <div 
-                  key={conquista.id}
-                  className={`flex flex-col items-center p-2 rounded-lg ${
-                    conquista.conquistado 
-                      ? "bg-amber-500/10" 
-                      : "bg-muted/50 opacity-50"
-                  }`}
-                >
-                  <span className="text-2xl">{conquista.icon}</span>
-                  <span className="text-[10px] text-center mt-1 line-clamp-2">
-                    {conquista.nome}
-                  </span>
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>
@@ -290,20 +250,24 @@ export default function VisaoGeral() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {ultimosServicos.map((servico) => (
-              <div 
-                key={servico.id}
-                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-              >
-                <div>
-                  <p className="font-medium text-sm">{servico.tipo}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {servico.veiculo} • {servico.data}
-                  </p>
+            {ultimosServicos.length > 0 ? (
+              ultimosServicos.map((servico) => (
+                <div 
+                  key={servico.id}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium text-sm">{servico.tipo}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {servico.veiculo} • {servico.data}
+                    </p>
+                  </div>
+                  <span className="font-semibold text-sm">{servico.valor}</span>
                 </div>
-                <span className="font-semibold text-sm">{servico.valor}</span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center py-4 text-muted-foreground">Nenhum serviço realizado</p>
+            )}
             <Button 
               variant="outline" 
               className="w-full mt-2"
@@ -315,17 +279,19 @@ export default function VisaoGeral() {
         </Card>
 
         {/* Tempo como Cliente */}
-        <Card className="bg-gradient-to-br from-red-600 to-red-700 border-0 text-white">
+        <Card className="bg-gradient-to-br from-primary to-primary/80 border-0 text-primary-foreground">
           <CardContent className="p-6 text-center">
             <Calendar className="h-10 w-10 mx-auto mb-3 opacity-80" />
-            <p className="text-white/80 text-sm">Você é nosso cliente há</p>
-            <p className="text-3xl font-bold mt-1">8 meses</p>
-            <p className="text-white/70 text-sm mt-2">
+            <p className="text-primary-foreground/80 text-sm">Você é nosso cliente há</p>
+            <p className="text-3xl font-bold mt-1">{stats.mesesCliente} {stats.mesesCliente === 1 ? 'mês' : 'meses'}</p>
+            <p className="text-primary-foreground/70 text-sm mt-2">
               Obrigado pela confiança! 🎉
             </p>
           </CardContent>
         </Card>
       </div>
+      
+      <BottomNavigation />
     </div>
   );
 }
