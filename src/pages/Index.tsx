@@ -3,12 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Car,
   Bell,
@@ -42,6 +37,8 @@ const Index = () => {
   const { vehicles, loading: clientLoading, getActiveServiceOrder, clientProfile } = useClientData();
   const [userName, setUserName] = useState("...");
   const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
+  const activeOS =
+    serviceHistory.find((o) => !["fechada", "cancelada", "entregue"].includes(o.order_status.toLowerCase())) || null;
 
   useEffect(() => {
     // Get name from client profile or fallback to email
@@ -49,14 +46,14 @@ const Index = () => {
       const firstName = clientProfile.name.split(" ")[0];
       setUserName(firstName);
     } else if (user?.email) {
-      setUserName(user.email.split('@')[0]);
+      setUserName(user.email.split("@")[0]);
     }
   }, [user, clientProfile]);
 
   // Redirect to login if not authenticated (after loading completes)
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [user, loading, navigate]);
 
@@ -85,7 +82,7 @@ const Index = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/login');
+    navigate("/login");
   };
 
   if (!user) {
@@ -94,11 +91,7 @@ const Index = () => {
 
   // Show password change screen if required
   if (mustChangePassword) {
-    return (
-      <ForcePasswordChange 
-        onSuccess={() => setMustChangePassword(false)} 
-      />
-    );
+    return <ForcePasswordChange onSuccess={() => setMustChangePassword(false)} />;
   }
 
   return (
@@ -113,11 +106,7 @@ const Index = () => {
         {/* Navigation Tabs - Only show if user has access to other modules */}
         {(canAccessAdmin || canAccessGestao) && (
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
+            <Button variant="ghost" size="sm" className="bg-red-600 hover:bg-red-700 text-white">
               <Home className="w-4 h-4 mr-1" />
               Cliente
             </Button>
@@ -160,9 +149,7 @@ const Index = () => {
       <main className="p-4 pb-24 max-w-2xl mx-auto">
         {/* Greeting */}
         <div className="mb-4">
-          <h2 className="text-3xl font-bold mb-1">
-            Olá, {userName} 👋
-          </h2>
+          <h2 className="text-3xl font-bold mb-1">Olá, {userName} 👋</h2>
         </div>
 
         {/* Meus Veículos - Modal */}
@@ -174,14 +161,14 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center relative">
                 <Car className="w-6 h-6 text-red-500" />
-                {vehicles.some(v => getActiveServiceOrder(v.plate)) && (
+                {vehicles.some((v) => getActiveServiceOrder(v.plate)) && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                 )}
               </div>
               <div>
                 <h3 className="font-semibold text-lg">MEUS VEÍCULOS</h3>
                 <p className="text-sm text-muted-foreground">
-                  {vehicles.length} veículo{vehicles.length !== 1 ? 's' : ''}
+                  {vehicles.length} veículo{vehicles.length !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
@@ -200,24 +187,22 @@ const Index = () => {
             </DialogHeader>
             <div className="space-y-3 mt-4">
               {vehicles.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  Nenhum veículo cadastrado
-                </p>
+                <p className="text-muted-foreground text-center py-4">Nenhum veículo cadastrado</p>
               ) : (
                 vehicles.map((veiculo) => {
                   const activeOS = getActiveServiceOrder(veiculo.plate);
                   return (
-                    <div 
+                    <div
                       key={veiculo.id}
                       className={`p-3 rounded-lg border ${
-                        activeOS 
-                          ? "bg-red-600/10 border-red-500/30" 
-                          : "bg-muted border-border"
+                        activeOS ? "bg-red-600/10 border-red-500/30" : "bg-muted border-border"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">{veiculo.brand} {veiculo.model}</p>
+                          <p className="font-medium">
+                            {veiculo.brand} {veiculo.model}
+                          </p>
                           <p className="text-sm text-muted-foreground font-mono">{veiculo.plate}</p>
                         </div>
                         {activeOS && (
@@ -231,10 +216,10 @@ const Index = () => {
                   );
                 })
               )}
-              
+
               <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                   onClick={() => {
                     setVeiculosModalOpen(false);
@@ -243,7 +228,7 @@ const Index = () => {
                 >
                   Ver todos
                 </Button>
-                <Button 
+                <Button
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => {
                     setVeiculosModalOpen(false);
@@ -264,12 +249,8 @@ const Index = () => {
           const temAvisos = true; // mock: tem aviso
           const temAgendamento = true; // mock: tem agendamento
           const destino = temAvisos ? "/avisos" : temAgendamento ? "/agenda" : "/avisos";
-          const descricao = temAvisos 
-            ? "1 aviso novo" 
-            : temAgendamento 
-              ? "1 agendamento pendente" 
-              : "Nenhum pendente";
-          
+          const descricao = temAvisos ? "1 aviso novo" : temAgendamento ? "1 agendamento pendente" : "Nenhum pendente";
+
           return (
             <Card
               className="bg-card border-border p-4 mb-4 cursor-pointer hover:bg-accent transition-colors"
@@ -352,10 +333,7 @@ const Index = () => {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3">
         <div className="max-w-2xl mx-auto grid grid-cols-4 gap-2">
-          <Button
-            variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-2 text-red-500"
-          >
+          <Button variant="ghost" className="flex flex-col items-center gap-1 h-auto py-2 text-red-500">
             <Home className="w-5 h-5" />
             <span className="text-xs">Home</span>
           </Button>
