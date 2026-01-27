@@ -37,8 +37,6 @@ const Index = () => {
   const { vehicles, loading: clientLoading, getActiveServiceOrder, clientProfile } = useClientData();
   const [userName, setUserName] = useState("...");
   const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
-  const activeOS =
-    serviceHistory.find((o) => !["fechada", "cancelada", "entregue"].includes(o.order_status.toLowerCase())) || null;
 
   useEffect(() => {
     // Get name from client profile or fallback to email
