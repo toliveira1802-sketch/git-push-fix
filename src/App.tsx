@@ -20,6 +20,8 @@ import Avisos from "./pages/Avisos";
 import Veiculos from "./pages/Veiculos";
 import VisaoGeral from "./pages/VisaoGeral";
 import NotFound from "./pages/NotFound";
+import OSClienteAcompanhamento from "./pages/OSClienteAcompanhamento";
+import OSClienteOrcamento from "./pages/OSClienteOrcamento";
 
 // Admin pages
 //import AdminNovaOS from "./pages/admin/AdminNovaOS";
