@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 // Types for client data
 export interface ClientVehicle {
@@ -68,13 +68,13 @@ export function useClientData() {
     if (!user) return null;
 
     const { data, error } = await supabase
-      .from('clients')
-      .select('id, name, phone, email')
-      .eq('user_id', user.id)
+      .from("clients")
+      .select("id, name, phone, email")
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching client profile:', error);
+      console.error("Error fetching client profile:", error);
       return null;
     }
 
@@ -84,14 +84,14 @@ export function useClientData() {
   // Fetch vehicles
   const fetchVehicles = useCallback(async (clientId: string) => {
     const { data, error } = await supabase
-      .from('vehicles')
-      .select('id, brand, model, plate, year, color, km, is_active')
-      .eq('client_id', clientId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+      .from("vehicles")
+      .select("id, brand, model, plate, year, color, km, is_active")
+      .eq("client_id", clientId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('Error fetching vehicles:', error);
+      console.error("Error fetching vehicles:", error);
       return [];
     }
 
@@ -103,23 +103,22 @@ export function useClientData() {
     if (!user) return [];
 
     const { data, error } = await supabase
-      .from('client_service_history')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('order_status', 'entregue') // Apenas ordens entregues
-      .order('order_date', { ascending: false });
+      .from("client_service_history")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("order_date", { ascending: false });
 
     if (error) {
-      console.error('Error fetching service history:', error);
+      console.error("Error fetching service history:", error);
       return [];
     }
 
     // Parse the items JSON and transform the data
-    return (data || []).map(row => ({
-      service_order_id: row.service_order_id || '',
-      order_number: row.order_number || '',
-      order_status: row.order_status || '',
-      order_date: row.order_date || '',
+    return (data || []).map((row) => ({
+      service_order_id: row.service_order_id || "",
+      order_number: row.order_number || "",
+      order_status: row.order_status || "",
+      order_date: row.order_date || "",
       completed_at: row.completed_at,
       total: row.total,
       total_parts: row.total_parts,
@@ -129,9 +128,9 @@ export function useClientData() {
       diagnosis: row.diagnosis,
       payment_status: row.payment_status,
       payment_method: row.payment_method,
-      vehicle_brand: row.vehicle_brand || '',
-      vehicle_model: row.vehicle_model || '',
-      vehicle_plate: row.vehicle_plate || '',
+      vehicle_brand: row.vehicle_brand || "",
+      vehicle_model: row.vehicle_model || "",
+      vehicle_plate: row.vehicle_plate || "",
       vehicle_year: row.vehicle_year,
       vehicle_color: row.vehicle_color,
       items: Array.isArray(row.items) ? (row.items as unknown as ServiceHistoryItem[]) : [],
@@ -139,12 +138,16 @@ export function useClientData() {
   }, [user]);
 
   // Check if a vehicle has an active service order
-  const getActiveServiceOrder = useCallback((vehiclePlate: string) => {
-    return serviceHistory.find(
-      order => order.vehicle_plate === vehiclePlate && 
-      !['fechada', 'cancelada', 'entregue'].includes(order.order_status.toLowerCase())
-    );
-  }, [serviceHistory]);
+  const getActiveServiceOrder = useCallback(
+    (vehiclePlate: string) => {
+      return serviceHistory.find(
+        (order) =>
+          order.vehicle_plate === vehiclePlate &&
+          !["fechada", "cancelada", "entregue"].includes(order.order_status.toLowerCase()),
+      );
+    },
+    [serviceHistory],
+  );
 
   // Refresh all data
   const refresh = useCallback(async () => {
@@ -168,8 +171,8 @@ export function useClientData() {
       const historyData = await fetchServiceHistory();
       setServiceHistory(historyData);
     } catch (err) {
-      console.error('Error loading client data:', err);
-      setError('Erro ao carregar dados');
+      console.error("Error loading client data:", err);
+      setError("Erro ao carregar dados");
     } finally {
       setLoading(false);
     }
@@ -189,35 +192,35 @@ export function useClientData() {
     const setupRealtime = async () => {
       // Subscribe to service_orders changes
       channel = supabase
-        .channel('client-service-orders')
+        .channel("client-service-orders")
         .on(
-          'postgres_changes',
+          "postgres_changes",
           {
-            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-            schema: 'public',
-            table: 'service_orders',
+            event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
+            schema: "public",
+            table: "service_orders",
           },
           (payload) => {
-            console.log('Realtime: service_orders changed', payload);
+            console.log("Realtime: service_orders changed", payload);
             // Refresh data when any service order changes
             refresh();
-          }
+          },
         )
         .on(
-          'postgres_changes',
+          "postgres_changes",
           {
-            event: '*',
-            schema: 'public',
-            table: 'service_order_items',
+            event: "*",
+            schema: "public",
+            table: "service_order_items",
           },
           (payload) => {
-            console.log('Realtime: service_order_items changed', payload);
+            console.log("Realtime: service_order_items changed", payload);
             // Refresh data when items change
             refresh();
-          }
+          },
         )
         .subscribe((status) => {
-          console.log('Realtime subscription status:', status);
+          console.log("Realtime subscription status:", status);
         });
     };
 
@@ -226,7 +229,7 @@ export function useClientData() {
     // Cleanup subscription on unmount
     return () => {
       if (channel) {
-        console.log('Unsubscribing from realtime channel');
+        console.log("Unsubscribing from realtime channel");
         supabase.removeChannel(channel);
       }
     };
