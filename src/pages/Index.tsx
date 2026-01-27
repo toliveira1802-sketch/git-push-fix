@@ -194,8 +194,15 @@ const Index = () => {
                   return (
                     <div
                       key={veiculo.id}
+                      onClick={() => {
+                        if (!activeOS) return;
+                        setVeiculosModalOpen(false);
+                        navigate(`/os/${activeOS.service_order_id}/acompanhamento`);
+                      }}
                       className={`p-3 rounded-lg border ${
-                        activeOS ? "bg-red-600/10 border-red-500/30" : "bg-muted border-border"
+                        activeOS
+                          ? "bg-red-600/10 border-red-500/30 cursor-pointer hover:bg-red-600/15 transition-colors"
+                          : "bg-muted border-border"
                       }`}
                     >
                       <div className="flex items-center justify-between">
