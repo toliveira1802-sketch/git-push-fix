@@ -95,6 +95,9 @@ const App = () => (
                 <Route path="/admin/clientes" element={<Clientes />} />
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
                 <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
+                <Route path="/os/:osId/acompanhamento" element={<OSClienteAcompanhamento />} />
+                <Route path="/os/:osId/orcamento" element={<OSClienteOrcamento />} />
+
                 {/* IAs movidas para /gestao/tecnologia */}
                 {/* Nova Promoção movida para /gestao/comercial */}
                 <Route path="/admin/patio" element={<MonitoramentoPatio />} />
