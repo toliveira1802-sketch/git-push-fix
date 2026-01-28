@@ -34,8 +34,7 @@ import OSUltimate from "./pages/admin/OSUltimate";
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
-// AdminIAs movido para GestaoTecnologia
-// NovaPromocao movido para GestaoComercial
+
 import Pendencias from "./pages/admin/Pendencias";
 import MonitoramentoPatio from "./pages/admin/MonitoramentoPatio";
 import AdminOperacional from "./pages/admin/AdminOperacional";
