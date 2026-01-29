@@ -23,25 +23,25 @@ import Avisos from "./pages/Avisos";
 import Veiculos from "./pages/Veiculos";
 import VisaoGeral from "./pages/VisaoGeral";
 import NotFound from "./pages/NotFound";
-<<<<<<< Updated upstream
+
 import OSClienteAcompanhamento from "./pages/OSClienteAcompanhamento";
 import OSClienteOrcamento from "./pages/OSClienteOrcamento";
-=======
+
 import OSUltimateClient from "@/pages/os/OSUltimateClient";
->>>>>>> Stashed changes
+
 
 // Admin pages
 // import AdminNovaOS from "./pages/admin/AdminNovaOS";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDashboardOrcamentos from "./pages/admin/AdminDashboardOrcamentos";
 import OrdensServico from "./pages/admin/OrdensServico";
-<<<<<<< Updated upstream
+
 import OSUltimate from "./pages/admin/OSUltimate";
 
 //import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
-=======
+
 // import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
->>>>>>> Stashed changes
+
 import Clientes from "./pages/admin/Clientes";
 import AdminVeiculos from "./pages/admin/AdminVeiculos";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
@@ -125,10 +125,8 @@ const App = () => (
                 <Route path="/avisos" element={<Avisos />} />
                 <Route path="/veiculos" element={<Veiculos />} />
                 <Route path="/visao-geral" element={<VisaoGeral />} />
-<<<<<<< Updated upstream
-=======
-                <Route path="/os/:id" element={<OSUltimateClient />} />
->>>>>>> Stashed changes
+             <Route path="/os/:id" element={<OSUltimateClient />} />
+
 
                 {/* Admin Routes */}
                 {/* <Route path="/admin/nova-os" element={<AdminNovaOS />} /> */}
@@ -139,14 +137,13 @@ const App = () => (
                 <Route path="/admin/clientes" element={<Clientes />} />
                 <Route path="/admin/veiculos" element={<AdminVeiculos />} />
                 <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
-<<<<<<< Updated upstream
+
                 <Route path="/os/:osId/acompanhamento" element={<OSClienteAcompanhamento />} />
                 <Route path="/os/:osId/orcamento" element={<OSClienteOrcamento />} />
 
                 {/* IAs movidas para /gestao/tecnologia */}
                 {/* Nova Promoção movida para /gestao/comercial */}
-=======
->>>>>>> Stashed changes
+
                 <Route path="/admin/patio" element={<MonitoramentoPatio />} />
                 <Route path="/admin/operacional" element={<AdminOperacional />} />
                 <Route path="/admin/patio/:patioId" element={<AdminPatioDetalhes />} />
@@ -175,15 +172,13 @@ const App = () => (
                 <Route path="/gestao/financeiro" element={<GestaoFinanceiro />} />
                 <Route path="/gestao/tecnologia" element={<GestaoTecnologia />} />
                 <Route path="/gestao/comercial" element={<GestaoComercial />} />
-<<<<<<< Updated upstream
-=======
-                
+    
 <Route path="/__dev" element={<DevScreens />} />
->>>>>>> Stashed changes
+<Route path="*" element={<NotFound />} />
+               
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-               
+                
 
               </Routes>
             </BrowserRouter>

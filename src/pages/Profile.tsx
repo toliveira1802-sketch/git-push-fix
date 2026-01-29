@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { LoyaltyCard } from "@/components/profile/LoyaltyCard";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
   id: string;
@@ -35,26 +36,76 @@ export default function Profile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [stats, setStats] = useState({ totalServicos: 0, economia: 0 });
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user]);
 
   const fetchProfile = async () => {
-    // Mock profile data
-    const savedProfile = localStorage.getItem('mock_profile');
-    const mockProfile: Profile = {
-      id: "1",
-      full_name: savedProfile ? JSON.parse(savedProfile).full_name : user?.email?.split('@')[0] || "Usuário",
-      phone: savedProfile ? JSON.parse(savedProfile).phone : "(11) 99999-9999",
-      cpf: null,
-      avatar_url: null,
-      birthday: savedProfile ? JSON.parse(savedProfile).birthday : "1990-05-15",
-      loyalty_points: 350,
-      loyalty_level: "bronze",
-    };
-    setProfile(mockProfile);
-    setLoading(false);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Buscar dados do profile no Supabase
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, full_name, phone, avatar_url, birthday, loyalty_points, loyalty_level")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Erro ao buscar profile:", profileError);
+      }
+
+      // Buscar dados do client para pegar cpf e data_aniversario
+      const { data: clientData, error: clientError } = await supabase
+        .from("clients")
+        .select("id, name, phone, cpf, data_aniversario")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (clientError) {
+        console.error("Erro ao buscar client:", clientError);
+      }
+
+      // Combinar dados de profile e client
+      if (profileData || clientData) {
+        setProfile({
+          id: profileData?.id || clientData?.id || "",
+          full_name: profileData?.full_name || clientData?.name || null,
+          phone: profileData?.phone || clientData?.phone || null,
+          cpf: clientData?.cpf || null,
+          avatar_url: profileData?.avatar_url || null,
+          birthday: profileData?.birthday || clientData?.data_aniversario || null,
+          loyalty_points: profileData?.loyalty_points || 0,
+          loyalty_level: profileData?.loyalty_level || "bronze",
+        });
+
+        // Buscar estatísticas de serviços
+        if (clientData?.id) {
+          const { data: ordersData } = await supabase
+            .from("service_orders")
+            .select("id, total, status")
+            .eq("client_id", clientData.id)
+            .eq("status", "entregue");
+
+          if (ordersData) {
+            const totalGasto = ordersData.reduce((acc, o) => acc + (o.total || 0), 0);
+            setStats({
+              totalServicos: ordersData.length,
+              economia: Math.round(totalGasto * 0.1), // Estimativa de 10% de economia
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao carregar perfil:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -159,11 +210,10 @@ export default function Profile() {
               </div>
               <div className="flex-1">
                 <p className="font-medium text-foreground">Aniversário</p>
-                <p className="text-sm text-muted-foreground">15 de maio</p>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(profile.birthday).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
+                </p>
               </div>
-              <Badge variant="secondary" className="bg-red-500/10 text-red-500">
-                Em breve!
-              </Badge>
             </CardContent>
           </Card>
         )}
@@ -182,8 +232,8 @@ export default function Profile() {
               <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center mb-2">
                 <span className="text-2xl">📊</span>
               </div>
-              <span className="text-xs text-muted-foreground">Estatísticas</span>
-              <span className="text-lg font-bold text-foreground">12</span>
+              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-lg font-bold text-foreground">{stats.totalServicos}</span>
               <span className="text-[10px] text-muted-foreground">serviços</span>
             </CardContent>
           </Card>
@@ -192,9 +242,9 @@ export default function Profile() {
               <div className="w-12 h-12 bg-yellow-600/20 rounded-full flex items-center justify-center mb-2">
                 <span className="text-2xl">🏆</span>
               </div>
-              <span className="text-xs text-muted-foreground">Conquistas</span>
-              <span className="text-lg font-bold text-foreground">5</span>
-              <span className="text-[10px] text-muted-foreground">badges</span>
+              <span className="text-xs text-muted-foreground">Pontos</span>
+              <span className="text-lg font-bold text-foreground">{profile?.loyalty_points || 0}</span>
+              <span className="text-[10px] text-muted-foreground">acumulados</span>
             </CardContent>
           </Card>
           <Card className="border-0 bg-gradient-to-br from-green-600/10 to-green-700/5">
@@ -203,8 +253,8 @@ export default function Profile() {
                 <span className="text-2xl">💰</span>
               </div>
               <span className="text-xs text-muted-foreground">Economia</span>
-              <span className="text-lg font-bold text-foreground">R$480</span>
-              <span className="text-[10px] text-muted-foreground">economizados</span>
+              <span className="text-lg font-bold text-foreground">R${stats.economia}</span>
+              <span className="text-[10px] text-muted-foreground">estimada</span>
             </CardContent>
           </Card>
         </div>
