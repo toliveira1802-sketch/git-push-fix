@@ -69,7 +69,7 @@ export function useClientData() {
 
     const { data, error } = await supabase
       .from("clients")
-      .select("id, name, phone, email")
+      .select("id, nome, telefone, email")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -78,15 +78,27 @@ export function useClientData() {
       return null;
     }
 
-    return data;
+    // Map database columns to expected interface
+    if (data) {
+      return {
+        id: data.id,
+        name: data.nome || "",
+        phone: data.telefone || "",
+        email: data.email,
+      };
+    }
+
+    return null;
   }, [user]);
 
-  // Fetch vehicles
-  const fetchVehicles = useCallback(async (clientId: string) => {
+  // Fetch vehicles - uses user_id directly (not client_id)
+  const fetchVehicles = useCallback(async () => {
+    if (!user) return [];
+
     const { data, error } = await supabase
       .from("vehicles")
-      .select("id, brand, model, plate, year, color, km, is_active")
-      .eq("client_id", clientId)
+      .select("id, brand, model, plate, year, color, km_atual, is_active")
+      .eq("user_id", user.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -95,8 +107,18 @@ export function useClientData() {
       return [];
     }
 
-    return data || [];
-  }, []);
+    // Map km_atual to km for interface compatibility
+    return (data || []).map(v => ({
+      id: v.id,
+      brand: v.brand,
+      model: v.model,
+      plate: v.plate,
+      year: v.year,
+      color: v.color,
+      km: v.km_atual,
+      is_active: v.is_active,
+    }));
+  }, [user]);
 
   // Fetch service history from the VIEW - ONLY delivered orders (entregue)
   const fetchServiceHistory = useCallback(async () => {
@@ -163,10 +185,9 @@ export function useClientData() {
       const profile = await fetchClientProfile();
       setClientProfile(profile);
 
-      if (profile) {
-        const vehiclesData = await fetchVehicles(profile.id);
-        setVehicles(vehiclesData);
-      }
+      // Fetch vehicles directly by user_id
+      const vehiclesData = await fetchVehicles();
+      setVehicles(vehiclesData);
 
       const historyData = await fetchServiceHistory();
       setServiceHistory(historyData);
