@@ -84,11 +84,19 @@ const Register: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    console.log('handleSubmit chamado');
+    console.log('formData:', formData);
 
+    if (!validateForm()) {
+      console.log('validateForm falhou');
+      return;
+    }
+
+    console.log('Validação OK, iniciando signUp...');
     setIsSubmitting(true);
-    
+
     const { error: signUpError } = await signUp(formData.email, formData.password, formData.name, formData.phone);
+    console.log('signUp result:', signUpError ? 'ERRO' : 'OK', signUpError);
     
     if (signUpError) {
       if (signUpError.message.includes('already registered')) {
