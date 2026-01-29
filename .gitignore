@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+.claude/
+nul
+
+# Mocks (dados de teste)
+src/mocks/
