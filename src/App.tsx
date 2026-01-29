@@ -172,14 +172,9 @@ const App = () => (
                 <Route path="/gestao/financeiro" element={<GestaoFinanceiro />} />
                 <Route path="/gestao/tecnologia" element={<GestaoTecnologia />} />
                 <Route path="/gestao/comercial" element={<GestaoComercial />} />
-    
-<Route path="/__dev" element={<DevScreens />} />
-<Route path="*" element={<NotFound />} />
-               
 
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                
-
+                <Route path="/__dev" element={<DevScreens />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
