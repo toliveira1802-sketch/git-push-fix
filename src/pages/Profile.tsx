@@ -63,7 +63,7 @@ export default function Profile() {
       // Buscar dados do client para pegar cpf e data_aniversario
       const { data: clientData, error: clientError } = await supabase
         .from("clients")
-        .select("id, nome, telefone, cpf_cnpj, data_aniversario, nivel_fidelidade, total_gasto")
+        .select("id, name, phone, cpf, data_aniversario, total_spent")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -75,25 +75,25 @@ export default function Profile() {
       if (profileData || clientData) {
         setProfile({
           id: profileData?.id || clientData?.id || "",
-          full_name: profileData?.full_name || clientData?.nome || null,
-          phone: profileData?.phone || clientData?.telefone || null,
-          cpf: clientData?.cpf_cnpj || null,
+          full_name: profileData?.full_name || clientData?.name || null,
+          phone: profileData?.phone || clientData?.phone || null,
+          cpf: clientData?.cpf || null,
           avatar_url: profileData?.avatar_url || null,
           birthday: profileData?.birthday || clientData?.data_aniversario || null,
-          loyalty_points: profileData?.loyalty_points || Math.round((clientData?.total_gasto || 0) / 10),
-          loyalty_level: profileData?.loyalty_level || clientData?.nivel_fidelidade || "bronze",
+          loyalty_points: profileData?.loyalty_points || Math.round((clientData?.total_spent || 0) / 10),
+          loyalty_level: profileData?.loyalty_level || "bronze",
         });
 
         // Buscar estatísticas de serviços
         if (clientData?.id) {
           const { data: ordersData } = await supabase
             .from("service_orders")
-            .select("id, valor_total, status")
+            .select("id, total, status")
             .eq("client_id", clientData.id)
             .eq("status", "entregue");
 
           if (ordersData) {
-            const totalGasto = ordersData.reduce((acc, o) => acc + (o.valor_total || 0), 0);
+            const totalGasto = ordersData.reduce((acc, o) => acc + (o.total || 0), 0);
             setStats({
               totalServicos: ordersData.length,
               economia: Math.round(totalGasto * 0.1), // Estimativa de 10% de economia
