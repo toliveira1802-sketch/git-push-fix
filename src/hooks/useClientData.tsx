@@ -69,7 +69,7 @@ export function useClientData() {
 
     const { data, error } = await supabase
       .from("clients")
-      .select("id, nome, telefone, email")
+      .select("id, name, phone, email")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -78,12 +78,11 @@ export function useClientData() {
       return null;
     }
 
-    // Map database columns to expected interface
     if (data) {
       return {
         id: data.id,
-        name: data.nome || "",
-        phone: data.telefone || "",
+        name: data.name || "",
+        phone: data.phone || "",
         email: data.email,
       };
     }
@@ -97,8 +96,7 @@ export function useClientData() {
 
     const { data, error } = await supabase
       .from("vehicles")
-      .select("id, brand, model, plate, year, color, km_atual, is_active")
-      .eq("user_id", user.id)
+      .select("id, brand, model, plate, year, color, km, is_active, client_id")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -107,7 +105,6 @@ export function useClientData() {
       return [];
     }
 
-    // Map km_atual to km for interface compatibility
     return (data || []).map(v => ({
       id: v.id,
       brand: v.brand,
@@ -115,7 +112,7 @@ export function useClientData() {
       plate: v.plate,
       year: v.year,
       color: v.color,
-      km: v.km_atual,
+      km: v.km,
       is_active: v.is_active,
     }));
   }, [user]);

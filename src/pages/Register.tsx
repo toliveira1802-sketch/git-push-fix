@@ -119,14 +119,12 @@ const Register: React.FC = () => {
       const { error: clientError } = await supabase
         .from('clients')
         .insert({
-          nome: formData.name,
-          telefone: formData.phone.replace(/\D/g, ''),
+          name: formData.name,
+          phone: formData.phone.replace(/\D/g, ''),
           email: formData.email,
-          origem_cadastro: 'self',
+          registration_source: 'self',
           user_id: user.id,
-          status: 'ativo',
-          is_active: true,
-          nivel_fidelidade: 'bronze'
+          status: 'active'
         });
 
       if (clientError) {
