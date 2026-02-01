@@ -202,6 +202,26 @@ const Login: React.FC = () => {
               </>
             )}
           </Button>
+
+          {/* Dev Bypass - Only visible in development */}
+          {import.meta.env.DEV && (
+            <div className="mt-6 p-4 border-2 border-dashed border-yellow-500 rounded-lg bg-yellow-50/50">
+              <p className="text-yellow-700 text-sm mb-3 text-center font-medium">
+                🔧 Modo Desenvolvimento - Bypass
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                  Admin
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate('/gestao')}>
+                  Gestão
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+                  Cliente
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
