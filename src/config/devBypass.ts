@@ -1,6 +1,6 @@
-// DEV_BYPASS desativado - autenticação Supabase está funcionando
-// Mude para true apenas em ambiente de desenvolvimento local se necessário
-export const DEV_BYPASS = false;
+// DEV_BYPASS ativado temporariamente para testes
+// LEMBRE DE DESATIVAR ANTES DE PUBLICAR!
+export const DEV_BYPASS = true;
 
 // Dados fake para desenvolvimento
 export const DEV_USER = {
