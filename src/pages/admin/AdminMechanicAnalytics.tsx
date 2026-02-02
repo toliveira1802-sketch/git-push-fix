@@ -84,7 +84,7 @@ const AdminMechanicAnalytics = () => {
 
       const [mechanicsRes, feedbacksRes] = await Promise.all([
         supabase
-          .from("mechanics")
+          .from("mecanicos")
           .select("id, name, specialty")
           .eq("is_active", true)
           .order("name"),

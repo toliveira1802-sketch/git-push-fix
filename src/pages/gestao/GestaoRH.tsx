@@ -23,12 +23,12 @@ export default function GestaoRH() {
   useEffect(() => {
     const fetchMechanics = async () => {
       const { data, error } = await supabase
-        .from('mechanics')
+        .from('mecanicos')
         .select('id, name, specialty, is_active')
         .order('name');
       
       if (!error && data) {
-        setMechanics(data);
+        setMechanics(data as Mechanic[]);
       }
       setLoading(false);
     };
