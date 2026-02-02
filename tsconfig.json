@@ -1,38 +1,36 @@
 {
   "compilerOptions": {
     "allowImportingTsExtensions": true,
-    "esModuleInterop": true,
-    "incremental": true,
-    "jsx": "preserve",
+    "isolatedModules": true,
+    "jsx": "react-jsx",
     "lib": [
-      "esnext",
-      "dom",
-      "dom.iterable"
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
     ],
     "module": "ESNext",
+    "moduleDetection": "force",
     "moduleResolution": "bundler",
     "noEmit": true,
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "paths": {
       "@/*": [
         "./src/*"
       ]
     },
     "skipLibCheck": true,
-    "strict": true,
-    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
+    "strict": false,
+    "target": "ES2020",
     "types": [
-      "node",
-      "vite/client"
+      "vitest/globals"
     ],
+    "useDefineForClassFields": true,
     "baseUrl": "."
   },
-  "exclude": [
-    "node_modules",
-    "build",
-    "dist",
-    "**/*.test.ts"
-  ],
   "include": [
-    "src/**/*"
+    "src"
   ]
 }
