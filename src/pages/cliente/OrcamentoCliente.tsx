@@ -1,4 +1,4 @@
-import { useParams, useLocation } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
 import {
   ArrowLeft, Car, Phone, AlertTriangle,
@@ -162,8 +162,8 @@ const mockClientProfile: ClientProfile = {
 };
 
 export default function OrcamentoCliente() {
-  const params = useParams<{ osId: string }>();
-  const osId = params.osId;
+  const [, routeParams] = useRoute("/cliente/orcamento/:osId");
+  const osId = (routeParams as { osId?: string })?.osId ?? "";
   const [, setLocation] = useLocation();
   const [itens, setItens] = useState<OrdemServicoItem[]>(mockItens);
   const [isLoading, setIsLoading] = useState(false);
