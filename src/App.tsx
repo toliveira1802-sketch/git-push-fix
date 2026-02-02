@@ -11,6 +11,7 @@ import { useActiveOS } from "@/hooks/useActiveOS";
 import DevScreens from "@/pages/__dev/DevScreens";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import LoginCliente from "./pages/cliente/LoginCliente";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Agenda from "./pages/Agenda";
@@ -109,8 +110,9 @@ const App = () => (
               <ActiveOSBanner />
 
               <Routes>
-                <Route path="/" element={<Index />} />
+              <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/cliente/login" element={<LoginCliente />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/perfil" element={<Profile />} />
                 <Route path="/agenda" element={<Agenda />} />
