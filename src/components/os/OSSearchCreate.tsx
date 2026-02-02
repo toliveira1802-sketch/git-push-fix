@@ -89,8 +89,8 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
       setIsLoading(true)
       try {
         const [clientsRes, vehiclesRes] = await Promise.all([
-          supabase.from('clients').select('id, name, phone, email').eq('status', 'active'),
-          supabase.from('vehicles').select('id, client_id, plate, brand, model, year, color').eq('is_active', true)
+          supabase.from('clientes').select('id, name, phone, email').eq('status', 'active'),
+          supabase.from('veiculos').select('id, client_id, plate, brand, model, year, color').eq('is_active', true)
         ])
         
         if (clientsRes.error) throw clientsRes.error
@@ -161,7 +161,7 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     
     // Get the latest order number for this year
     const { data, error } = await supabase
-      .from('service_orders')
+      .from('ordens_servico')
       .select('order_number')
       .like('order_number', `${year}-%`)
       .order('order_number', { ascending: false })
@@ -200,7 +200,7 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
       
       // Create the service order
       const { data, error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .insert({
           order_number: orderNumber,
           client_id: clientId,
@@ -237,7 +237,7 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     try {
       // 1. Create vehicle
       const { data: vehicleData, error: vehicleError } = await supabase
-        .from('vehicles')
+        .from('veiculos')
         .insert({
           client_id: selectedClient.id,
           plate: newVehicle.plate.toUpperCase(),

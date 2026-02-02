@@ -85,7 +85,7 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
   useEffect(() => {
     const fetchMechanics = async () => {
       const { data } = await supabase
-        .from('mechanics')
+        .from('mecanicos')
         .select('id, name')
         .eq('is_active', true)
         .order('name');
@@ -111,7 +111,7 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
     setIsUpdating(true);
     try {
       const { error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .update({ em_terceiros: !veiculo.emTerceiros })
         .eq('id', veiculo.id);
 
@@ -132,7 +132,7 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
     try {
       const newMechanicId = mechanicId === 'none' ? null : mechanicId;
       const { error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .update({ mechanic_id: newMechanicId })
         .eq('id', veiculo.id);
 
@@ -154,7 +154,7 @@ export function KanbanCardDetails({ veiculo, open, onOpenChange, onUpdate }: Kan
     try {
       const newRecurso = recurso === 'none' ? null : recurso;
       const { error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .update({ recurso: newRecurso })
         .eq('id', veiculo.id);
 

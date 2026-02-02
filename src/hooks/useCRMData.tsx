@@ -60,11 +60,11 @@ export function useCRMData() {
     queryFn: async (): Promise<{ clients: CRMClient[]; stats: CRMStats }> => {
       // Fetch clients with vehicle and order counts
       const { data: clients, error } = await supabase
-        .from("clients")
+        .from("clientes")
         .select(`
           *,
-          vehicles:vehicles(count),
-          service_orders:service_orders(count)
+          veiculos:veiculos(count),
+          ordens_servico:ordens_servico(count)
         `)
         .order("created_at", { ascending: false });
 
@@ -72,7 +72,7 @@ export function useCRMData() {
 
       // Fetch profiles for loyalty data
       const { data: profiles } = await supabase
-        .from("profiles")
+        .from("colaboradores")
         .select("user_id, loyalty_level, loyalty_points");
 
       const profileMap = new Map(
@@ -81,7 +81,7 @@ export function useCRMData() {
 
       // Fetch order totals for ticket medio calculation
       const { data: orderTotals } = await supabase
-        .from("service_orders")
+        .from("ordens_servico")
         .select("client_id, total")
         .not("total", "is", null);
 
@@ -95,8 +95,8 @@ export function useCRMData() {
 
       // Process clients
       const processedClients: CRMClient[] = (clients || []).map((client: any) => {
-        const vehiclesCount = client.vehicles?.[0]?.count || 0;
-        const ordersCount = client.service_orders?.[0]?.count || 0;
+        const vehiclesCount = client.veiculos?.[0]?.count || 0;
+        const ordersCount = client.ordens_servico?.[0]?.count || 0;
         const clientOrders = ordersByClient.get(client.id) || [];
         const ticketMedio = clientOrders.length > 0
           ? clientOrders.reduce((a, b) => a + b, 0) / clientOrders.length
@@ -176,7 +176,7 @@ export function useCRMData() {
 export function useUpdateClientCRM() {
   const updateClient = async (clientId: string, updates: Partial<CRMClient>) => {
     const { error } = await supabase
-      .from("clients")
+      .from("clientes")
       .update(updates)
       .eq("id", clientId);
 
