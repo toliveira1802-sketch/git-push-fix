@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle, user } = useAuth();
+  const { signIn, user } = useAuth();
   const { role, isLoading: isRoleLoading } = useUserRole();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -65,16 +65,6 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    const { error } = await signInWithGoogle();
-
-    if (error) {
-      toast.error('Erro ao fazer login com Google');
-      setIsLoading(false);
-    }
-    // Redirecionamento será feito pelo OAuth callback
-  };
 
   // Mostrar loading enquanto verifica autenticação
   if (user && isRoleLoading) {
@@ -224,18 +214,6 @@ const Login: React.FC = () => {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-muted-foreground text-sm">
-            Primeiro acesso?{' '}
-            <button
-              onClick={() => navigate('/register')}
-              className="text-red-500 hover:underline font-medium"
-            >
-              Cadastre-se
-            </button>
-          </p>
-        </div>
       </div>
 
       {/* Bottom safe area */}
