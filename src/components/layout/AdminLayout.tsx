@@ -21,11 +21,7 @@ import {
   FileText,
   SlidersHorizontal,
   CalendarClock,
-  ClipboardCheck,
-  LayoutDashboard,
-  DollarSign,
-  BarChart3,
-  Target
+  ClipboardCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -61,17 +57,7 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { 
-    icon: LayoutDashboard, 
-    label: 'Dashboards', 
-    path: '/admin',
-    subItems: [
-      { icon: DollarSign, label: 'Financeiro', path: '/admin/financeiro' },
-      { icon: BarChart3, label: 'Produtividade', path: '/admin/produtividade' },
-      { icon: CalendarClock, label: 'Agenda Mecânicos', path: '/admin/agenda-mecanicos' },
-      { icon: Target, label: 'Metas', path: '/admin/metas' },
-    ]
-  },
+  { icon: Home, label: 'Visão Geral', path: '/admin' },
   { icon: Plus, label: 'Nova OS', path: '/admin/os-ultimate', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
   { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
@@ -167,29 +153,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     path => location.pathname === path
   );
 
-  const isOnDashboardsSubRoute = ['/admin/financeiro', '/admin/produtividade', '/admin/agenda-mecanicos', '/admin/metas'].some(
-    path => location.pathname === path
-  );
-  const isOnDashboardsRoute = location.pathname === '/admin' || isOnDashboardsSubRoute;
-
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    '/admin': isOnDashboardsRoute,
     '/admin/cadastros': isOnCadastrosRoute,
     '/admin/configuracoes': isOnConfigSubRoute,
   });
 
   // Keep parent menus expanded when navigating to sub-routes
   useEffect(() => {
-    if (isOnDashboardsRoute && !expandedItems['/admin']) {
-      setExpandedItems(prev => ({ ...prev, '/admin': true }));
-    }
     if (isOnCadastrosRoute && !expandedItems['/admin/cadastros']) {
       setExpandedItems(prev => ({ ...prev, '/admin/cadastros': true }));
     }
     if (isOnConfigSubRoute && !expandedItems['/admin/configuracoes']) {
       setExpandedItems(prev => ({ ...prev, '/admin/configuracoes': true }));
     }
-  }, [location.pathname, isOnDashboardsRoute, isOnCadastrosRoute, isOnConfigSubRoute]);
+  }, [location.pathname, isOnCadastrosRoute, isOnConfigSubRoute]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock } from "lucide-react";
+import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock, BarChart3, CalendarClock, Target } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "react-router-dom";
@@ -85,6 +85,57 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Dashboard Buttons */}
+        <div className="grid grid-cols-4 gap-3">
+          <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-emerald-500/10 to-emerald-600/5"
+            onClick={() => navigate('/admin/financeiro')}
+          >
+            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-2">
+                <DollarSign className="w-5 h-5 text-emerald-500" />
+              </div>
+              <span className="text-xs font-medium text-foreground">Financeiro</span>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-blue-500/10 to-blue-600/5"
+            onClick={() => navigate('/admin/produtividade')}
+          >
+            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center mb-2">
+                <BarChart3 className="w-5 h-5 text-blue-500" />
+              </div>
+              <span className="text-xs font-medium text-foreground">Produtividade</span>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-purple-500/10 to-purple-600/5"
+            onClick={() => navigate('/admin/agenda-mecanicos')}
+          >
+            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-2">
+                <CalendarClock className="w-5 h-5 text-purple-500" />
+              </div>
+              <span className="text-xs font-medium text-foreground">Agenda Mec.</span>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-amber-500/10 to-amber-600/5"
+            onClick={() => navigate('/admin/metas')}
+          >
+            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center mb-2">
+                <Target className="w-5 h-5 text-amber-500" />
+              </div>
+              <span className="text-xs font-medium text-foreground">Metas</span>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           {/* Veículos no Pátio */}
