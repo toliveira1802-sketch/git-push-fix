@@ -5,21 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { trpc } from '@/lib/trpc';
-
-interface ColaboradorLogado {
-  id: number;
-  nome: string;
-  cargo: string;
-  email: string;
-  empresaId: number | null;
-  nivelAcessoId: number | null;
-  primeiroAcesso?: boolean;
-}
+import { supabase } from '@/integrations/supabase/client';
 
 export default function TrocarSenha() {
   const [, setLocation] = useLocation();
-  const [colaborador, setColaborador] = useState<ColaboradorLogado | null>(null);
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -29,30 +18,23 @@ export default function TrocarSenha() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ senhaAtual?: string; novaSenha?: string; confirmarSenha?: string }>({});
 
-  const trocarSenhaMutation = trpc.colaboradores.trocarSenha.useMutation();
-
-  useEffect(() => {
-    const stored = localStorage.getItem('doctorAuto_colaborador');
-    if (!stored) {
-      setLocation('/login');
-      return;
-    }
-    setColaborador(JSON.parse(stored));
-  }, [setLocation]);
-
   const isValidNovaSenha = novaSenha.length >= 6;
   const senhasConferem = novaSenha === confirmarSenha && confirmarSenha.length > 0;
   const isFormValid = senhaAtual.length > 0 && isValidNovaSenha && senhasConferem;
 
   const handleTrocarSenha = async () => {
-    if (!colaborador) return;
-
     const newErrors: { senhaAtual?: string; novaSenha?: string; confirmarSenha?: string } = {};
     
-    if (!senhaAtual) newErrors.senhaAtual = 'Digite a senha atual';
-    if (!isValidNovaSenha) newErrors.novaSenha = 'A nova senha deve ter pelo menos 6 caracteres';
-    if (!senhasConferem) newErrors.confirmarSenha = 'As senhas não conferem';
-
+    if (senhaAtual.length === 0) {
+      newErrors.senhaAtual = 'Digite a senha atual';
+    }
+    if (!isValidNovaSenha) {
+      newErrors.novaSenha = 'A nova senha deve ter pelo menos 6 caracteres';
+    }
+    if (!senhasConferem) {
+      newErrors.confirmarSenha = 'As senhas não conferem';
+    }
+    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -62,43 +44,24 @@ export default function TrocarSenha() {
     setErrors({});
 
     try {
-      const result = await trocarSenhaMutation.mutateAsync({
-        id: colaborador.id,
-        senhaAtual,
-        novaSenha,
+      const { error } = await supabase.auth.updateUser({
+        password: novaSenha,
       });
 
-      if (!result.success) {
-        toast.error(result.error || 'Erro ao trocar senha');
+      if (error) {
+        toast.error(error.message || 'Erro ao trocar senha');
         setIsLoading(false);
         return;
       }
-
-      // Atualizar localStorage para marcar que não é mais primeiro acesso
-      const updatedColaborador = { ...colaborador, primeiroAcesso: false };
-      localStorage.setItem('doctorAuto_colaborador', JSON.stringify(updatedColaborador));
 
       toast.success('Senha alterada com sucesso!');
       setLocation('/admin');
     } catch (error) {
       toast.error('Erro ao trocar senha. Tente novamente.');
+    } finally {
       setIsLoading(false);
     }
   };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && isFormValid) {
-      handleTrocarSenha();
-    }
-  };
-
-  if (!colaborador) {
-    return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen gradient-bg flex flex-col">
@@ -111,23 +74,20 @@ export default function TrocarSenha() {
       {/* Content */}
       <div className="relative flex-1 flex flex-col justify-center px-6 py-12 max-w-md mx-auto w-full">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl gradient-primary flex items-center justify-center red-glow">
-            <ShieldCheck className="w-10 h-10 text-white" />
+        <div className="text-center mb-12">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-2xl gradient-primary flex items-center justify-center red-glow">
+            <ShieldCheck className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Primeiro Acesso
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Trocar Senha
           </h1>
           <p className="text-muted-foreground">
-            Olá, <span className="text-primary font-medium">{colaborador.nome}</span>!
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            Por segurança, você precisa criar uma nova senha.
+            Crie uma nova senha segura
           </p>
         </div>
 
         {/* Form */}
-        <div className="space-y-5">
+        <div className="space-y-6">
           {/* Senha Atual */}
           <div className="space-y-2">
             <Label htmlFor="senhaAtual" className="text-foreground font-medium">
@@ -143,8 +103,7 @@ export default function TrocarSenha() {
                   setSenhaAtual(e.target.value);
                   if (errors.senhaAtual) setErrors(prev => ({ ...prev, senhaAtual: undefined }));
                 }}
-                onKeyDown={handleKeyPress}
-                placeholder="Digite a senha atual (123456)"
+                placeholder="Sua senha atual"
                 className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 text-lg py-6"
               />
               <button
@@ -175,7 +134,6 @@ export default function TrocarSenha() {
                   setNovaSenha(e.target.value);
                   if (errors.novaSenha) setErrors(prev => ({ ...prev, novaSenha: undefined }));
                 }}
-                onKeyDown={handleKeyPress}
                 placeholder="Mínimo 6 caracteres"
                 className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 text-lg py-6"
               />
@@ -192,7 +150,7 @@ export default function TrocarSenha() {
             )}
           </div>
 
-          {/* Confirmar Nova Senha */}
+          {/* Confirmar Senha */}
           <div className="space-y-2">
             <Label htmlFor="confirmarSenha" className="text-foreground font-medium">
               Confirmar Nova Senha
@@ -207,7 +165,6 @@ export default function TrocarSenha() {
                   setConfirmarSenha(e.target.value);
                   if (errors.confirmarSenha) setErrors(prev => ({ ...prev, confirmarSenha: undefined }));
                 }}
-                onKeyDown={handleKeyPress}
                 placeholder="Repita a nova senha"
                 className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 text-lg py-6"
               />
@@ -222,17 +179,14 @@ export default function TrocarSenha() {
             {errors.confirmarSenha && (
               <p className="text-destructive text-sm animate-fade-in">{errors.confirmarSenha}</p>
             )}
-            {novaSenha && confirmarSenha && senhasConferem && (
-              <p className="text-green-500 text-sm animate-fade-in">✓ Senhas conferem</p>
-            )}
           </div>
 
           <Button
             onClick={handleTrocarSenha}
             disabled={!isFormValid || isLoading}
-            className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-lg mt-4"
+            className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-lg"
           >
-            {isLoading ? 'Salvando...' : 'Salvar Nova Senha'}
+            {isLoading ? 'Alterando...' : 'Alterar Senha'}
           </Button>
         </div>
       </div>

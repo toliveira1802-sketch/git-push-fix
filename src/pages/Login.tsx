@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { trpc } from '@/lib/trpc';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -18,12 +18,6 @@ export default function Login() {
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = password.length >= 4;
   const isFormValid = isValidEmail && isValidPassword;
-
-  // Query para buscar colaborador por email
-  const colaboradorQuery = trpc.colaboradores.getByEmail.useQuery(
-    { email },
-    { enabled: false }
-  );
 
   const handleLogin = async () => {
     if (!isFormValid) {
@@ -38,43 +32,19 @@ export default function Login() {
     setErrors({});
 
     try {
-      // Buscar colaborador pelo email
-      const result = await colaboradorQuery.refetch();
-      const colaborador = result.data;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (!colaborador) {
-        toast.error('Email não encontrado no sistema');
+      if (error) {
+        toast.error(error.message || 'Erro ao fazer login');
         setIsLoading(false);
         return;
       }
 
-      // Verificar senha (por enquanto, comparação simples)
-      // Em produção, usar hash
-      if (colaborador.senha !== password) {
-        toast.error('Senha incorreta');
-        setIsLoading(false);
-        return;
-      }
-
-      // Salvar dados do colaborador no localStorage
-      localStorage.setItem('doctorAuto_colaborador', JSON.stringify({
-        id: colaborador.id,
-        nome: colaborador.nome,
-        cargo: colaborador.cargo,
-        email: colaborador.email,
-        empresaId: colaborador.empresaId,
-        nivelAcessoId: colaborador.nivelAcessoId,
-        primeiroAcesso: colaborador.primeiroAcesso,
-      }));
-
-      toast.success(`Bem-vindo(a), ${colaborador.nome}!`);
-      
-      // Verificar se é primeiro acesso - redirecionar para troca de senha
-      if (colaborador.primeiroAcesso) {
-        toast.info('Por segurança, você precisa criar uma nova senha.');
-        setLocation('/trocar-senha');
-      } else {
-        // Redirecionar para o dashboard admin
+      if (data.user) {
+        toast.success('Login realizado com sucesso!');
         setLocation('/admin');
       }
     } catch (error) {
@@ -199,9 +169,6 @@ export default function Login() {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-muted-foreground text-sm">
-            Primeiro acesso? Senha padrão: <span className="text-primary font-mono">123456</span>
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
             Problemas com acesso? Fale com a gestão.
           </p>
         </div>

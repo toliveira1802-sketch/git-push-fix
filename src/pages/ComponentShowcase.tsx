@@ -189,7 +189,7 @@ export default function ComponentsShowcase() {
 
   // AI ChatBox demo state
   const [chatMessages, setChatMessages] = useState<Message[]>([
-    { role: "system", content: "You are a helpful assistant." },
+    { id: "1", role: "system", content: "You are a helpful assistant." },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
 
@@ -211,13 +211,15 @@ export default function ComponentsShowcase() {
 
   const handleChatSend = (content: string) => {
     // Add user message
-    const newMessages: Message[] = [...chatMessages, { role: "user", content }];
+    const newMessage: Message = { id: Date.now().toString(), role: "user", content };
+    const newMessages: Message[] = [...chatMessages, newMessage];
     setChatMessages(newMessages);
 
     // Simulate AI response with delay
     setIsChatLoading(true);
     setTimeout(() => {
       const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
         role: "assistant",
         content: `This is a **demo response**. In a real app, you would call a tRPC mutation here:\n\n\`\`\`typescript\nconst chatMutation = trpc.ai.chat.useMutation({\n  onSuccess: (response) => {\n    setChatMessages(prev => [...prev, {\n      role: "assistant",\n      content: response.choices[0].message.content\n    }]);\n  }\n});\n\nchatMutation.mutate({ messages: newMessages });\n\`\`\`\n\nYour message was: "${content}"`,
       };

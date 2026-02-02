@@ -26,6 +26,8 @@ interface CompanyContextType {
   isLoading: boolean;
 }
 
+const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
+
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [companies, setCompanies] = useState<Company[]>(DEV_BYPASS ? [DEV_COMPANY] : []);
