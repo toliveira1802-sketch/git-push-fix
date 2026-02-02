@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 const routes = {
   "🏠 Cliente": [
     { path: "/", label: "Dashboard (Index)" },
-    { path: "/login", label: "Login Funcionários" },
     { path: "/cliente/login", label: "Login Clientes" },
     { path: "/register", label: "Registro" },
     { path: "/perfil", label: "Perfil" },
@@ -25,6 +24,7 @@ const routes = {
     { path: "/os/123/orcamento", label: "OS Orçamento" },
   ],
   "🏢 Admin": [
+    { path: "/login", label: "Login Admin/Gestão" },
     { path: "/admin", label: "Dashboard" },
     { path: "/admin/pendencias", label: "Pendências" },
     { path: "/admin/ordens-servico", label: "Ordens de Serviço" },
