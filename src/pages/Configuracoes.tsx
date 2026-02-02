@@ -26,12 +26,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Configuracoes() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [instagramHandle, setInstagramHandle] = useState("");
   const [instagramLinked, setInstagramLinked] = useState(false);
 
@@ -44,8 +44,10 @@ export default function Configuracoes() {
   }, []);
 
   const handleThemeChange = (newTheme: 'light' | 'dark') => {
-    setTheme(newTheme);
-    toast.success("Tema atualizado!");
+    if ((newTheme === 'dark' && theme !== 'dark') || (newTheme === 'light' && theme !== 'light')) {
+      toggleTheme?.();
+      toast.success("Tema atualizado!");
+    }
   };
 
   const handleLinkInstagram = () => {
