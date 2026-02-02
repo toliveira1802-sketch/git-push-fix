@@ -5,10 +5,10 @@ import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
 import DevScreens from "./pages/__dev/DevScreens";
-
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
@@ -101,12 +101,14 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        <CompanyProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </CompanyProvider>
+        <AuthProvider>
+          <CompanyProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </CompanyProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
