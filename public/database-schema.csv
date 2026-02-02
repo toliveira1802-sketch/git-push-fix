@@ -1,0 +1,211 @@
+Tabela,Coluna,Tipo,Nullable,Default,Descrição
+agenda_mecanicos,id,uuid,Não,gen_random_uuid(),ID único
+agenda_mecanicos,status,text,Não,'agendado',Status do agendamento
+agenda_mecanicos,hora_inicio,time,Não,-,Hora de início
+agenda_mecanicos,data,date,Não,-,Data do agendamento
+agenda_mecanicos,mechanic_id,uuid,Não,-,FK para mecânico
+agenda_mecanicos,created_at,timestamp,Não,now(),Data de criação
+agenda_mecanicos,vehicle_id,uuid,Sim,-,FK para veículo
+agenda_mecanicos,tipo,text,Não,'normal',Tipo de agendamento
+agenda_snapshots,id,uuid,Não,gen_random_uuid(),ID único
+agenda_snapshots,data_agenda,date,Não,-,Data da agenda
+agenda_snapshots,snapshot,jsonb,Não,-,Dados do snapshot
+agenda_snapshots,created_at,timestamp,Não,now(),Data de criação
+agenda_snapshots,created_by,uuid,Sim,-,Usuário que criou
+appointments,id,uuid,Não,gen_random_uuid(),ID único
+appointments,client_id,uuid,Não,-,FK para cliente
+appointments,vehicle_id,uuid,Sim,-,FK para veículo
+appointments,service_type,text,Não,-,Tipo de serviço
+appointments,scheduled_date,date,Não,-,Data agendada
+appointments,scheduled_time,time,Não,-,Hora agendada
+appointments,status,text,Não,'agendado',Status
+appointments,description,text,Sim,-,Descrição
+appointments,notes,text,Sim,-,Observações
+appointments,origin,text,Sim,'sistema',Origem do agendamento
+appointments,confirmed_at,timestamp,Sim,-,Data de confirmação
+appointments,cancelled_at,timestamp,Sim,-,Data de cancelamento
+appointments,cancel_reason,text,Sim,-,Motivo do cancelamento
+appointments,created_at,timestamp,Não,now(),Data de criação
+appointments,updated_at,timestamp,Não,now(),Data de atualização
+clients,id,uuid,Não,gen_random_uuid(),ID único
+clients,name,text,Não,-,Nome do cliente
+clients,phone,text,Não,-,Telefone
+clients,email,text,Sim,-,Email
+clients,cpf,text,Sim,-,CPF
+clients,address,text,Sim,-,Endereço
+clients,city,text,Sim,-,Cidade
+clients,status,text,Não,'active',Status
+clients,notes,text,Sim,-,Observações
+clients,user_id,uuid,Sim,-,FK para auth.users
+clients,total_spent,numeric,Sim,0,Total gasto
+clients,last_service_date,timestamp,Sim,-,Último serviço
+clients,pending_review,boolean,Não,false,Pendente revisão
+clients,reviewed_at,timestamp,Sim,-,Data de revisão
+clients,reviewed_by,uuid,Sim,-,Revisado por
+clients,registration_source,text,Não,'admin',Origem do cadastro
+clients,origem,text,Sim,'direto',Origem do lead
+clients,status_crm,text,Sim,'ativo',Status CRM
+clients,tags,array,Sim,[],Tags
+clients,preferencias,text,Sim,-,Preferências
+clients,motivo_contato,text,Sim,-,Motivo do contato
+clients,ultima_interacao,timestamp,Sim,-,Última interação
+clients,proximo_contato,date,Sim,-,Próximo contato
+clients,nivel_satisfacao,integer,Sim,-,Nível de satisfação
+clients,data_aniversario,date,Sim,-,Data de aniversário
+clients,indicado_por,uuid,Sim,-,Indicado por
+clients,indicacoes_feitas,integer,Sim,0,Indicações feitas
+clients,reclamacoes,integer,Sim,0,Reclamações
+clients,created_at,timestamp,Não,now(),Data de criação
+clients,updated_at,timestamp,Não,now(),Data de atualização
+companies,id,uuid,Não,gen_random_uuid(),ID único
+companies,name,text,Não,-,Nome da empresa
+companies,code,text,Não,-,Código (POMBAL/BOSCH/LEOPOLDINA)
+companies,is_active,boolean,Não,true,Ativa
+companies,hora_abertura,time,Não,'08:00',Hora de abertura
+companies,hora_fechamento,time,Não,'18:00',Hora de fechamento
+companies,dias_atendimento,array,Não,[seg..sab],Dias de atendimento
+companies,meta_mensal,numeric,Sim,0,Meta mensal
+companies,meta_diaria,numeric,Sim,0,Meta diária
+companies,created_at,timestamp,Não,now(),Data de criação
+companies,updated_at,timestamp,Não,now(),Data de atualização
+gestao_alerts,id,uuid,Não,gen_random_uuid(),ID único
+gestao_alerts,tipo,text,Não,-,Tipo do alerta
+gestao_alerts,titulo,text,Não,-,Título
+gestao_alerts,descricao,text,Sim,-,Descrição
+gestao_alerts,service_order_id,uuid,Sim,-,FK para OS
+gestao_alerts,vehicle_id,uuid,Sim,-,FK para veículo
+gestao_alerts,client_id,uuid,Sim,-,FK para cliente
+gestao_alerts,lido,boolean,Não,false,Lido
+gestao_alerts,lido_em,timestamp,Sim,-,Data de leitura
+gestao_alerts,lido_por,uuid,Sim,-,Lido por
+gestao_alerts,metadata,jsonb,Sim,{},Metadados
+gestao_alerts,created_at,timestamp,Não,now(),Data de criação
+mechanic_daily_feedback,id,uuid,Não,gen_random_uuid(),ID único
+mechanic_daily_feedback,mechanic_id,uuid,Não,-,FK para mecânico
+mechanic_daily_feedback,feedback_date,date,Não,-,Data do feedback
+mechanic_daily_feedback,quality_score,integer,Não,-,Nota qualidade (1-5)
+mechanic_daily_feedback,punctuality_score,integer,Não,-,Nota pontualidade (1-5)
+mechanic_daily_feedback,performance_score,integer,Não,-,Nota performance (1-5)
+mechanic_daily_feedback,notes,text,Sim,-,Observações
+mechanic_daily_feedback,given_by,uuid,Sim,-,Dado por
+mechanic_daily_feedback,created_at,timestamp,Não,now(),Data de criação
+mechanics,id,uuid,Não,gen_random_uuid(),ID único
+mechanics,name,text,Não,-,Nome do mecânico
+mechanics,phone,text,Sim,-,Telefone
+mechanics,specialty,text,Sim,-,Especialidade
+mechanics,is_active,boolean,Não,true,Ativo
+mechanics,company_id,uuid,Sim,-,FK para empresa
+mechanics,created_at,timestamp,Não,now(),Data de criação
+mechanics,updated_at,timestamp,Não,now(),Data de atualização
+pendencias,id,uuid,Não,gen_random_uuid(),ID único
+pendencias,titulo,varchar,Não,-,Título
+pendencias,descricao,text,Sim,-,Descrição
+pendencias,tipo,varchar,Não,'bo_peca',Tipo (bo_peca/tarefa)
+pendencias,status,varchar,Não,'pendente',Status
+pendencias,prioridade,varchar,Sim,'normal',Prioridade
+pendencias,vehicle_plate,varchar,Sim,-,Placa do veículo
+pendencias,mechanic_id,uuid,Sim,-,FK para mecânico
+pendencias,service_order_id,uuid,Sim,-,FK para OS
+pendencias,resolved_at,timestamp,Sim,-,Data de resolução
+pendencias,resolved_by,uuid,Sim,-,Resolvido por
+pendencias,created_at,timestamp,Não,now(),Data de criação
+profiles,id,uuid,Não,gen_random_uuid(),ID único
+profiles,user_id,uuid,Não,-,FK para auth.users
+profiles,full_name,text,Sim,-,Nome completo
+profiles,phone,text,Sim,-,Telefone
+profiles,avatar_url,text,Sim,-,URL do avatar
+profiles,birthday,date,Sim,-,Data de nascimento
+profiles,loyalty_points,integer,Não,0,Pontos fidelidade
+profiles,loyalty_level,text,Não,'bronze',Nível fidelidade
+profiles,must_change_password,boolean,Não,false,Deve trocar senha
+profiles,company_id,uuid,Sim,-,FK para empresa
+profiles,created_at,timestamp,Não,now(),Data de criação
+profiles,updated_at,timestamp,Não,now(),Data de atualização
+push_subscriptions,id,uuid,Não,gen_random_uuid(),ID único
+push_subscriptions,user_id,uuid,Não,-,FK para auth.users
+push_subscriptions,endpoint,text,Não,-,Endpoint push
+push_subscriptions,p256dh,text,Não,-,Chave p256dh
+push_subscriptions,auth,text,Não,-,Chave auth
+push_subscriptions,created_at,timestamp,Não,now(),Data de criação
+push_subscriptions,updated_at,timestamp,Não,now(),Data de atualização
+service_order_history,id,uuid,Não,gen_random_uuid(),ID único
+service_order_history,service_order_id,uuid,Não,-,FK para OS
+service_order_history,event_type,text,Não,-,Tipo do evento
+service_order_history,description,text,Não,-,Descrição
+service_order_history,user_id,uuid,Sim,-,FK para auth.users
+service_order_history,metadata,jsonb,Sim,{},Metadados
+service_order_history,created_at,timestamp,Não,now(),Data de criação
+service_order_items,id,uuid,Não,gen_random_uuid(),ID único
+service_order_items,service_order_id,uuid,Não,-,FK para OS
+service_order_items,description,text,Não,-,Descrição do item
+service_order_items,type,text,Não,-,Tipo (peça/serviço)
+service_order_items,quantity,numeric,Sim,1,Quantidade
+service_order_items,unit_price,numeric,Não,-,Preço unitário
+service_order_items,total_price,numeric,Não,-,Preço total
+service_order_items,cost_price,numeric,Sim,0,Preço de custo
+service_order_items,suggested_price,numeric,Sim,-,Preço sugerido
+service_order_items,margin_percent,numeric,Sim,40,Margem %
+service_order_items,status,text,Sim,'orcamento',Status do item
+service_order_items,priority,text,Sim,'normal',Prioridade
+service_order_items,notes,text,Sim,-,Observações
+service_order_items,refusal_reason,text,Sim,-,Motivo de recusa
+service_order_items,discount_justification,text,Sim,-,Justificativa desconto
+service_order_items,budget_tier,text,Sim,'standard',Faixa de orçamento
+service_order_items,estimated_return_date,date,Sim,-,Previsão de retorno
+service_order_items,created_at,timestamp,Não,now(),Data de criação
+service_orders,id,uuid,Não,gen_random_uuid(),ID único
+service_orders,order_number,text,Não,-,Número da OS (YYYY-XXXXX)
+service_orders,client_id,uuid,Não,-,FK para cliente
+service_orders,vehicle_id,uuid,Não,-,FK para veículo
+service_orders,mechanic_id,uuid,Sim,-,FK para mecânico
+service_orders,status,text,Não,'orcamento',Status da OS
+service_orders,priority,text,Sim,'normal',Prioridade
+service_orders,problem_description,text,Sim,-,Descrição do problema
+service_orders,diagnosis,text,Sim,-,Diagnóstico
+service_orders,observations,text,Sim,-,Observações
+service_orders,entry_km,integer,Sim,-,KM de entrada
+service_orders,entry_checklist,jsonb,Sim,{},Checklist de entrada
+service_orders,total,numeric,Sim,0,Total da OS
+service_orders,total_parts,numeric,Sim,0,Total em peças
+service_orders,total_labor,numeric,Sim,0,Total mão de obra
+service_orders,total_discount,numeric,Sim,0,Total desconto
+service_orders,approved_total,numeric,Sim,0,Total aprovado
+service_orders,payment_status,text,Sim,'pendente',Status pagamento
+service_orders,payment_method,text,Sim,-,Forma de pagamento
+service_orders,em_terceiros,boolean,Não,false,Em terceiros
+service_orders,recurso,text,Sim,-,Recurso atribuído
+service_orders,estimated_completion,timestamp,Sim,-,Previsão de conclusão
+service_orders,completed_at,timestamp,Sim,-,Data de conclusão
+service_orders,budget_sent_at,timestamp,Sim,-,Orçamento enviado em
+service_orders,budget_approved_at,timestamp,Sim,-,Orçamento aprovado em
+service_orders,created_at,timestamp,Não,now(),Data de criação
+service_orders,updated_at,timestamp,Não,now(),Data de atualização
+system_config,id,uuid,Não,gen_random_uuid(),ID único
+system_config,key,text,Não,-,Chave de configuração
+system_config,value,jsonb,Não,{},Valor
+system_config,updated_at,timestamp,Não,now(),Data de atualização
+user_roles,id,uuid,Não,gen_random_uuid(),ID único
+user_roles,user_id,uuid,Não,-,FK para auth.users
+user_roles,role,app_role,Não,'user',Role (user/admin/gestao/dev)
+user_roles,created_at,timestamp,Não,now(),Data de criação
+vehicles,id,uuid,Não,gen_random_uuid(),ID único
+vehicles,client_id,uuid,Não,-,FK para cliente
+vehicles,brand,text,Não,-,Marca
+vehicles,model,text,Não,-,Modelo
+vehicles,plate,text,Não,-,Placa
+vehicles,year,integer,Sim,-,Ano
+vehicles,color,text,Sim,-,Cor
+vehicles,km,integer,Sim,0,Quilometragem
+vehicles,chassis,text,Sim,-,Chassi
+vehicles,fuel_type,text,Sim,'flex',Combustível
+vehicles,is_active,boolean,Sim,true,Ativo
+vehicles,notes,text,Sim,-,Observações
+vehicles,created_at,timestamp,Não,now(),Data de criação
+vehicles,updated_at,timestamp,Não,now(),Data de atualização
+workflow_etapas,id,uuid,Não,gen_random_uuid(),ID único
+workflow_etapas,nome,text,Não,-,Nome da etapa
+workflow_etapas,ordem,integer,Não,-,Ordem de exibição
+workflow_etapas,cor,text,Não,'#3b82f6',Cor da etapa
+workflow_etapas,icone,text,Não,'clock',Ícone
+workflow_etapas,is_active,boolean,Não,true,Ativa
+workflow_etapas,created_at,timestamp,Não,now(),Data de criação
