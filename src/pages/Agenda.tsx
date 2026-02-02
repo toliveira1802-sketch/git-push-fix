@@ -70,7 +70,7 @@ const Agenda = () => {
 
       // Get client by user_id
       const { data: client } = await supabase
-        .from('clients')
+        .from('clientes')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
@@ -82,7 +82,7 @@ const Agenda = () => {
 
       // Get appointments for this client
       const { data: appointmentsData } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select(`
           id,
           scheduled_date,
@@ -90,7 +90,7 @@ const Agenda = () => {
           service_type,
           status,
           vehicle_id,
-          vehicles (brand, model, plate)
+          veiculos (brand, model, plate)
         `)
         .eq('client_id', client.id)
         .gte('scheduled_date', new Date().toISOString().split('T')[0])
@@ -103,8 +103,8 @@ const Agenda = () => {
           time: apt.scheduled_time,
           service: apt.service_type,
           status: apt.status === 'confirmado' ? 'confirmado' : apt.status === 'concluido' ? 'concluido' : 'pendente',
-          vehicleModel: apt.vehicles ? `${apt.vehicles.brand} ${apt.vehicles.model}` : undefined,
-          vehiclePlate: apt.vehicles?.plate,
+          vehicleModel: apt.veiculos ? `${apt.veiculos.brand} ${apt.veiculos.model}` : undefined,
+          vehiclePlate: apt.veiculos?.plate,
         }));
         setAppointments(mapped);
       }
@@ -120,7 +120,7 @@ const Agenda = () => {
     setIsCancelling(true);
     
     const { error } = await supabase
-      .from('appointments')
+      .from('agendamentos')
       .update({ 
         status: 'cancelado',
         cancel_reason: cancelReason || null,

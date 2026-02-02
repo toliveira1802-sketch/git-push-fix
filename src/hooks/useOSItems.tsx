@@ -69,7 +69,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("service_order_items")
+        .from("itens_ordem_servico")
         .select("*")
         .eq("service_order_id", serviceOrderId)
         .order("created_at", { ascending: true });
@@ -121,7 +121,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
       const suggestedPrice = calculateSuggestedPrice(input.cost_price, margin);
       const totalPrice = input.unit_price * input.quantity;
 
-      const { error } = await supabase.from("service_order_items").insert({
+      const { error } = await supabase.from("itens_ordem_servico").insert({
         service_order_id: serviceOrderId,
         description: input.description,
         type: input.type,
@@ -179,7 +179,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
       }
 
       const { error } = await supabase
-        .from("service_order_items")
+        .from("itens_ordem_servico")
         .update(updateData)
         .eq("id", itemId);
 
@@ -202,7 +202,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from("service_order_items")
+        .from("itens_ordem_servico")
         .delete()
         .eq("id", itemId);
 
@@ -250,7 +250,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
     try {
       // Fetch fresh items
       const { data: freshItems, error: fetchError } = await supabase
-        .from("service_order_items")
+        .from("itens_ordem_servico")
         .select("total_price, status, type")
         .eq("service_order_id", serviceOrderId);
 
@@ -268,7 +268,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
         .reduce((sum, i) => sum + Number(i.total_price), 0);
 
       const { error } = await supabase
-        .from("service_orders")
+        .from("ordens_servico")
         .update({
           total,
           total_parts: totalParts,

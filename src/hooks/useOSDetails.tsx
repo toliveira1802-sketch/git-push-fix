@@ -84,13 +84,13 @@ export function useOSDetails(osId: string | undefined) {
         .from("ordens_servico")
         .select(`
           *,
-          clientes!ordens_servico_client_id_fkey (
+          clientes (
             id, name, phone, email
           ),
-          veiculos!ordens_servico_vehicle_id_fkey (
+          veiculos (
             id, plate, brand, model, year, color, km
           ),
-          mecanicos!ordens_servico_mechanic_id_fkey (
+          mecanicos (
             id, name
           )
         `)

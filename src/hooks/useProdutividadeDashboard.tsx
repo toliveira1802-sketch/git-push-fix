@@ -57,7 +57,7 @@ export function useProdutividadeDashboard(semana?: number) {
   };
 
   const calcValorAprovado = (os: any): number => {
-    const itens = os.service_order_items || [];
+    const itens = os.itens_ordem_servico || [];
     const aprovados = itens.filter((i: any) => i.status?.toLowerCase() === 'aprovado');
     return aprovados.length > 0
       ? aprovados.reduce((sum: number, i: any) => sum + (i.total_price || 0), 0)
@@ -99,20 +99,20 @@ export function useProdutividadeDashboard(semana?: number) {
 
       // Buscar mecânicos ativos
       const { data: mechanicsData } = await supabase
-        .from('mechanics')
+        .from('mecanicos')
         .select('id, name')
         .eq('is_active', true)
         .order('name');
 
       // Buscar OSs entregues no mês com mecânico
       const { data: ossEntregues } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select(`
           id,
           mechanic_id,
           total,
           completed_at,
-          service_order_items(total_price, status)
+          itens_ordem_servico(total_price, status)
         `)
         .eq('status', 'entregue')
         .gte('completed_at', inicioMes.toISOString())

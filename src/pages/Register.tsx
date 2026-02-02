@@ -134,7 +134,7 @@ const Register: React.FC = () => {
     if (user) {
       // Criar entrada em clients como auto-cadastro
       const { error: clientError } = await supabase
-        .from('clients')
+        .from('clientes')
         .insert({
           name: formData.name,
           phone: formData.phone.replace(/\D/g, ''),
@@ -150,7 +150,7 @@ const Register: React.FC = () => {
 
       // Dar 50 pontos de boas-vindas no profile
       const { error: pointsError } = await supabase
-        .from('profiles')
+        .from('colaboradores')
         .update({
           loyalty_points: 50,
           loyalty_level: 'bronze'

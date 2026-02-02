@@ -146,7 +146,7 @@ export function useImportData() {
     try {
       for (const row of validRows) {
         const { data } = row;
-        const { error } = await supabase.from("clients").insert({
+        const { error } = await supabase.from("clientes").insert({
           name: data.name,
           phone: data.phone,
           email: data.email || null,
@@ -189,7 +189,7 @@ export function useImportData() {
         
         // Find client by phone
         const { data: clients } = await supabase
-          .from("clients")
+          .from("clientes")
           .select("id")
           .eq("phone", data.client_phone)
           .limit(1);
@@ -199,7 +199,7 @@ export function useImportData() {
           continue;
         }
 
-        const { error } = await supabase.from("vehicles").insert({
+        const { error } = await supabase.from("veiculos").insert({
           plate: data.plate.toUpperCase(),
           brand: data.brand,
           model: data.model,
