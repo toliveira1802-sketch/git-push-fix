@@ -48,7 +48,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     const fetchCompanies = async () => {
       try {
         const { data, error } = await supabase
-          .from('companies')
+          .from('empresas')
           .select('*')
           .eq('is_active', true)
           .order('name');

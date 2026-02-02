@@ -68,7 +68,7 @@ const ForcePasswordChange = ({ onSuccess }: ForcePasswordChangeProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
-          .from("profiles")
+          .from("colaboradores")
           .update({ must_change_password: false })
           .eq("user_id", user.id);
       }

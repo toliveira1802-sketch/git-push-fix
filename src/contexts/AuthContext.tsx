@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const checkMustChangePassword = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('colaboradores')
         .select('must_change_password')
         .eq('user_id', userId)
         .single();

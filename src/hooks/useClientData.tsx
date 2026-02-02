@@ -73,7 +73,7 @@ export function useClientData() {
     if (!user) return null;
 
     const { data, error } = await supabase
-      .from("clients")
+      .from("clientes")
       .select("id, name, phone, email")
       .eq("user_id", user.id)
       .maybeSingle();
@@ -100,7 +100,7 @@ export function useClientData() {
     if (!user) return [];
 
     const { data, error } = await supabase
-      .from("vehicles")
+      .from("veiculos")
       .select("id, brand, model, plate, year, color, km, is_active, client_id")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
@@ -213,14 +213,14 @@ export function useClientData() {
     refresh();
   }, [refresh]);
 
-  // Realtime subscription for service_orders changes
+  // Realtime subscription for ordens_servico changes
   useEffect(() => {
     if (!user) return;
 
     let channel: RealtimeChannel | null = null;
 
     const setupRealtime = async () => {
-      // Subscribe to service_orders changes
+      // Subscribe to ordens_servico changes
       channel = supabase
         .channel("client-service-orders")
         .on(
@@ -228,10 +228,10 @@ export function useClientData() {
           {
             event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
             schema: "public",
-            table: "service_orders",
+            table: "ordens_servico",
           },
           (payload) => {
-            console.log("Realtime: service_orders changed", payload);
+            console.log("Realtime: ordens_servico changed", payload);
             // Refresh data when any service order changes
             refresh();
           },
@@ -241,10 +241,10 @@ export function useClientData() {
           {
             event: "*",
             schema: "public",
-            table: "service_order_items",
+            table: "itens_ordem_servico",
           },
           (payload) => {
-            console.log("Realtime: service_order_items changed", payload);
+            console.log("Realtime: itens_ordem_servico changed", payload);
             // Refresh data when items change
             refresh();
           },

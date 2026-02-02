@@ -81,16 +81,16 @@ export function useOSDetails(osId: string | undefined) {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("service_orders")
+        .from("ordens_servico")
         .select(`
           *,
-          clients!service_orders_client_id_fkey (
+          clientes!ordens_servico_client_id_fkey (
             id, name, phone, email
           ),
-          vehicles!service_orders_vehicle_id_fkey (
+          veiculos!ordens_servico_vehicle_id_fkey (
             id, plate, brand, model, year, color, km
           ),
-          mechanics!service_orders_mechanic_id_fkey (
+          mecanicos!ordens_servico_mechanic_id_fkey (
             id, name
           )
         `)
@@ -124,29 +124,29 @@ export function useOSDetails(osId: string | undefined) {
           completed_at: data.completed_at,
           budget_sent_at: (data as any).budget_sent_at || null,
           budget_approved_at: (data as any).budget_approved_at || null,
-          client: data.clients
+          client: data.clientes
             ? {
-                id: data.clients.id,
-                name: data.clients.name,
-                phone: data.clients.phone,
-                email: data.clients.email,
+                id: data.clientes.id,
+                name: data.clientes.name,
+                phone: data.clientes.phone,
+                email: data.clientes.email,
               }
             : null,
-          vehicle: data.vehicles
+          vehicle: data.veiculos
             ? {
-                id: data.vehicles.id,
-                plate: data.vehicles.plate,
-                brand: data.vehicles.brand,
-                model: data.vehicles.model,
-                year: data.vehicles.year,
-                color: data.vehicles.color,
-                km: data.vehicles.km,
+                id: data.veiculos.id,
+                plate: data.veiculos.plate,
+                brand: data.veiculos.brand,
+                model: data.veiculos.model,
+                year: data.veiculos.year,
+                color: data.veiculos.color,
+                km: data.veiculos.km,
               }
             : null,
-          mechanic: data.mechanics
+          mechanic: data.mecanicos
             ? {
-                id: data.mechanics.id,
-                name: data.mechanics.name,
+                id: data.mecanicos.id,
+                name: data.mecanicos.name,
               }
             : null,
         };
@@ -169,7 +169,7 @@ export function useOSDetails(osId: string | undefined) {
 
     try {
       const { data, error } = await supabase
-        .from("service_order_history")
+        .from("historico_ordem_servico")
         .select("*")
         .eq("service_order_id", osId)
         .order("created_at", { ascending: false });
@@ -206,7 +206,7 @@ export function useOSDetails(osId: string | undefined) {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from("service_orders")
+        .from("ordens_servico")
         .update(updates)
         .eq("id", osId);
 
@@ -249,7 +249,7 @@ export function useOSDetails(osId: string | undefined) {
     if (!osId) return false;
 
     try {
-      const { error } = await supabase.from("service_order_history").insert({
+      const { error } = await supabase.from("historico_ordem_servico").insert({
         service_order_id: osId,
         event_type: eventType,
         description,
