@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,12 @@ export default function GestaoRH() {
   useEffect(() => {
     const fetchMechanics = async () => {
       const { data, error } = await supabase
-        .from('mechanics')
+        .from('mecanicos')
         .select('id, name, specialty, is_active')
         .order('name');
       
       if (!error && data) {
-        setMechanics(data);
+        setMechanics(data as Mechanic[]);
       }
       setLoading(false);
     };

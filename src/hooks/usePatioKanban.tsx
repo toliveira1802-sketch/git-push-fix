@@ -91,7 +91,7 @@ export function usePatioKanban() {
 
       // Buscar OSs ativas (não entregues)
       const { data: ossAtivas, error: errorAtivas } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select(`
           id,
           order_number,
@@ -105,10 +105,10 @@ export function usePatioKanban() {
           mechanic_id,
           em_terceiros,
           recurso,
-          vehicles!inner(plate, model, brand, year, color),
-          clients!inner(name, phone),
-          mechanics(name),
-          service_order_items(total_price, status)
+          veiculos!inner(plate, model, brand, year, color),
+          clientes!inner(name, phone),
+          mecanicos(name),
+          itens_ordem_servico(total_price, status)
         `)
         .neq('status', 'entregue')
         .order('created_at', { ascending: false });
@@ -117,7 +117,7 @@ export function usePatioKanban() {
 
       // Buscar entregues do mês atual (para mostrar na coluna Entregue)
       const { data: ossEntregues, error: errorEntregues } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select(`
           id,
           order_number,
@@ -131,10 +131,10 @@ export function usePatioKanban() {
           mechanic_id,
           em_terceiros,
           recurso,
-          vehicles!inner(plate, model, brand, year, color),
-          clients!inner(name, phone),
-          mechanics(name),
-          service_order_items(total_price, status)
+          veiculos!inner(plate, model, brand, year, color),
+          clientes!inner(name, phone),
+          mecanicos(name),
+          itens_ordem_servico(total_price, status)
         `)
         .eq('status', 'entregue')
         .gte('completed_at', inicioMes.toISOString())
@@ -146,7 +146,7 @@ export function usePatioKanban() {
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
       const { data: agendamentosConfirmados } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select(`
           id,
           scheduled_date,
@@ -154,8 +154,8 @@ export function usePatioKanban() {
           service_type,
           description,
           status,
-          clients!inner(name, phone),
-          vehicles(plate, model, brand, year, color)
+          clientes!inner(name, phone),
+          veiculos(plate, model, brand, year, color)
         `)
         .eq('status', 'confirmado')
         .gte('scheduled_date', hoje.toISOString().split('T')[0]);
@@ -166,7 +166,7 @@ export function usePatioKanban() {
       // Calcular total faturado do mês
       let totalMes = 0;
       ossEntregues?.forEach(os => {
-        const itensAprovados = (os.service_order_items || [])
+        const itensAprovados = (os.itens_ordem_servico || [])
           .filter((item: { status: string | null; total_price: number }) => 
             item.status?.toLowerCase() === 'aprovado'
           );
@@ -207,7 +207,7 @@ export function usePatioKanban() {
           
           // Calcular valor aprovado (soma dos itens com status 'aprovado')
           // Se não houver itens (ex: cards do Trello), usa o total da OS
-          const itensAprovados = (os.service_order_items || [])
+          const itensAprovados = (os.itens_ordem_servico || [])
             .filter((item: { status: string | null; total_price: number }) => 
               item.status?.toLowerCase() === 'aprovado'
             );
@@ -219,13 +219,13 @@ export function usePatioKanban() {
           const veiculo: VeiculoKanban = {
             id: os.id,
             orderNumber: os.order_number,
-            placa: os.vehicles?.plate || '',
-            modelo: os.vehicles?.model || '',
-            marca: os.vehicles?.brand || '',
-            ano: os.vehicles?.year || null,
-            cor: os.vehicles?.color || null,
-            cliente: os.clients?.name || '',
-            clienteTelefone: os.clients?.phone || '',
+            placa: (os.veiculos as any)?.plate || '',
+            modelo: (os.veiculos as any)?.model || '',
+            marca: (os.veiculos as any)?.brand || '',
+            ano: (os.veiculos as any)?.year || null,
+            cor: (os.veiculos as any)?.color || null,
+            cliente: (os.clientes as any)?.name || '',
+            clienteTelefone: (os.clientes as any)?.phone || '',
             servico: os.problem_description || os.order_number,
             categoria: getCategoria(os.problem_description),
             entrada: createdAt.toLocaleString('pt-BR', { 
@@ -241,7 +241,7 @@ export function usePatioKanban() {
             total: os.total || 0,
             valorAprovado: valorAprovado,
             emTerceiros: os.em_terceiros || false,
-            mecanico: os.mechanics?.name || null,
+            mecanico: (os.mecanicos as any)?.name || null,
             mecanicoId: os.mechanic_id || null,
             recurso: os.recurso || null,
           };
@@ -259,13 +259,13 @@ export function usePatioKanban() {
           const veiculo: VeiculoKanban = {
             id: `ag-${ag.id}`, // Prefixo para diferenciar de OSs
             orderNumber: `AG-${scheduledDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`,
-            placa: ag.vehicles?.plate || 'A definir',
-            modelo: ag.vehicles?.model || '',
-            marca: ag.vehicles?.brand || '',
-            ano: ag.vehicles?.year || null,
-            cor: ag.vehicles?.color || null,
-            cliente: ag.clients?.name || '',
-            clienteTelefone: ag.clients?.phone || '',
+            placa: (ag.veiculos as any)?.plate || 'A definir',
+            modelo: (ag.veiculos as any)?.model || '',
+            marca: (ag.veiculos as any)?.brand || '',
+            ano: (ag.veiculos as any)?.year || null,
+            cor: (ag.veiculos as any)?.color || null,
+            cliente: (ag.clientes as any)?.name || '',
+            clienteTelefone: (ag.clientes as any)?.phone || '',
             servico: ag.service_type || ag.description || 'Agendamento',
             categoria: 'Agendamento',
             entrada: scheduledDate.toLocaleString('pt-BR', { 
@@ -334,7 +334,7 @@ export function usePatioKanban() {
       }
 
       const { error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .update(updateData)
         .eq('id', veiculoId);
 

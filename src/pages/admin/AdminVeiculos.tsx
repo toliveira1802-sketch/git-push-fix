@@ -18,7 +18,7 @@ import {
   Calendar,
   Loader2
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -55,13 +55,13 @@ export default function AdminVeiculos() {
   useEffect(() => {
     const fetchClientsWithVehicles = async () => {
       const { data: clientsData, error } = await supabase
-        .from('clients')
+        .from('clientes')
         .select(`
           id,
           name,
           phone,
           email,
-          vehicles (
+          veiculos (
             id,
             brand,
             model,
@@ -74,14 +74,14 @@ export default function AdminVeiculos() {
         .order('name');
 
       if (!error && clientsData) {
-        const mapped: ClientWithVehicles[] = clientsData
-          .filter((c: any) => c.vehicles && c.vehicles.length > 0)
+        const mapped: ClientWithVehicles[] = (clientsData as any[])
+          .filter((c: any) => c.veiculos && c.veiculos.length > 0)
           .map((client: any) => ({
             id: client.id,
             name: client.name,
             phone: client.phone,
             email: client.email,
-            vehicles: client.vehicles.map((v: any) => ({
+            vehicles: client.veiculos.map((v: any) => ({
               id: v.id,
               brand: v.brand,
               model: v.model,
@@ -176,9 +176,9 @@ export default function AdminVeiculos() {
       return;
     }
 
-    navigate('/admin/nova-promocao', { 
-      state: { selectedVehicles: selectedData }
-    });
+    // Note: wouter doesn't support state - using query params or sessionStorage instead
+    sessionStorage.setItem('selectedVehicles', JSON.stringify(selectedData));
+    navigate('/admin/nova-promocao');
   };
 
   const formatPlate = (plate: string) => {

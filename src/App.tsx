@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
+import DevScreens from "./pages/__dev/DevScreens";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -45,6 +46,9 @@ import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
 function Router() {
   return (
     <Switch>
+      {/* Public dev route - no auth required */}
+      <Route path="/__dev" component={DevScreens} />
+      
       <Route path={"/"}>
         <Redirect to="/login" />
       </Route>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,16 +30,16 @@ export default function GestaoOperacoes() {
       const fimMes = endOfMonth(hoje);
 
       const { data: orders, error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select('status')
         .gte('created_at', inicioMes.toISOString())
         .lte('created_at', fimMes.toISOString());
 
       if (!error && orders) {
-        const pending = orders.filter(o => ['recebido', 'diagnostico', 'orcamento'].includes(o.status)).length;
-        const inProgress = orders.filter(o => ['em_execucao', 'aguardando_peca', 'terceiros'].includes(o.status)).length;
-        const completed = orders.filter(o => ['pronto_retirada', 'entregue'].includes(o.status)).length;
-        const cancelled = orders.filter(o => o.status === 'cancelado').length;
+        const pending = (orders as any[]).filter((o: any) => ['recebido', 'diagnostico', 'orcamento'].includes(o.status)).length;
+        const inProgress = (orders as any[]).filter((o: any) => ['em_execucao', 'aguardando_peca', 'terceiros'].includes(o.status)).length;
+        const completed = (orders as any[]).filter((o: any) => ['pronto_retirada', 'entregue'].includes(o.status)).length;
+        const cancelled = (orders as any[]).filter((o: any) => o.status === 'cancelado').length;
 
         setStats({
           total: orders.length,

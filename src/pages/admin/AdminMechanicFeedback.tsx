@@ -92,7 +92,7 @@ const AdminMechanicFeedback = () => {
     try {
       // Fetch mechanics
       const { data: mechanicsData, error: mechanicsError } = await supabase
-        .from("mechanics")
+        .from("mecanicos")
         .select("id, name, specialty")
         .eq("is_active", true)
         .order("name");

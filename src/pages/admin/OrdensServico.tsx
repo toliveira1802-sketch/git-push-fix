@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from '@/hooks/useNavigate'
+import { useLocation } from 'wouter'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -47,7 +48,7 @@ type FilterStatus = 'all' | 'ativas' | 'entregue'
 
 export default function OrdensServico() {
   const navigate = useNavigate()
-  const location = useLocation()
+  const [pathname] = useLocation()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [startDate, setStartDate] = useState<Date | undefined>()
@@ -61,7 +62,7 @@ export default function OrdensServico() {
       setLoading(true)
       try {
         const { data, error } = await supabase
-          .from('service_orders')
+          .from('ordens_servico')
           .select(`
             id,
             order_number,
@@ -70,13 +71,13 @@ export default function OrdensServico() {
             created_at,
             completed_at,
             problem_description,
-            vehicles!inner(plate, brand, model),
-            clients!inner(name, phone)
+            veiculos!inner(plate, brand, model),
+            clientes!inner(name, phone)
           `)
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        setOrders((data as unknown as ServiceOrderRow[]) || [])
+        setOrders(((data || []) as any[]).map((d: any) => ({ ...d, vehicles: d.veiculos, clients: d.clientes })) as ServiceOrderRow[])
       } catch (error) {
         console.error('Error fetching orders:', error)
       } finally {
@@ -115,7 +116,7 @@ export default function OrdensServico() {
     { value: 'entregue', label: 'Histórico' },
   ]
 
-  const basePath = location.pathname.includes('/gestao') ? '/gestao' : '/admin'
+  const basePath = pathname.includes('/gestao') ? '/gestao' : '/admin'
 
   const clearDateFilter = () => {
     setStartDate(undefined)

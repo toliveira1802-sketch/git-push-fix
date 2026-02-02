@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from '@/hooks/useNavigate';
+import { useLocation } from 'wouter';
 import { 
   ClipboardList, 
   Users, 
@@ -88,7 +89,7 @@ const systemMenuItems: MenuItem[] = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [pathname] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(true);
@@ -105,7 +106,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       if (user) {
         // Tentar buscar do profile primeiro
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('colaboradores')
           .select('full_name')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -145,12 +146,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   // Auto-expand parent menus when on child routes
   const isOnCadastrosSubRoute = ['/admin/clientes', '/admin/ordens-servico', '/admin/veiculos'].some(
-    path => location.pathname.startsWith(path)
+    path => pathname.startsWith(path)
   );
-  const isOnCadastrosRoute = location.pathname === '/admin/cadastros' || isOnCadastrosSubRoute;
+  const isOnCadastrosRoute = pathname === '/admin/cadastros' || isOnCadastrosSubRoute;
   
   const isOnConfigSubRoute = ['/admin/melhorias', '/admin/configuracoes'].some(
-    path => location.pathname === path
+    path => pathname === path
   );
 
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
@@ -166,7 +167,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     if (isOnConfigSubRoute && !expandedItems['/admin/configuracoes']) {
       setExpandedItems(prev => ({ ...prev, '/admin/configuracoes': true }));
     }
-  }, [location.pathname, isOnCadastrosRoute, isOnConfigSubRoute]);
+  }, [pathname, isOnCadastrosRoute, isOnConfigSubRoute]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));
@@ -174,8 +175,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const renderMenuItem = (item: MenuItem, onClick?: () => void, level = 0) => {
     const Icon = item.icon;
-    const isActive = location.pathname === item.path || 
-      (item.path !== '/admin' && location.pathname.startsWith(item.path));
+    const isActive = pathname === item.path || 
+      (item.path !== '/admin' && pathname.startsWith(item.path));
     const isHighlight = item.highlight;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isExpanded = expandedItems[item.path];
@@ -463,3 +464,5 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     </div>
   );
 }
+
+export default AdminLayout;

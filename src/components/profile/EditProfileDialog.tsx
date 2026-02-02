@@ -36,7 +36,7 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave }: EditP
     setSaving(true);
     
     const { error } = await supabase
-      .from('profiles')
+      .from('colaboradores')
       .update({
         full_name: name,
         phone,

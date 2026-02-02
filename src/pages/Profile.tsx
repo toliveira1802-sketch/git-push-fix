@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { ArrowLeft, Gift, Settings, LogOut, ChevronRight, Award, Crown, Edit2, Camera, Loader2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,7 +51,7 @@ export default function Profile() {
     try {
       // Buscar dados do profile no Supabase
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
+        .from("colaboradores")
         .select("id, full_name, phone, avatar_url, birthday, loyalty_points, loyalty_level")
         .eq("user_id", user.id)
         .maybeSingle();
@@ -62,7 +62,7 @@ export default function Profile() {
 
       // Buscar dados do client para pegar cpf e data_aniversario
       const { data: clientData, error: clientError } = await supabase
-        .from("clients")
+        .from("clientes")
         .select("id, name, phone, cpf, data_aniversario, total_spent")
         .eq("user_id", user.id)
         .maybeSingle();
@@ -74,22 +74,22 @@ export default function Profile() {
       // Combinar dados de profile e client
       if (profileData || clientData) {
         setProfile({
-          id: profileData?.id || clientData?.id || "",
-          full_name: profileData?.full_name || clientData?.name || null,
-          phone: profileData?.phone || clientData?.phone || null,
-          cpf: clientData?.cpf || null,
-          avatar_url: profileData?.avatar_url || null,
-          birthday: profileData?.birthday || clientData?.data_aniversario || null,
-          loyalty_points: profileData?.loyalty_points || Math.round((clientData?.total_spent || 0) / 10),
-          loyalty_level: profileData?.loyalty_level || "bronze",
+          id: (profileData as any)?.id || (clientData as any)?.id || "",
+          full_name: (profileData as any)?.full_name || (clientData as any)?.name || null,
+          phone: (profileData as any)?.phone || (clientData as any)?.phone || null,
+          cpf: (clientData as any)?.cpf || null,
+          avatar_url: (profileData as any)?.avatar_url || null,
+          birthday: (profileData as any)?.birthday || (clientData as any)?.data_aniversario || null,
+          loyalty_points: (profileData as any)?.loyalty_points || Math.round(((clientData as any)?.total_spent || 0) / 10),
+          loyalty_level: (profileData as any)?.loyalty_level || "bronze",
         });
 
         // Buscar estatísticas de serviços
-        if (clientData?.id) {
+        if ((clientData as any)?.id) {
           const { data: ordersData } = await supabase
-            .from("service_orders")
+            .from("ordens_servico")
             .select("id, total, status")
-            .eq("client_id", clientData.id)
+            .eq("client_id", (clientData as any).id)
             .eq("status", "entregue");
 
           if (ordersData) {

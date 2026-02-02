@@ -15,7 +15,7 @@ import {
   CheckCircle,
   ArrowLeft 
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 
 type ImportType = "clients" | "vehicles";
 

@@ -86,14 +86,14 @@ export default function AdminOperacional() {
     try {
       // Fetch active service orders (excluding 'entregue')
       const { data: orders, error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select(`
           id,
           status,
           created_at,
           estimated_completion,
           em_terceiros,
-          vehicles!inner(plate, model)
+          veiculos!inner(plate, model)
         `)
         .neq('status', 'entregue');
 
@@ -114,7 +114,7 @@ export default function AdminOperacional() {
       const delayed: DelayedVehicle[] = [];
       const stageData: Record<string, { totalDays: number; count: number }> = {};
 
-      orders?.forEach(order => {
+      orders?.forEach((order: any) => {
         const status = order.status as keyof StatusCounts;
         if (counts[status] !== undefined) {
           counts[status]++;
@@ -139,16 +139,16 @@ export default function AdminOperacional() {
             const daysDelayed = differenceInDays(new Date(), estimatedDate);
             delayed.push({
               id: order.id,
-              plate: order.vehicles?.plate || '',
-              model: order.vehicles?.model || '',
+              plate: order.veiculos?.plate || '',
+              model: order.veiculos?.model || '',
               daysDelayed,
             });
           }
         } else if (daysInYard > 7) {
           delayed.push({
             id: order.id,
-            plate: order.vehicles?.plate || '',
-            model: order.vehicles?.model || '',
+            plate: order.veiculos?.plate || '',
+            model: order.veiculos?.model || '',
             daysDelayed: daysInYard,
           });
         }
@@ -223,7 +223,7 @@ export default function AdminOperacional() {
       // Fetch today's appointments
       const today = new Date().toISOString().split('T')[0];
       const { data: appointments } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select('id')
         .eq('scheduled_date', today)
         .eq('status', 'agendado');

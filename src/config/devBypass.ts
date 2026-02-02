@@ -1,6 +1,6 @@
-// TODO: REMOVER BYPASS DEV - Quando autenticação Supabase estiver funcionando
-// Mude para false para desativar todos os bypasses de uma vez
-export const DEV_BYPASS = true;
+// DEV_BYPASS desativado - autenticação Supabase está funcionando
+// Mude para true apenas em ambiente de desenvolvimento local se necessário
+export const DEV_BYPASS = false;
 
 // Dados fake para desenvolvimento
 export const DEV_USER = {

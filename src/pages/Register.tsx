@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/hooks/useNavigate';
 import { ArrowLeft, User, Mail, Lock, ArrowRight, Eye, EyeOff, Phone, Car, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -134,7 +134,7 @@ const Register: React.FC = () => {
     if (user) {
       // Criar entrada em clients como auto-cadastro
       const { error: clientError } = await supabase
-        .from('clients')
+        .from('clientes')
         .insert({
           name: formData.name,
           phone: formData.phone.replace(/\D/g, ''),
@@ -150,7 +150,7 @@ const Register: React.FC = () => {
 
       // Dar 50 pontos de boas-vindas no profile
       const { error: pointsError } = await supabase
-        .from('profiles')
+        .from('colaboradores')
         .update({
           loyalty_points: 50,
           loyalty_level: 'bronze'

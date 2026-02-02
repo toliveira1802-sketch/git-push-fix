@@ -3,7 +3,7 @@ import { Bird, Plus, ArrowLeft, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +51,7 @@ export default function Pendencias() {
     const fetchData = async () => {
       // Fetch mechanics
       const { data: mechanics } = await supabase
-        .from('mechanics')
+        .from('mecanicos')
         .select('id, name')
         .eq('is_active', true)
         .order('name');
@@ -63,13 +63,13 @@ export default function Pendencias() {
         .order('created_at', { ascending: false });
 
       if (mechanics) {
-        const members: TeamMember[] = mechanics.map((m, index) => ({
+        const members: TeamMember[] = (mechanics as any[]).map((m: any, index) => ({
           id: m.id,
           name: m.name.toUpperCase(),
           symbol: index === 0 ? 'corinthians' : 'pombo',
           tasks: (pendencias || [])
-            .filter(p => p.mechanic_id === m.id)
-            .map(p => ({
+            .filter((p: any) => p.mechanic_id === m.id)
+            .map((p: any) => ({
               id: p.id,
               text: p.titulo,
               completed: p.status === 'resolvido'

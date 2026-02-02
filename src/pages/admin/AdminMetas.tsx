@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/hooks/useNavigate';
 import { format, startOfMonth, endOfMonth, differenceInBusinessDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -125,14 +125,14 @@ export default function AdminMetas() {
           if (meta.tipo === 'financeira') {
             // Buscar faturamento do mês (OSs entregues)
             const { data: ossEntregues } = await supabase
-              .from('service_orders')
-              .select('total, completed_at, service_order_items(total_price, status)')
+              .from('ordens_servico')
+              .select('total, completed_at, itens_ordem_servico(total_price, status)')
               .eq('status', 'entregue')
               .gte('completed_at', inicioMes.toISOString())
               .lte('completed_at', fimMes.toISOString());
 
-            ossEntregues?.forEach(os => {
-              const itensAprovados = os.service_order_items?.filter((i: any) => i.status?.toLowerCase() === 'aprovado');
+            ossEntregues?.forEach((os: any) => {
+              const itensAprovados = os.itens_ordem_servico?.filter((i: any) => i.status?.toLowerCase() === 'aprovado');
               const valor = itensAprovados?.length > 0
                 ? itensAprovados.reduce((sum: number, i: any) => sum + (i.total_price || 0), 0)
                 : (os.total || 0);
@@ -150,7 +150,7 @@ export default function AdminMetas() {
           } else if (meta.tipo === 'crescimento') {
             // Buscar novos clientes do mês
             const { count } = await supabase
-              .from('clients')
+              .from('clientes')
               .select('*', { count: 'exact', head: true })
               .gte('created_at', inicioMes.toISOString())
               .lte('created_at', fimMes.toISOString());
@@ -167,7 +167,7 @@ export default function AdminMetas() {
           } else if (meta.tipo === 'operacional') {
             // Buscar OSs entregues no mês
             const { count } = await supabase
-              .from('service_orders')
+              .from('ordens_servico')
               .select('*', { count: 'exact', head: true })
               .eq('status', 'entregue')
               .gte('completed_at', inicioMes.toISOString())

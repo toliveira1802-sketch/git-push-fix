@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
+import { useRoute } from "wouter";
 import { 
   ArrowLeft, 
   Car, 
@@ -112,7 +113,8 @@ const statusOrder: OSStatus[] = [
 
 const AdminPatioDetalhes = () => {
   const navigate = useNavigate();
-  const { patioId } = useParams();
+  const [, routeParams] = useRoute("/admin/patio/:id");
+  const patioId = (routeParams as { id?: string } | null)?.id || "";
   const queryClient = useQueryClient();
 
   const [notes, setNotes] = useState("");
@@ -126,7 +128,7 @@ const AdminPatioDetalhes = () => {
       if (!patioId) throw new Error("ID não fornecido");
       
       const { data, error } = await supabase
-        .from("service_orders")
+        .from("ordens_servico")
         .select(`
           id, 
           status, 
@@ -135,17 +137,17 @@ const AdminPatioDetalhes = () => {
           vehicle_id, 
           client_id, 
           order_number,
-          vehicles:vehicle_id (brand, model, plate),
-          clients:client_id (name, phone)
+          veiculos:vehicle_id (brand, model, plate),
+          clientes:client_id (name, phone)
         `)
         .eq("id", patioId)
         .single();
 
       if (error) throw error;
       return {
-        ...data,
-        vehicle: data.vehicles,
-        client: data.clients,
+        ...(data as any),
+        vehicle: (data as any).veiculos,
+        client: (data as any).clientes,
       } as PatioData;
     },
     enabled: !!patioId,
@@ -168,7 +170,7 @@ const AdminPatioDetalhes = () => {
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: OSStatus) => {
       const { error } = await supabase
-        .from("service_orders")
+        .from("ordens_servico")
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq("id", patioId);
       if (error) throw error;
@@ -196,7 +198,7 @@ const AdminPatioDetalhes = () => {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from("service_orders")
+        .from("ordens_servico")
         .update({ observations: notes })
         .eq("id", patioId);
       

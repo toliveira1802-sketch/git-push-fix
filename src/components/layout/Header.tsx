@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { Car, Bell, User, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
