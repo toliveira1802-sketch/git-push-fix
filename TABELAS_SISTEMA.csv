@@ -1,0 +1,222 @@
+TABELA,CAMPO,TIPO,DESCRIÇÃO,OBRIGATÓRIO
+
+=== EMPRESAS ===,,,,
+empresas,id,int,PK auto-increment,Sim
+empresas,razaoSocial,varchar(255),Razão social,Não
+empresas,nomeEmpresa,varchar(255),Nome fantasia,Sim
+empresas,cnpj,varchar(20),CNPJ,Não
+empresas,telefone,varchar(20),Telefone,Não
+empresas,createdAt,timestamp,Data criação,Sim
+empresas,updatedAt,timestamp,Data atualização,Sim
+
+=== COLABORADORES ===,,,,
+colaboradores,id,int,PK auto-increment,Sim
+colaboradores,empresaId,int,FK empresa,Não
+colaboradores,nome,varchar(255),Nome completo,Sim
+colaboradores,cargo,varchar(100),"Direção, Gestão, Consultor Técnico",Não
+colaboradores,email,varchar(320),Email,Não
+colaboradores,telefone,varchar(20),Telefone,Não
+colaboradores,cpf,varchar(14),CPF,Não
+colaboradores,senha,varchar(255),Senha (default: 123456),Não
+colaboradores,primeiroAcesso,boolean,Primeiro acesso?,Não
+colaboradores,nivelAcessoId,int,FK nível de acesso,Não
+colaboradores,createdAt,timestamp,Data criação,Sim
+colaboradores,updatedAt,timestamp,Data atualização,Sim
+
+=== MECANICOS ===,,,,
+mecanicos,id,int,PK auto-increment,Sim
+mecanicos,empresaId,int,FK empresa,Não
+mecanicos,nome,varchar(255),Nome,Sim
+mecanicos,email,varchar(320),Email,Não
+mecanicos,telefone,varchar(20),Telefone,Não
+mecanicos,cpf,varchar(14),CPF,Não
+mecanicos,grauConhecimento,varchar(50),"Júnior, Pleno, Sênior",Não
+mecanicos,especialidade,varchar(255),"Motor, Elétrica, Suspensão, etc",Não
+mecanicos,qtdePositivos,int,Feedbacks positivos,Não
+mecanicos,qtdeNegativos,int,Feedbacks negativos,Não
+mecanicos,ativo,boolean,Ativo?,Não
+mecanicos,createdAt,timestamp,Data criação,Sim
+mecanicos,updatedAt,timestamp,Data atualização,Sim
+
+=== RECURSOS ===,,,,
+recursos,id,int,PK auto-increment,Sim
+recursos,empresaId,int,FK empresa,Não
+recursos,nomeRecurso,varchar(255),Nome do recurso,Sim
+recursos,ultimaManutencao,date,Última manutenção,Não
+recursos,horasUtilizadasMes,int,Horas utilizadas no mês,Não
+recursos,valorProduzidoMes,int,Valor produzido no mês,Não
+recursos,ativo,boolean,Ativo?,Não
+recursos,createdAt,timestamp,Data criação,Sim
+recursos,updatedAt,timestamp,Data atualização,Sim
+
+=== CLIENTES ===,,,,
+clientes,id,int,PK auto-increment,Sim
+clientes,empresaId,int,FK empresa,Não
+clientes,nomeCompleto,varchar(255),Nome completo,Sim
+clientes,cpf,varchar(14),CPF,Não
+clientes,email,varchar(320),Email,Não
+clientes,telefone,varchar(20),Telefone,Não
+clientes,dataNascimento,date,Data nascimento,Não
+clientes,endereco,varchar(500),Endereço,Não
+clientes,cep,varchar(10),CEP,Não
+clientes,cidade,varchar(100),Cidade,Não
+clientes,estado,varchar(2),Estado,Não
+clientes,origemCadastro,varchar(100),Origem do cadastro,Não
+clientes,senha,varchar(255),Senha (default: 123456),Não
+clientes,primeiroAcesso,boolean,Primeiro acesso?,Não
+clientes,createdAt,timestamp,Data criação,Sim
+clientes,updatedAt,timestamp,Data atualização,Sim
+
+=== VEICULOS ===,,,,
+veiculos,id,int,PK auto-increment,Sim
+veiculos,clienteId,int,FK cliente,Sim
+veiculos,placa,varchar(10),Placa,Sim
+veiculos,marca,varchar(100),Marca,Não
+veiculos,modelo,varchar(255),Modelo,Não
+veiculos,versao,varchar(255),Versão,Não
+veiculos,ano,int,Ano,Não
+veiculos,combustivel,varchar(50),Combustível,Não
+veiculos,ultimoKm,int,Último KM registrado,Não
+veiculos,kmAtual,int,KM atual,Não
+veiculos,origemContato,varchar(100),Origem do contato,Não
+veiculos,createdAt,timestamp,Data criação,Sim
+veiculos,updatedAt,timestamp,Data atualização,Sim
+
+=== ORDENS_SERVICO ===,,,,
+ordens_servico,id,int,PK auto-increment,Sim
+ordens_servico,numeroOs,varchar(20),Número da OS,Não
+ordens_servico,dataEntrada,timestamp,Data entrada,Não
+ordens_servico,dataSaida,timestamp,Data saída,Não
+ordens_servico,clienteId,int,FK cliente,Não
+ordens_servico,veiculoId,int,FK veículo,Não
+ordens_servico,placa,varchar(10),Placa,Não
+ordens_servico,km,int,KM na entrada,Não
+ordens_servico,status,varchar(50),Status atual,Não
+ordens_servico,colaboradorId,int,FK colaborador,Não
+ordens_servico,mecanicoId,int,FK mecânico,Não
+ordens_servico,recursoId,int,FK recurso,Não
+ordens_servico,veioDePromocao,boolean,Veio de promoção?,Não
+ordens_servico,motivoVisita,varchar(255),Motivo da visita,Não
+ordens_servico,totalOrcamento,decimal(10.2),Total orçamento,Não
+ordens_servico,valorTotalOs,decimal(10.2),Valor total OS,Não
+ordens_servico,primeiraVez,boolean,Primeira vez?,Não
+ordens_servico,observacoes,text,Observações,Não
+ordens_servico,createdAt,timestamp,Data criação,Sim
+ordens_servico,updatedAt,timestamp,Data atualização,Sim
+
+=== ORDENS_SERVICO_ITENS ===,,,,
+ordens_servico_itens,id,int,PK auto-increment,Sim
+ordens_servico_itens,ordemServicoId,int,FK ordem de serviço,Sim
+ordens_servico_itens,tipo,varchar(50),"Peça, Serviço, Mão de Obra",Não
+ordens_servico_itens,descricao,varchar(500),Descrição,Não
+ordens_servico_itens,quantidade,int,Quantidade,Não
+ordens_servico_itens,valorUnitario,decimal(10.2),Valor unitário,Não
+ordens_servico_itens,valorTotal,decimal(10.2),Valor total,Não
+ordens_servico_itens,aprovado,boolean,Aprovado?,Não
+ordens_servico_itens,executado,boolean,Executado?,Não
+ordens_servico_itens,mecanicoId,int,FK mecânico,Não
+ordens_servico_itens,createdAt,timestamp,Data criação,Sim
+
+=== ORDENS_SERVICO_HISTORICO ===,,,,
+ordens_servico_historico,id,int,PK auto-increment,Sim
+ordens_servico_historico,ordemServicoId,int,FK ordem de serviço,Sim
+ordens_servico_historico,statusAnterior,varchar(50),Status anterior,Não
+ordens_servico_historico,statusNovo,varchar(50),Status novo,Não
+ordens_servico_historico,colaboradorId,int,FK colaborador,Não
+ordens_servico_historico,observacao,text,Observação,Não
+ordens_servico_historico,dataAlteracao,timestamp,Data alteração,Sim
+ordens_servico_historico,createdAt,timestamp,Data criação,Sim
+
+=== AGENDAMENTOS ===,,,,
+agendamentos,id,int,PK auto-increment,Sim
+agendamentos,clienteId,int,FK cliente,Não
+agendamentos,veiculoId,int,FK veículo,Não
+agendamentos,dataAgendamento,date,Data agendamento,Sim
+agendamentos,horaAgendamento,varchar(10),Hora agendamento,Não
+agendamentos,motivoVisita,varchar(255),Motivo da visita,Não
+agendamentos,status,varchar(50),"agendado, confirmado, etc",Não
+agendamentos,colaboradorId,int,FK colaborador,Não
+agendamentos,observacoes,text,Observações,Não
+agendamentos,createdAt,timestamp,Data criação,Sim
+agendamentos,updatedAt,timestamp,Data atualização,Sim
+
+=== FATURAMENTO ===,,,,
+faturamento,id,int,PK auto-increment,Sim
+faturamento,ordemServicoId,int,FK ordem de serviço,Não
+faturamento,clienteId,int,FK cliente,Não
+faturamento,dataEntrega,date,Data entrega,Não
+faturamento,valor,decimal(10.2),Valor,Não
+faturamento,formaPagamento,varchar(100),Forma de pagamento,Não
+faturamento,parcelas,int,Número de parcelas,Não
+faturamento,observacoes,text,Observações,Não
+faturamento,createdAt,timestamp,Data criação,Sim
+faturamento,updatedAt,timestamp,Data atualização,Sim
+
+=== SERVICOS_CATALOGO ===,,,,
+servicos_catalogo,id,int,PK auto-increment,Sim
+servicos_catalogo,nome,varchar(255),Nome do serviço,Sim
+servicos_catalogo,descricao,text,Descrição,Não
+servicos_catalogo,tipo,varchar(50),"Peça, Serviço, Mão de Obra, Diagnóstico",Não
+servicos_catalogo,valorBase,decimal(10.2),Valor base,Não
+servicos_catalogo,tempoEstimado,int,Tempo estimado (minutos),Não
+servicos_catalogo,ativo,boolean,Ativo?,Não
+servicos_catalogo,createdAt,timestamp,Data criação,Sim
+servicos_catalogo,updatedAt,timestamp,Data atualização,Sim
+
+=== PENDENCIAS ===,,,,
+pendencias,id,int,PK auto-increment,Sim
+pendencias,nomePendencia,varchar(255),Nome da pendência,Sim
+pendencias,responsavelId,int,FK colaborador responsável,Sim
+pendencias,criadorId,int,FK colaborador criador,Sim
+pendencias,status,enum,"pendente, feita, feita_ressalvas, nao_feita",Sim
+pendencias,dataCriacao,timestamp,Data criação,Sim
+pendencias,dataAtualizacao,timestamp,Data atualização,Sim
+pendencias,observacoes,text,Observações,Não
+pendencias,empresaId,int,FK empresa,Não
+
+=== CRM ===,,,,
+crm,id,int,PK auto-increment,Sim
+crm,clienteId,int,FK cliente,Sim
+crm,marcaCarro,varchar(100),Marca preferida,Não
+crm,modeloCarro,varchar(255),Modelo preferido,Não
+crm,tipoServico1,varchar(100),Serviço mais usado 1,Não
+crm,tipoServico2,varchar(100),Serviço mais usado 2,Não
+crm,tipoServico3,varchar(100),Serviço mais usado 3,Não
+crm,ultimaQuilometragem,int,Última KM,Não
+crm,ultimaPassagem,timestamp,Última passagem,Não
+crm,totalPassagens,int,Total de passagens,Não
+crm,totalGasto,decimal(10.2),Total gasto,Não
+crm,comoConheceu,varchar(255),Como conheceu,Não
+crm,nivelFidelidade,varchar(50),Nível fidelidade,Não
+crm,pontosFidelidade,int,Pontos fidelidade,Não
+crm,cashbackDisponivel,decimal(10.2),Cashback disponível,Não
+crm,createdAt,timestamp,Data criação,Sim
+crm,updatedAt,timestamp,Data atualização,Sim
+
+=== LISTA_STATUS ===,,,,
+lista_status,id,int,PK auto-increment,Sim
+lista_status,status,varchar(100),Nome do status,Sim
+lista_status,ordem,int,Ordem de exibição,Não
+lista_status,cor,varchar(20),Cor (hex),Não
+lista_status,ativo,boolean,Ativo?,Não
+lista_status,createdAt,timestamp,Data criação,Sim
+
+=== NIVEIS_ACESSO ===,,,,
+niveis_acesso,id,int,PK auto-increment,Sim
+niveis_acesso,tipoUsuario,varchar(100),Tipo de usuário,Sim
+niveis_acesso,nivelAcesso,int,Nível (1-5),Sim
+niveis_acesso,permissoes,text,JSON de permissões,Não
+niveis_acesso,createdAt,timestamp,Data criação,Sim
+niveis_acesso,updatedAt,timestamp,Data atualização,Sim
+
+=== ANALISE_PROMOCOES ===,,,,
+analise_promocoes,id,int,PK auto-increment,Sim
+analise_promocoes,dataPromocao,date,Data promoção,Não
+analise_promocoes,nomePromocao,varchar(255),Nome promoção,Não
+analise_promocoes,clienteId,int,FK cliente,Não
+analise_promocoes,veioPelaPromocao,boolean,Veio pela promoção?,Não
+analise_promocoes,clienteRetornou,boolean,Cliente retornou?,Não
+analise_promocoes,quantasVezesRetornou,int,Quantas vezes retornou,Não
+analise_promocoes,totalGasto,decimal(10.2),Total gasto,Não
+analise_promocoes,createdAt,timestamp,Data criação,Sim
+analise_promocoes,updatedAt,timestamp,Data atualização,Sim

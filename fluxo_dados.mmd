@@ -1,0 +1,49 @@
+flowchart TD
+    subgraph ENTRADA["📥 ENTRADA DE DADOS"]
+        A1[Agendamento Online]
+        A2[Chegada Espontânea]
+        A3[Retorno de Cliente]
+        A4[Promoção/Campanha]
+    end
+
+    subgraph CADASTRO["📝 CADASTRO"]
+        B1[07_clientes]
+        B2[08_veiculos]
+        B3[99_CRM]
+    end
+
+    subgraph OS["🔧 ORDEM DE SERVIÇO"]
+        C1[09_ordens_servico]
+        C2[11_ordens_servico_itens]
+        C3[10_ordens_servico_historico]
+    end
+
+    subgraph EXECUCAO["⚙️ EXECUÇÃO"]
+        D1[04_lista_status]
+        D2[03_mecanicos]
+        D3[06_recursos]
+    end
+
+    subgraph SAIDA["📤 SAÍDA"]
+        E1[95_faturamento]
+        E2[Entrega ao Cliente]
+    end
+
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
+    A4 --> B1
+    
+    B1 --> B2
+    B1 --> B3
+    B2 --> C1
+    
+    C1 --> C2
+    C1 --> C3
+    C1 --> D1
+    
+    D1 --> D2
+    D1 --> D3
+    
+    C1 --> E1
+    E1 --> E2
