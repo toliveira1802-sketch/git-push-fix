@@ -67,7 +67,7 @@ export default function GestaoDashboards() {
   useEffect(() => {
     const fetchPendingCount = async () => {
       const { count } = await supabase
-        .from('clients')
+        .from('clientes')
         .select('*', { count: 'exact', head: true })
         .eq('pending_review', true);
       
@@ -84,7 +84,7 @@ export default function GestaoDashboards() {
         {
           event: '*',
           schema: 'public',
-          table: 'clients'
+          table: 'clientes'
         },
         () => {
           fetchPendingCount();

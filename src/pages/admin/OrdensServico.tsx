@@ -62,7 +62,7 @@ export default function OrdensServico() {
       setLoading(true)
       try {
         const { data, error } = await supabase
-          .from('service_orders')
+          .from('ordens_servico')
           .select(`
             id,
             order_number,
@@ -71,13 +71,13 @@ export default function OrdensServico() {
             created_at,
             completed_at,
             problem_description,
-            vehicles!inner(plate, brand, model),
-            clients!inner(name, phone)
+            veiculos!inner(plate, brand, model),
+            clientes!inner(name, phone)
           `)
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        setOrders((data as unknown as ServiceOrderRow[]) || [])
+        setOrders(((data || []) as any[]).map((d: any) => ({ ...d, vehicles: d.veiculos, clients: d.clientes })) as ServiceOrderRow[])
       } catch (error) {
         console.error('Error fetching orders:', error)
       } finally {

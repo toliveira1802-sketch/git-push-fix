@@ -51,7 +51,7 @@ export default function AdminPainelTV() {
 
       // Fetch mechanics
       const { data: mechanicsData } = await supabase
-        .from('mechanics')
+        .from('mecanicos')
         .select('id, name')
         .eq('is_active', true);
 
@@ -68,23 +68,23 @@ export default function AdminPainelTV() {
           mechanic_id,
           hora_inicio,
           status,
-          vehicles (plate, model)
+          veiculos:vehicle_id (plate, model)
         `)
         .eq('data', today);
 
       // Map mechanics with schedules
-      const mechanicsWithSchedule: MechanicSchedule[] = (mechanicsData || []).map(m => ({
+      const mechanicsWithSchedule: MechanicSchedule[] = ((mechanicsData as any[]) || []).map((m: any) => ({
         id: m.id,
         name: m.name,
         slots: slots.map(hora => {
           const agendaItem = agendaData?.find(
-            a => a.mechanic_id === m.id && a.hora_inicio?.startsWith(hora.slice(0, 2))
+            (a: any) => a.mechanic_id === m.id && a.hora_inicio?.startsWith(hora.slice(0, 2))
           );
           return {
             hora,
-            vehicle: agendaItem?.vehicles ? {
-              plate: (agendaItem.vehicles as any).plate,
-              model: (agendaItem.vehicles as any).model,
+            vehicle: agendaItem?.veiculos ? {
+              plate: (agendaItem.veiculos as any).plate,
+              model: (agendaItem.veiculos as any).model,
               tipo: 'Revisão',
             } : undefined,
             status: agendaItem ? (agendaItem.status as any) : 'livre',
@@ -102,7 +102,7 @@ export default function AdminPainelTV() {
         .order('ordem');
 
       const { data: appointments } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select('status')
         .not('status', 'eq', 'cancelado')
         .not('status', 'eq', 'concluido');
@@ -118,7 +118,7 @@ export default function AdminPainelTV() {
       };
 
       const counts: Record<number, number> = {};
-      appointments?.forEach(apt => {
+      (appointments as any[])?.forEach((apt: any) => {
         const ordem = statusToEtapa[apt.status] || 2;
         counts[ordem] = (counts[ordem] || 0) + 1;
       });
@@ -137,17 +137,17 @@ export default function AdminPainelTV() {
 
       // Fetch entregas do dia (pronto_retirada)
       const { data: entregasData } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select(`
           estimated_completion,
-          vehicles (plate, model)
+          veiculos:vehicle_id (plate, model)
         `)
         .eq('status', 'pronto_retirada')
         .limit(5);
 
       setEntregas((entregasData || []).map((e: any) => ({
-        plate: e.vehicles?.plate || 'N/A',
-        model: e.vehicles?.model || '',
+        plate: e.veiculos?.plate || 'N/A',
+        model: e.veiculos?.model || '',
         hora: e.estimated_completion 
           ? format(new Date(e.estimated_completion), 'HH:mm')
           : '--:--',
@@ -155,16 +155,16 @@ export default function AdminPainelTV() {
 
       // Fetch próximos a entrar (pronto_iniciar)
       const { data: proximosData } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select(`
-          vehicles (plate, model)
+          veiculos:vehicle_id (plate, model)
         `)
         .eq('status', 'pronto_iniciar')
         .limit(5);
 
       setProximosEntrar((proximosData || []).map((p: any) => ({
-        plate: p.vehicles?.plate || 'N/A',
-        model: p.vehicles?.model || '',
+        plate: p.veiculos?.plate || 'N/A',
+        model: p.veiculos?.model || '',
       })));
 
       setLastRefresh(new Date());

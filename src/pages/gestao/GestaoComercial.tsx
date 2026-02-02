@@ -67,7 +67,7 @@ export default function GestaoComercial() {
   const fetchPendingClients = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('clients')
+      .from('clientes')
       .select('id, name, email, phone, created_at, registration_source')
       .eq('pending_review', true)
       .order('created_at', { ascending: false });
@@ -75,7 +75,7 @@ export default function GestaoComercial() {
     if (error) {
       console.error('Erro ao buscar clientes pendentes:', error);
     } else {
-      setPendingClients(data || []);
+      setPendingClients((data || []) as PendingClient[]);
     }
     setLoading(false);
   };
@@ -90,7 +90,7 @@ export default function GestaoComercial() {
         {
           event: '*',
           schema: 'public',
-          table: 'clients',
+          table: 'clientes',
           filter: 'pending_review=eq.true'
         },
         () => {
@@ -108,7 +108,7 @@ export default function GestaoComercial() {
     setProcessingId(client.id);
     
     const { error } = await supabase
-      .from('clients')
+      .from('clientes')
       .update({
         pending_review: false,
         reviewed_at: new Date().toISOString()
@@ -128,7 +128,7 @@ export default function GestaoComercial() {
     setProcessingId(client.id);
     
     const { error } = await supabase
-      .from('clients')
+      .from('clientes')
       .update({
         pending_review: false,
         status: 'inactive',
@@ -150,7 +150,7 @@ export default function GestaoComercial() {
 
     setLoading(true);
     const { error } = await supabase
-      .from('clients')
+      .from('clientes')
       .update({
         pending_review: false,
         reviewed_at: new Date().toISOString()
