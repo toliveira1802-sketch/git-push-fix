@@ -1,0 +1,51 @@
+Categoria,Rota,Componente,Descrição
+Cliente,/,Index,Dashboard do cliente
+Cliente,/login,Login,Login de funcionários (Admin/Gestão)
+Cliente,/cliente/login,LoginCliente,Login de clientes
+Cliente,/register,Register,Registro de usuários
+Cliente,/perfil,Profile,Perfil do usuário
+Cliente,/agenda,Agenda,Agenda do cliente
+Cliente,/historico,Historico,Histórico de serviços
+Cliente,/novo-agendamento,NovoAgendamento,Novo agendamento
+Cliente,/agendamento-sucesso,AgendamentoSucesso,Confirmação de agendamento
+Cliente,/configuracoes,Configuracoes,Configurações do cliente
+Cliente,/performance,Performance,Performance do cliente
+Cliente,/avisos,Avisos,Avisos e notificações
+Cliente,/veiculos,Veiculos,Veículos do cliente
+Cliente,/visao-geral,VisaoGeral,Visão geral do cliente
+Cliente,/os/:id,OSUltimateClient,Acompanhamento de OS pelo cliente
+Cliente,/os/:osId/acompanhamento,OSClienteAcompanhamento,Acompanhamento detalhado
+Cliente,/os/:osId/orcamento,OSClienteOrcamento,Orçamento da OS
+Admin,/admin,AdminDashboard,Dashboard administrativo
+Admin,/admin/pendencias,Pendencias,Pendências do dia
+Admin,/admin/ordens-servico,OrdensServico,Lista de ordens de serviço
+Admin,/admin/os-ultimate,OSUltimate,Nova OS / Gestão de OS
+Admin,/admin/clientes,Clientes,Cadastro de clientes
+Admin,/admin/veiculos,AdminVeiculos,Cadastro de veículos
+Admin,/admin/agendamentos,AdminAgendamentos,Gestão de agendamentos
+Admin,/admin/patio,MonitoramentoPatio,Monitoramento do pátio (Kanban)
+Admin,/admin/operacional,AdminOperacional,Dashboard operacional
+Admin,/admin/patio/:patioId,AdminPatioDetalhes,Detalhes do veículo no pátio
+Admin,/admin/documentacao,AdminDocumentacao,Documentação do sistema
+Admin,/admin/agenda-mecanicos,AdminAgendaMecanicos,Agenda dos mecânicos
+Admin,/admin/feedback-mecanicos,AdminMechanicFeedback,Feedback dos mecânicos
+Admin,/admin/analytics-mecanicos,AdminMechanicAnalytics,Analytics dos mecânicos
+Admin,/admin/financeiro,AdminFinanceiro,Dashboard financeiro
+Admin,/admin/configuracoes,AdminConfiguracoes,Configurações do sistema
+Admin,/admin/produtividade,AdminProdutividade,Dashboard de produtividade
+Admin,/admin/melhorias,AdminMelhorias,Sugestões de melhorias
+Admin,/admin/parametros,AdminParametros,Parâmetros do sistema
+Admin,/admin/metas,AdminMetas,Metas e objetivos
+Admin,/admin/cadastros,Cadastros,Hub de cadastros
+Admin,/admin/monitoramento-kommo,AdminMonitoramentoKommo,Monitoramento Kommo CRM
+Admin,/admin/orcamentos,AdminDashboardOrcamentos,Dashboard de orçamentos
+Admin,/admin/checklist,AdminChecklist,Checklist de entrada
+Admin,/admin/importar,ImportarDados,Importação de dados
+Gestão,/gestao,GestaoDashboards,Hub de dashboards de gestão
+Gestão,/gestao/rh,GestaoRH,Gestão de RH
+Gestão,/gestao/operacoes,GestaoOperacoes,Gestão de operações
+Gestão,/gestao/financeiro,GestaoFinanceiro,Gestão financeira
+Gestão,/gestao/tecnologia,GestaoTecnologia,Gestão de tecnologia
+Gestão,/gestao/comercial,GestaoComercial,Gestão comercial e marketing
+Sistema,/__dev,DevScreens,Telas de desenvolvimento
+Sistema,*,NotFound,Página não encontrada (404)
