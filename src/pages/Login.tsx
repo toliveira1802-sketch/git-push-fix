@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole, getHomeRouteForRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { DEV_BYPASS } from '@/config/devBypass';
 
 const DEV_PASSWORD = 'dev2024';
 
@@ -44,6 +45,15 @@ const Login: React.FC = () => {
 
     setIsLoading(true);
     setErrors({});
+
+    // DEV BYPASS: Pular autenticação e ir direto para a home
+    if (DEV_BYPASS) {
+      console.log('DEV BYPASS ATIVO - pulando autenticação');
+      toast.success('[DEV] Bypass ativo! Entrando...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      navigate('/');
+      return;
+    }
 
     const { error } = await signIn(email, password);
 

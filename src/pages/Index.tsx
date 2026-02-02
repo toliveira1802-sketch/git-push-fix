@@ -29,16 +29,22 @@ import { useClientData } from "@/hooks/useClientData";
 import TikTokIcon from "@/components/icons/TikTokIcon";
 import ForcePasswordChange from "@/components/auth/ForcePasswordChange";
 import logo from "@/assets/logo.png";
+import { DEV_BYPASS } from "@/config/devBypass";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading, signOut, mustChangePassword, setMustChangePassword } = useAuth();
   const { canAccessAdmin, canAccessGestao, isLoading: roleLoading } = useUserRole();
   const { vehicles, loading: clientLoading, getActiveServiceOrder, clientProfile } = useClientData();
-  const [userName, setUserName] = useState("...");
+  const [userName, setUserName] = useState(DEV_BYPASS ? "Dev User" : "...");
   const [veiculosModalOpen, setVeiculosModalOpen] = useState(false);
 
   useEffect(() => {
+    // DEV BYPASS: usar nome fake
+    if (DEV_BYPASS) {
+      setUserName("Dev User");
+      return;
+    }
     // Get name from client profile or fallback to email
     if (clientProfile?.name) {
       const firstName = clientProfile.name.split(" ")[0];
@@ -50,6 +56,9 @@ const Index = () => {
 
   // Redirect to login if not authenticated (after loading completes)
   useEffect(() => {
+    // DEV BYPASS: não redirecionar para login
+    if (DEV_BYPASS) return;
+
     if (!loading && !user) {
       navigate("/login");
     }

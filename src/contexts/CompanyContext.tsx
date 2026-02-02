@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { DEV_BYPASS, DEV_COMPANY } from '@/config/devBypass';
 
 export interface Company {
   id: string;
@@ -25,19 +26,23 @@ interface CompanyContextType {
   isLoading: boolean;
 }
 
-const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
-
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
-  const [userCompany, setUserCompany] = useState<Company | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<Company[]>(DEV_BYPASS ? [DEV_COMPANY] : []);
+  const [currentCompany, setCurrentCompany] = useState<Company | null>(DEV_BYPASS ? DEV_COMPANY : null);
+  const [userCompany, setUserCompany] = useState<Company | null>(DEV_BYPASS ? DEV_COMPANY : null);
+  const [userRole, setUserRole] = useState<string | null>(DEV_BYPASS ? 'dev' : null);
   const [isConsolidated, setConsolidated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(DEV_BYPASS ? false : true);
 
   // Buscar empresas do banco
   useEffect(() => {
+    // DEV BYPASS: não buscar empresas do banco
+    if (DEV_BYPASS) {
+      console.log('DEV BYPASS: usando empresa fake');
+      return;
+    }
+
     const fetchCompanies = async () => {
       try {
         const { data, error } = await supabase
@@ -61,7 +66,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         }));
 
         setCompanies(mappedCompanies);
-        
+
         // Definir empresa padrão se ainda não tiver
         if (mappedCompanies.length > 0 && !currentCompany) {
           setCurrentCompany(mappedCompanies[0]);

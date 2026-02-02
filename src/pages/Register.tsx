@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { DEV_BYPASS } from '@/config/devBypass';
 
 interface FormData {
   name: string;
@@ -95,9 +96,25 @@ const Register: React.FC = () => {
     console.log('Validação OK, iniciando signUp...');
     setIsSubmitting(true);
 
+    // DEV BYPASS: Pular autenticação e ir direto para a home
+    if (DEV_BYPASS) {
+      console.log('DEV BYPASS ATIVO - pulando autenticação');
+      toast.success(
+        <div className="flex items-center gap-2">
+          <div>
+            <p className="font-semibold">[DEV] Bypass ativo!</p>
+            <p className="text-sm text-muted-foreground">Redirecionando sem criar conta real...</p>
+          </div>
+        </div>
+      );
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      navigate('/');
+      return;
+    }
+
     const { error: signUpError } = await signUp(formData.email, formData.password, formData.name, formData.phone);
     console.log('signUp result:', signUpError ? 'ERRO' : 'OK', signUpError);
-    
+
     if (signUpError) {
       if (signUpError.message.includes('already registered')) {
         toast.error('Este email já está cadastrado');
@@ -134,7 +151,7 @@ const Register: React.FC = () => {
       // Dar 50 pontos de boas-vindas no profile
       const { error: pointsError } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           loyalty_points: 50,
           loyalty_level: 'bronze'
         })

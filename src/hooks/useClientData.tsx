@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { DEV_BYPASS, DEV_CLIENT, DEV_VEHICLES } from "@/config/devBypass";
 
 // Types for client data
 export interface ClientVehicle {
@@ -57,10 +58,14 @@ export interface ClientProfile {
 
 export function useClientData() {
   const { user } = useAuth();
-  const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null);
-  const [vehicles, setVehicles] = useState<ClientVehicle[]>([]);
+  const [clientProfile, setClientProfile] = useState<ClientProfile | null>(
+    DEV_BYPASS ? DEV_CLIENT : null
+  );
+  const [vehicles, setVehicles] = useState<ClientVehicle[]>(
+    DEV_BYPASS ? DEV_VEHICLES : []
+  );
   const [serviceHistory, setServiceHistory] = useState<ClientServiceHistory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(DEV_BYPASS ? false : true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch client profile
@@ -170,6 +175,13 @@ export function useClientData() {
 
   // Refresh all data
   const refresh = useCallback(async () => {
+    // DEV BYPASS: não fazer chamadas ao Supabase
+    if (DEV_BYPASS) {
+      console.log('DEV BYPASS: usando dados fake de cliente');
+      setLoading(false);
+      return;
+    }
+
     if (!user) {
       setLoading(false);
       return;
