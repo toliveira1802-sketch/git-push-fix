@@ -105,12 +105,12 @@ export default function AdminAgendaMecanicos() {
     try {
       // Fetch mechanics
       const { data: mechanicsData } = await supabase
-        .from('mechanics')
+        .from('mecanicos')
         .select('id, name')
         .eq('is_active', true)
         .order('name');
 
-      setMechanics(mechanicsData || []);
+      setMechanics((mechanicsData as any[]) || []);
 
       // Fetch schedule for selected date
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -121,7 +121,7 @@ export default function AdminAgendaMecanicos() {
 
       // Fetch OSs ativas (veículos no pátio)
       const { data: ossAtivas } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select(`
           id,
           order_number,
@@ -129,19 +129,19 @@ export default function AdminAgendaMecanicos() {
           problem_description,
           status,
           estimated_completion,
-          vehicles(id, plate, model, brand),
-          clients(name)
+          veiculos(id, plate, model, brand),
+          clientes(name)
         `)
         .neq('status', 'entregue')
         .order('created_at', { ascending: true });
 
       // Salvar lista de veículos no pátio
-      const patio: PatioVehicle[] = (ossAtivas || []).map(os => ({
+      const patio: PatioVehicle[] = ((ossAtivas as any[]) || []).map((os: any) => ({
         id: os.id,
-        plate: os.vehicles?.plate || '',
-        model: os.vehicles?.model || '',
-        brand: os.vehicles?.brand || '',
-        clientName: os.clients?.name || '',
+        plate: os.veiculos?.plate || '',
+        model: os.veiculos?.model || '',
+        brand: os.veiculos?.brand || '',
+        clientName: os.clientes?.name || '',
         osNumber: os.order_number,
         status: os.status,
         servico: os.problem_description || 'Serviço',
@@ -150,7 +150,7 @@ export default function AdminAgendaMecanicos() {
 
       // Fetch agendamentos confirmados para a data
       const { data: agendamentosConfirmados } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select(`
           id,
           scheduled_date,
@@ -158,8 +158,8 @@ export default function AdminAgendaMecanicos() {
           service_type,
           description,
           status,
-          clients(name),
-          vehicles(plate, model, brand)
+          clientes(name),
+          veiculos(plate, model, brand)
         `)
         .eq('scheduled_date', dateStr)
         .eq('status', 'confirmado');
@@ -187,7 +187,7 @@ export default function AdminAgendaMecanicos() {
       });
 
       // Distribuir OSs do pátio com mecânico nos slots disponíveis
-      ossAtivas?.filter(os => os.mechanic_id).forEach(os => {
+      ((ossAtivas as any[]) || []).filter((os: any) => os.mechanic_id).forEach((os: any) => {
         if (!os.mechanic_id || !scheduleMap[os.mechanic_id]) return;
         
         const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
@@ -196,10 +196,10 @@ export default function AdminAgendaMecanicos() {
             scheduleMap[os.mechanic_id][hora] = {
               mechanic_id: os.mechanic_id,
               hora,
-              vehicle_plate: os.vehicles?.plate,
-              vehicle_model: os.vehicles?.model,
-              vehicle_brand: os.vehicles?.brand,
-              cliente: os.clients?.name,
+              vehicle_plate: os.veiculos?.plate,
+              vehicle_model: os.veiculos?.model,
+              vehicle_brand: os.veiculos?.brand,
+              cliente: os.clientes?.name,
               servico: os.problem_description || 'Serviço',
               osNumber: os.order_number,
               serviceOrderId: os.id,
@@ -213,8 +213,8 @@ export default function AdminAgendaMecanicos() {
       });
 
       // Adicionar agendamentos confirmados nos slots disponíveis
-      agendamentosConfirmados?.forEach(ag => {
-        for (const m of mechanicsData || []) {
+      ((agendamentosConfirmados as any[]) || []).forEach((ag: any) => {
+        for (const m of (mechanicsData as any[]) || []) {
           const hora = ag.scheduled_time?.slice(0, 5)?.replace(':', 'h') + '0' || '08h00';
           const allHoras = [...HORARIOS_PADRAO, ...HORARIOS_TARDE];
           const horaMatch = allHoras.find(h => h.startsWith(hora.slice(0, 3))) || allHoras[0];
@@ -223,10 +223,10 @@ export default function AdminAgendaMecanicos() {
             scheduleMap[m.id][horaMatch] = {
               mechanic_id: m.id,
               hora: horaMatch,
-              vehicle_plate: ag.vehicles?.plate,
-              vehicle_model: ag.vehicles?.model,
-              vehicle_brand: ag.vehicles?.brand,
-              cliente: ag.clients?.name,
+              vehicle_plate: ag.veiculos?.plate,
+              vehicle_model: ag.veiculos?.model,
+              vehicle_brand: ag.veiculos?.brand,
+              cliente: ag.clientes?.name,
               servico: ag.service_type,
               origem: 'agendamento',
               tipo: 'normal',
@@ -305,7 +305,7 @@ export default function AdminAgendaMecanicos() {
     // Atualizar a OS para vincular ao mecânico
     const mechanic = mechanics.find(m => m.id === editingCell.mechanicId);
     supabase
-      .from('service_orders')
+      .from('ordens_servico')
       .update({ mechanic_id: editingCell.mechanicId })
       .eq('id', vehicle.id)
       .then(({ error }) => {
@@ -386,7 +386,7 @@ export default function AdminAgendaMecanicos() {
   const handlePronto = async (slot: SlotDetail) => {
     if (slot.serviceOrderId) {
       const { error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .update({ status: 'pronto' })
         .eq('id', slot.serviceOrderId);
       
@@ -400,7 +400,7 @@ export default function AdminAgendaMecanicos() {
   const handleEmTeste = async (slot: SlotDetail) => {
     if (slot.serviceOrderId) {
       const { error } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .update({ status: 'em_teste' })
         .eq('id', slot.serviceOrderId);
       

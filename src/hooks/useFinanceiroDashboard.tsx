@@ -67,7 +67,7 @@ export function useFinanceiroDashboard() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   const calcValorAprovado = (os: any): number => {
-    const itens = os.service_order_items || [];
+    const itens = os.itens_ordem_servico || [];
     const aprovados = itens.filter((i: any) => i.status?.toLowerCase() === 'aprovado');
     return aprovados.length > 0
       ? aprovados.reduce((sum: number, i: any) => sum + (i.total_price || 0), 0)
@@ -105,14 +105,14 @@ export function useFinanceiroDashboard() {
 
       // 1. OSs entregues no mês (faturado/realizado)
       const { data: ossEntregues } = await supabase
-        .from('service_orders')
-        .select('id, total, completed_at, service_order_items(total_price, status)')
+        .from('ordens_servico')
+        .select('id, total, completed_at, itens_ordem_servico(total_price, status)')
         .eq('status', 'entregue')
         .gte('completed_at', inicioMes.toISOString())
         .lte('completed_at', fimMes.toISOString());
 
       let faturado = 0;
-      (ossEntregues || []).forEach(os => {
+      (ossEntregues || []).forEach((os: any) => {
         faturado += calcValorAprovado(os);
       });
       const entregues = ossEntregues?.length || 0;
@@ -120,16 +120,16 @@ export function useFinanceiroDashboard() {
 
       // 2. OSs ativas no pátio (exceto entregue)
       const { data: ossAtivas } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select(`
           id,
           status,
           total,
           estimated_completion,
           created_at,
-          service_order_items(total_price, status),
-          vehicles(plate, model, brand),
-          clients(name)
+          itens_ordem_servico(total_price, status),
+          veiculos(plate, model, brand),
+          clientes(name)
         `)
         .neq('status', 'entregue');
 
@@ -143,16 +143,16 @@ export function useFinanceiroDashboard() {
       const vehiclesAtrasado: VehicleFinanceInfo[] = [];
       const vehiclesSaidaHoje: VehicleFinanceInfo[] = [];
 
-      (ossAtivas || []).forEach(os => {
+      (ossAtivas || []).forEach((os: any) => {
         const valorAprovado = calcValorAprovado(os);
         aprovadoPatio += valorAprovado;
         const daysInYard = differenceInBusinessDays(today, new Date(os.created_at));
 
         const vehicleInfo: VehicleFinanceInfo = {
           id: os.id,
-          plate: (os.vehicles as any)?.plate || 'N/A',
-          model: (os.vehicles as any)?.model || '',
-          clientName: (os.clients as any)?.name || '',
+          plate: os.veiculos?.plate || 'N/A',
+          model: os.veiculos?.model || '',
+          clientName: os.clientes?.name || '',
           valorAprovado,
           status: os.status,
           estimatedCompletion: os.estimated_completion || undefined,

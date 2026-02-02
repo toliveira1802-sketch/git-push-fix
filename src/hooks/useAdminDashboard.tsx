@@ -103,34 +103,34 @@ export function useAdminDashboard() {
 
       // 1. Agendamentos de hoje
       const { data: appointmentsData } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select(`
           id,
           scheduled_time,
           status,
-          clients!inner(name),
-          vehicles(plate, model)
+          clientes!inner(name),
+          veiculos(plate, model)
         `)
         .eq('scheduled_date', todayStr)
         .order('scheduled_time');
 
-      const formattedAppointments: TodayAppointment[] = (appointmentsData || []).map(apt => ({
+      const formattedAppointments: TodayAppointment[] = (appointmentsData || []).map((apt: any) => ({
         id: apt.id,
         time: apt.scheduled_time?.slice(0, 5) || '',
-        client_name: apt.clients?.name || 'N/A',
-        vehicle: apt.vehicles ? `${apt.vehicles.model} - ${apt.vehicles.plate}` : 'Sem veículo',
+        client_name: apt.clientes?.name || 'N/A',
+        vehicle: apt.veiculos ? `${apt.veiculos.model} - ${apt.veiculos.plate}` : 'Sem veículo',
         status: apt.status,
       }));
       setTodayAppointments(formattedAppointments);
 
       // 2. Novos clientes do mês
       const { data: clientsData } = await supabase
-        .from('clients')
+        .from('clientes')
         .select('id, name, phone, created_at')
         .gte('created_at', inicioMes.toISOString())
         .order('created_at', { ascending: false });
 
-      const formattedClients: NewClient[] = (clientsData || []).map(c => ({
+      const formattedClients: NewClient[] = (clientsData || []).map((c: any) => ({
         id: c.id,
         full_name: c.name,
         phone: c.phone,
@@ -140,7 +140,7 @@ export function useAdminDashboard() {
 
       // 3. OSs ativas (veículos no pátio) - exceto entregue
       const { data: ossAtivas } = await supabase
-        .from('service_orders')
+        .from('ordens_servico')
         .select(`
           id,
           order_number,
@@ -148,16 +148,16 @@ export function useAdminDashboard() {
           total,
           created_at,
           estimated_completion,
-          vehicles!inner(plate, model),
-          clients!inner(name),
-          service_order_items(total_price, status)
+          veiculos!inner(plate, model),
+          clientes!inner(name),
+          itens_ordem_servico(total_price, status)
         `)
         .neq('status', 'entregue')
         .order('created_at', { ascending: false });
 
       // Calcular valor aprovado para cada OS
       const calcValorAprovado = (os: any) => {
-        const itens = os.service_order_items || [];
+        const itens = os.itens_ordem_servico || [];
         const aprovados = itens.filter((i: any) => i.status?.toLowerCase() === 'aprovado');
         return aprovados.length > 0
           ? aprovados.reduce((sum: number, i: any) => sum + (i.total_price || 0), 0)
@@ -176,25 +176,25 @@ export function useAdminDashboard() {
         pronto: 'Pronto',
       };
 
-      const formattedVehiclesInYard: VehicleInYard[] = (ossAtivas || []).map(os => ({
+      const formattedVehiclesInYard: VehicleInYard[] = (ossAtivas || []).map((os: any) => ({
         id: os.id,
-        plate: os.vehicles?.plate || '',
-        vehicle: os.vehicles?.model || '',
-        client_name: os.clients?.name || '',
+        plate: os.veiculos?.plate || '',
+        vehicle: os.veiculos?.model || '',
+        client_name: os.clientes?.name || '',
         status: statusLabels[os.status] || os.status,
         etapa: statusLabels[os.status] || os.status,
       }));
       setVehiclesInYard(formattedVehiclesInYard);
 
       // Aguardando aprovação
-      const aguardandoAPV = (ossAtivas || []).filter(os => os.status === 'aguardando_aprovacao');
-      const formattedAguardando: AwaitingApproval[] = aguardandoAPV.map(os => {
+      const aguardandoAPV = (ossAtivas || []).filter((os: any) => os.status === 'aguardando_aprovacao');
+      const formattedAguardando: AwaitingApproval[] = aguardandoAPV.map((os: any) => {
         const diasAguardando = Math.floor((Date.now() - new Date(os.created_at).getTime()) / (1000 * 60 * 60 * 24));
         return {
           id: os.id,
           numero_os: os.order_number,
-          vehicle: os.vehicles?.model || '',
-          client_name: os.clients?.name || '',
+          vehicle: os.veiculos?.model || '',
+          client_name: os.clientes?.name || '',
           valor: calcValorAprovado(os),
           dias_aguardando: diasAguardando,
         };
@@ -202,33 +202,33 @@ export function useAdminDashboard() {
       setAwaitingApproval(formattedAguardando);
 
       // Prontos para retirada (status pronto)
-      const prontos = (ossAtivas || []).filter(os => os.status === 'pronto');
-      const formattedProntos: ReadyToDeliver[] = prontos.map(os => ({
+      const prontos = (ossAtivas || []).filter((os: any) => os.status === 'pronto');
+      const formattedProntos: ReadyToDeliver[] = prontos.map((os: any) => ({
         id: os.id,
         numero_os: os.order_number,
-        vehicle: os.vehicles?.model || '',
-        client_name: os.clients?.name || '',
+        vehicle: os.veiculos?.model || '',
+        client_name: os.clientes?.name || '',
         valor_final: calcValorAprovado(os),
       }));
       setReadyToDeliver(formattedProntos);
 
       // Valor para sair hoje = soma dos valores aprovados com previsão de entrega para hoje
-      const paraSairHoje = (ossAtivas || []).filter(os => {
+      const paraSairHoje = (ossAtivas || []).filter((os: any) => {
         if (!os.estimated_completion) return false;
         const previsao = new Date(os.estimated_completion);
         return previsao.toDateString() === today.toDateString();
       });
-      const valorParaSair = paraSairHoje.reduce((sum, os) => sum + calcValorAprovado(os), 0);
+      const valorParaSair = paraSairHoje.reduce((sum: number, os: any) => sum + calcValorAprovado(os), 0);
 
       // 4. Entregues do mês (faturamento)
       const { data: ossEntregues } = await supabase
-        .from('service_orders')
-        .select('id, total, service_order_items(total_price, status)')
+        .from('ordens_servico')
+        .select('id, total, itens_ordem_servico(total_price, status)')
         .eq('status', 'entregue')
         .gte('completed_at', inicioMes.toISOString());
 
       let faturamentoMes = 0;
-      (ossEntregues || []).forEach(os => {
+      (ossEntregues || []).forEach((os: any) => {
         faturamentoMes += calcValorAprovado(os);
       });
 
@@ -238,41 +238,41 @@ export function useAdminDashboard() {
         .select(`
           id,
           created_at,
-          service_orders!inner(
-            vehicles!inner(plate, model),
-            clients!inner(name)
+          ordens_servico!inner(
+            veiculos!inner(plate, model),
+            clientes!inner(name)
           )
         `)
         .eq('tipo', 'retorno_45_dias')
         .gte('created_at', inicioMes.toISOString());
 
-      const formattedRetornos: ReturnVehicle[] = (alertasRetorno || []).map(alert => ({
+      const formattedRetornos: ReturnVehicle[] = (alertasRetorno || []).map((alert: any) => ({
         id: alert.id,
-        plate: (alert.service_orders as any)?.vehicles?.plate || '',
-        vehicle: (alert.service_orders as any)?.vehicles?.model || '',
-        client_name: (alert.service_orders as any)?.clients?.name || '',
+        plate: alert.ordens_servico?.veiculos?.plate || '',
+        vehicle: alert.ordens_servico?.veiculos?.model || '',
+        client_name: alert.ordens_servico?.clientes?.name || '',
         data_entrega: new Date(alert.created_at).toLocaleDateString('pt-BR'),
       }));
       setReturnVehicles(formattedRetornos);
 
       // 6. Agendamentos cancelados do mês
       const { data: cancelados } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select(`
           id,
           cancelled_at,
-          clients!inner(name, phone),
-          vehicles(model)
+          clientes!inner(name, phone),
+          veiculos(model)
         `)
         .eq('status', 'cancelado')
         .gte('cancelled_at', inicioMes.toISOString())
         .order('cancelled_at', { ascending: false });
 
-      const formattedCancelados: CancelledAppointment[] = (cancelados || []).map(apt => ({
+      const formattedCancelados: CancelledAppointment[] = (cancelados || []).map((apt: any) => ({
         id: apt.id,
-        client_name: apt.clients?.name || '',
-        phone: apt.clients?.phone || '',
-        vehicle: apt.vehicles?.model || 'Sem veículo',
+        client_name: apt.clientes?.name || '',
+        phone: apt.clientes?.phone || '',
+        vehicle: apt.veiculos?.model || 'Sem veículo',
         cancelled_at: apt.cancelled_at ? new Date(apt.cancelled_at).toLocaleDateString('pt-BR') : '',
       }));
       setCancelledAppointments(formattedCancelados);

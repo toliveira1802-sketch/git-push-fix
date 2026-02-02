@@ -47,7 +47,7 @@ export default function VisaoGeral() {
 
       // Get client
       const { data: client } = await supabase
-        .from('clients')
+        .from('clientes')
         .select('id, created_at')
         .eq('user_id', user.id)
         .maybeSingle();
@@ -59,32 +59,32 @@ export default function VisaoGeral() {
 
       // Get profile for loyalty info
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('colaboradores')
         .select('loyalty_points, loyalty_level')
         .eq('user_id', user.id)
         .maybeSingle();
 
       // Get service orders for this client
       const { data: orders } = await supabase
-        .from('service_orders')
-        .select('id, order_number, total, completed_at, status, vehicles(brand, model)')
-        .eq('client_id', client.id)
+        .from('ordens_servico')
+        .select('id, order_number, total, completed_at, status, veiculos(brand, model)')
+        .eq('client_id', (client as any).id)
         .order('created_at', { ascending: false });
 
       if (orders) {
-        const completedOrders = orders.filter(o => o.status === 'entregue');
+        const completedOrders = (orders as any[]).filter(o => o.status === 'entregue');
         const totalGasto = completedOrders.reduce((acc, o) => acc + (o.total || 0), 0);
         
         // Calculate months as client
-        const createdAt = new Date(client.created_at);
+        const createdAt = new Date((client as any).created_at);
         const now = new Date();
         const meses = Math.max(1, Math.floor((now.getTime() - createdAt.getTime()) / (30 * 24 * 60 * 60 * 1000)));
 
         setStats({
           totalServicos: completedOrders.length,
           economia: Math.round(totalGasto * 0.1), // Estimate 10% savings
-          pontos: profile?.loyalty_points || 0,
-          nivel: profile?.loyalty_level || "Bronze",
+          pontos: (profile as any)?.loyalty_points || 0,
+          nivel: (profile as any)?.loyalty_level || "Bronze",
           mesesCliente: meses
         });
 
@@ -92,7 +92,7 @@ export default function VisaoGeral() {
         const monthlyData: Record<string, number> = {};
         const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
         
-        completedOrders.forEach(order => {
+        completedOrders.forEach((order: any) => {
           if (order.completed_at) {
             const date = new Date(order.completed_at);
             const key = monthNames[date.getMonth()];
@@ -111,12 +111,12 @@ export default function VisaoGeral() {
         setServicosData(last6Months);
 
         // Last 3 services
-        setUltimosServicos(completedOrders.slice(0, 3).map(o => ({
+        setUltimosServicos(completedOrders.slice(0, 3).map((o: any) => ({
           id: o.id,
           tipo: "Serviço",
           data: o.completed_at ? new Date(o.completed_at).toLocaleDateString('pt-BR') : '-',
           valor: `R$ ${(o.total || 0).toLocaleString('pt-BR')}`,
-          veiculo: o.vehicles ? `${o.vehicles.brand} ${o.vehicles.model}` : '-'
+          veiculo: o.veiculos ? `${o.veiculos.brand} ${o.veiculos.model}` : '-'
         })));
       }
 
