@@ -9,7 +9,7 @@ import { clientesMock, veiculosMock } from "@/lib/mockData";
 
 export default function AdminClientes() {
   const [search, setSearch] = useState("");
-  const [clienteExpandido, setClienteExpandido] = useState<number | null>(null);
+  const [clienteExpandido, setClienteExpandido] = useState<string | null>(null);
 
   const clientesFiltrados = clientesMock.filter((cliente) => {
     const searchLower = search.toLowerCase();

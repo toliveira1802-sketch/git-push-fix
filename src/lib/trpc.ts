@@ -1,9 +1,46 @@
-// trpc stub - placeholder for build compatibility
+// tRPC stub - placeholder for build compatibility
 // This project uses direct Supabase integration, not tRPC
 
-import { createTRPCReact } from "@trpc/react-query";
-
-// Stub type for compatibility
-type AppRouter = any;
-
-export const trpc = createTRPCReact<AppRouter>();
+export const trpc = {
+  useUtils: () => ({
+    auth: {
+      me: {
+        setData: () => {},
+        invalidate: () => Promise.resolve(),
+      },
+    },
+  }),
+  auth: {
+    me: {
+      useQuery: () => ({
+        data: null,
+        isLoading: false,
+        error: null,
+        refetch: () => Promise.resolve({ data: null }),
+      }),
+    },
+    logout: {
+      useMutation: () => ({
+        mutateAsync: () => Promise.resolve(),
+        isPending: false,
+        error: null,
+      }),
+    },
+  },
+  colaboradores: {
+    login: {
+      useMutation: () => ({
+        mutateAsync: () => Promise.resolve({ success: true }),
+        isPending: false,
+        error: null,
+      }),
+    },
+    changePassword: {
+      useMutation: () => ({
+        mutateAsync: () => Promise.resolve({ success: true }),
+        isPending: false,
+        error: null,
+      }),
+    },
+  },
+};
