@@ -63,6 +63,7 @@ import Cadastros from "./pages/admin/Cadastros";
 import AdminMetas from "./pages/admin/AdminMetas";
 import AdminMonitoramentoKommo from "./pages/admin/AdminMonitoramentoKommo";
 import AdminChecklist from "./pages/admin/AdminChecklist";
+import ImportarDados from "./pages/admin/ImportarDados";
 
 // Gestão pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -166,6 +167,7 @@ const App = () => (
                 />
                 <Route path="/admin/orcamentos" element={<AdminDashboardOrcamentos />} />
                 <Route path="/admin/checklist" element={<AdminChecklist />} />
+                <Route path="/admin/importar" element={<ImportarDados />} />
 
                 {/* Gestão Routes */}
                 <Route path="/gestao" element={<GestaoDashboards />} />
