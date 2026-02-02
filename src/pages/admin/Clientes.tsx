@@ -17,6 +17,7 @@ import {
   Loader2,
   Filter,
   X,
+  Upload,
 } from "lucide-react";
 import {
   Select,
@@ -188,6 +189,10 @@ export default function Clientes() {
                 <Kanban className="h-4 w-4" />
               </Button>
             </div>
+            <Button variant="outline" onClick={() => navigate("/admin/importar")}>
+              <Upload className="h-4 w-4 mr-2" />
+              Importar
+            </Button>
             <Button onClick={() => navigate("/admin/clientes/novo")}>
               <UserPlus className="h-4 w-4 mr-2" />
               Novo Cliente
