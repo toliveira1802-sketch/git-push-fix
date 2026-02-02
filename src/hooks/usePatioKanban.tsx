@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
+import { useCompany } from "@/contexts/CompanyContext";
 export interface VeiculoKanban {
   id: string; // service_order id
   orderNumber: string;
@@ -74,6 +74,7 @@ const etapaToStatus: Record<string, string> = {
 };
 
 export function usePatioKanban() {
+  const { currentCompany } = useCompany();
   const [etapas, setEtapas] = useState<EtapaWorkflow[]>(
     etapasConfig.map(e => ({ id: e.id, titulo: e.titulo, color: e.color, veiculos: [] }))
   );
@@ -89,8 +90,8 @@ export function usePatioKanban() {
       inicioMes.setDate(1);
       inicioMes.setHours(0, 0, 0, 0);
 
-      // Buscar OSs ativas (não entregues)
-      const { data: ossAtivas, error: errorAtivas } = await supabase
+      // Build query base para OSs ativas (não entregues)
+      let queryAtivas = supabase
         .from('ordens_servico')
         .select(`
           id,
@@ -106,17 +107,24 @@ export function usePatioKanban() {
           em_terceiros,
           recurso,
           veiculos!inner(plate, model, brand, year, color),
-          clientes!inner(name, phone),
+          clientes!inner(id, name, phone, empresa_id),
           mecanicos(name),
           itens_ordem_servico(total_price, status)
         `)
         .neq('status', 'entregue')
         .order('created_at', { ascending: false });
 
+      // Filtrar por empresa se houver uma selecionada
+      if (currentCompany?.id) {
+        queryAtivas = queryAtivas.eq('clientes.empresa_id', currentCompany.id);
+      }
+
+      const { data: ossAtivas, error: errorAtivas } = await queryAtivas;
+
       if (errorAtivas) throw errorAtivas;
 
       // Buscar entregues do mês atual (para mostrar na coluna Entregue)
-      const { data: ossEntregues, error: errorEntregues } = await supabase
+      let queryEntregues = supabase
         .from('ordens_servico')
         .select(`
           id,
@@ -132,7 +140,7 @@ export function usePatioKanban() {
           em_terceiros,
           recurso,
           veiculos!inner(plate, model, brand, year, color),
-          clientes!inner(name, phone),
+          clientes!inner(id, name, phone, empresa_id),
           mecanicos(name),
           itens_ordem_servico(total_price, status)
         `)
@@ -140,12 +148,19 @@ export function usePatioKanban() {
         .gte('completed_at', inicioMes.toISOString())
         .order('completed_at', { ascending: false });
 
+      if (currentCompany?.id) {
+        queryEntregues = queryEntregues.eq('clientes.empresa_id', currentCompany.id);
+      }
+
+      const { data: ossEntregues, error: errorEntregues } = await queryEntregues;
+
       if (errorEntregues) throw errorEntregues;
 
       // Buscar agendamentos confirmados (ainda não chegaram)
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
-      const { data: agendamentosConfirmados } = await supabase
+      
+      let queryAgendamentos = supabase
         .from('agendamentos')
         .select(`
           id,
@@ -154,11 +169,17 @@ export function usePatioKanban() {
           service_type,
           description,
           status,
-          clientes!inner(name, phone),
+          clientes!inner(id, name, phone, empresa_id),
           veiculos(plate, model, brand, year, color)
         `)
         .eq('status', 'confirmado')
         .gte('scheduled_date', hoje.toISOString().split('T')[0]);
+
+      if (currentCompany?.id) {
+        queryAgendamentos = queryAgendamentos.eq('clientes.empresa_id', currentCompany.id);
+      }
+
+      const { data: agendamentosConfirmados } = await queryAgendamentos;
 
       // Combinar OSs ativas + entregues do mês
       const oss = [...(ossAtivas || []), ...(ossEntregues || [])];
@@ -300,7 +321,7 @@ export function usePatioKanban() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentCompany?.id]);
 
   // Mover veículo entre etapas
   const moverVeiculo = async (veiculoId: string, deEtapaId: string, paraEtapaId: string) => {
