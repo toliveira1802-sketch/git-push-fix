@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, differenceInBusinessDays } from "date-fns";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export interface MechanicRanking {
   id: string;
@@ -25,6 +26,7 @@ export interface ProdutividadeMetrics {
 }
 
 export function useProdutividadeDashboard(semana?: number) {
+  const { currentCompany } = useCompany();
   const [metrics, setMetrics] = useState<ProdutividadeMetrics>({
     meta: 300000,
     realizado: 0,
@@ -105,18 +107,25 @@ export function useProdutividadeDashboard(semana?: number) {
         .order('name');
 
       // Buscar OSs entregues no mês com mecânico
-      const { data: ossEntregues } = await supabase
+      let queryOss = supabase
         .from('ordens_servico')
         .select(`
           id,
           mechanic_id,
           total,
           completed_at,
-          itens_ordem_servico(total_price, status)
+          itens_ordem_servico(total_price, status),
+          clientes!inner(empresa_id)
         `)
         .eq('status', 'entregue')
         .gte('completed_at', inicioMes.toISOString())
         .lte('completed_at', fimMes.toISOString());
+
+      if (currentCompany?.id) {
+        queryOss = queryOss.eq('clientes.empresa_id', currentCompany.id);
+      }
+
+      const { data: ossEntregues } = await queryOss;
 
       // Calcular produção por mecânico
       const mechanicStats: Record<string, { valor: number; carros: number }> = {};
@@ -213,7 +222,7 @@ export function useProdutividadeDashboard(semana?: number) {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, currentCompany?.id]);
 
   return {
     metrics,
