@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock, BarChart3, CalendarClock, Target } from "lucide-react";
+import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock, BarChart3, CalendarClock, Cog } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "react-router-dom";
@@ -89,6 +89,18 @@ const AdminDashboard = () => {
         {/* Quick Dashboard Buttons */}
         <div className="grid grid-cols-4 gap-3">
           <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-cyan-500/10 to-cyan-600/5"
+            onClick={() => navigate('/admin/operacional')}
+          >
+            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-2">
+                <Cog className="w-5 h-5 text-cyan-500" />
+              </div>
+              <span className="text-xs font-medium text-foreground">Operacional</span>
+            </CardContent>
+          </Card>
+
+          <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-emerald-500/10 to-emerald-600/5"
             onClick={() => navigate('/admin/financeiro')}
           >
@@ -121,18 +133,6 @@ const AdminDashboard = () => {
                 <CalendarClock className="w-5 h-5 text-purple-500" />
               </div>
               <span className="text-xs font-medium text-foreground">Agenda Mec.</span>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-amber-500/10 to-amber-600/5"
-            onClick={() => navigate('/admin/metas')}
-          >
-            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center mb-2">
-                <Target className="w-5 h-5 text-amber-500" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Metas</span>
             </CardContent>
           </Card>
         </div>
