@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { ArrowLeft, Rocket, Sparkles, Zap, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

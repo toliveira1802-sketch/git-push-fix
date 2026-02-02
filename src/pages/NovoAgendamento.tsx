@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -62,8 +62,9 @@ const timeSlots = [
 
 const NovoAgendamento = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const promotion = location.state?.promotion;
+  // Note: wouter doesn't support location.state like react-router-dom
+  // Promotion state would need to be passed via query params or context
+  const promotion = null;
   const { vehicles, loading: vehiclesLoading } = useClientData();
 
   const [step, setStep] = useState(1);
@@ -121,15 +122,14 @@ const NovoAgendamento = () => {
     }
 
     if (step === 5 || (step === 4 && isFullDay)) {
-      // Submit
+      // Submit - store state in sessionStorage since wouter doesn't support state
+      sessionStorage.setItem('agendamentoData', JSON.stringify({
+        vehicleModel: `${selectedVehicle?.brand} ${selectedVehicle?.model}`,
+        date: format(selectedDate!, "dd/MM/yyyy", { locale: ptBR }),
+        promoTitle: promotion?.title,
+      }));
       toast.success("Agendamento realizado!");
-      navigate("/agendamento-sucesso", {
-        state: {
-          vehicleModel: `${selectedVehicle?.brand} ${selectedVehicle?.model}`,
-          date: format(selectedDate!, "dd/MM/yyyy", { locale: ptBR }),
-          promoTitle: promotion?.title,
-        }
-      });
+      navigate("/agendamento-sucesso");
       return;
     }
 
@@ -138,7 +138,7 @@ const NovoAgendamento = () => {
 
   const handleBack = () => {
     if (step === 1) {
-      navigate(-1);
+      window.history.back();
     } else {
       setStep(prev => prev - 1);
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar, Plus, Clock, Gift, ChevronRight, CalendarClock, XCircle, PartyPopper, MapPin, Loader2 } from "lucide-react";
