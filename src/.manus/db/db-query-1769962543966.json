@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO mecanicos (nome) VALUES \n('Tadeu'),\n('João'),\n('Pedro'),\n('Aldo'),\n('Samuel'),\n('Wendel'),\n('Alexandre'),\n('Léo'),\n('Rogério'),\n('Matheus'),\n('Gabriel'),\n('Alessandro');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute INSERT INTO mecanicos (nome) VALUES \n('Tadeu'),\n('João'),\n('Pedro'),\n('Aldo'),\n('Samuel'),\n('Wendel'),\n('Alexandre'),\n('Léo'),\n('Rogério'),\n('Matheus'),\n('Gabriel'),\n('Alessandro');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 72
+}

@@ -1,0 +1,58 @@
+{
+  "query": "SELECT v.*, c.nomeCompleto as cliente FROM veiculos v LEFT JOIN clientes c ON v.clienteId = c.id ORDER BY v.id DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT v.*, c.nomeCompleto as cliente FROM veiculos v LEFT JOIN clientes c ON v.clienteId = c.id ORDER BY v.id DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "30001",
+      "clienteId": "37231",
+      "placa": "TST-1234",
+      "marca": "NULL",
+      "modelo": "BMW 320i 2022",
+      "versao": "NULL",
+      "ano": "NULL",
+      "combustivel": "NULL",
+      "ultimoKm": "0",
+      "kmAtual": "50000",
+      "origemContato": "NULL",
+      "createdAt": "2026-02-02 07:57:13",
+      "updatedAt": "2026-02-02 07:57:13",
+      "cliente": "João Teste"
+    },
+    {
+      "id": "2",
+      "clienteId": "7230",
+      "placa": "ERR4E88",
+      "marca": "VW",
+      "modelo": "PASSAT 2.0T FSI",
+      "versao": "I/VW PASSAT 2.0T FSI",
+      "ano": "2011",
+      "combustivel": "Gasolina",
+      "ultimoKm": "0",
+      "kmAtual": "0",
+      "origemContato": "NULL",
+      "createdAt": "2026-02-01 17:17:37",
+      "updatedAt": "2026-02-01 17:17:37",
+      "cliente": "NELSON VOLPATO"
+    },
+    {
+      "id": "1",
+      "clienteId": "7230",
+      "placa": "ERR1B44",
+      "marca": "VW",
+      "modelo": "I/VW PASSAT CC 3.6 FSI",
+      "versao": "FSI",
+      "ano": "2011",
+      "combustivel": "Gasolina",
+      "ultimoKm": "0",
+      "kmAtual": "0",
+      "origemContato": "NULL",
+      "createdAt": "2026-02-01 17:17:37",
+      "updatedAt": "2026-02-01 17:17:37",
+      "cliente": "NELSON VOLPATO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tclienteId\tplaca\tmarca\tmodelo\tversao\tano\tcombustivel\tultimoKm\tkmAtual\torigemContato\tcreatedAt\tupdatedAt\tcliente\n30001\t37231\tTST-1234\tNULL\tBMW 320i 2022\tNULL\tNULL\tNULL\t0\t50000\tNULL\t2026-02-02 07:57:13\t2026-02-02 07:57:13\tJoão Teste\n2\t7230\tERR4E88\tVW\tPASSAT 2.0T FSI\tI/VW PASSAT 2.0T FSI\t2011\tGasolina\t0\t0\tNULL\t2026-02-01 17:17:37\t2026-02-01 17:17:37\tNELSON VOLPATO\n1\t7230\tERR1B44\tVW\tI/VW PASSAT CC 3.6 FSI\tFSI\t2011\tGasolina\t0\t0\tNULL\t2026-02-01 17:17:37\t2026-02-01 17:17:37\tNELSON VOLPATO\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

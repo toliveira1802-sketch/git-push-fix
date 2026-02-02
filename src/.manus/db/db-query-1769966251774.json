@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO clientes (id, nomeCompleto, cpf, email, telefone, endereco, cep, cidade, estado, senha) VALUES \n(7230, 'NELSON VOLPATO', '300.650.118-72', 'nelson@doctor.com', '(11) 97151-7535', 'RUA JOAO DELLA MANNA', '05535-010', 'ROLINOPOLIS', 'SP', '123456');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute INSERT INTO clientes (id, nomeCompleto, cpf, email, telefone, endereco, cep, cidade, estado, senha) VALUES \n(7230, 'NELSON VOLPATO', '300.650.118-72', 'nelson@doctor.com', '(11) 97151-7535', 'RUA JOAO DELLA MANNA', '05535-010', 'ROLINOPOLIS', 'SP', '123456');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 75
+}

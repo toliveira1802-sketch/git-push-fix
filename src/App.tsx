@@ -1,254 +1,108 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/hooks/useTheme";
-import { CompanyProvider } from "@/contexts/CompanyContext";
-import { useActiveOS } from "@/hooks/useActiveOS";
-
-import DevScreens from "@/pages/__dev/DevScreens";
-import Index from "./pages/Index";
+import NotFound from "@/pages/NotFound";
+import { Route, Switch, Redirect } from "wouter";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
-import LoginCliente from "./pages/cliente/LoginCliente";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-import Agenda from "./pages/Agenda";
-import Historico from "./pages/Historico";
-import NovoAgendamento from "./pages/NovoAgendamento";
-import AgendamentoSucesso from "./pages/AgendamentoSucesso";
-import Configuracoes from "./pages/Configuracoes";
-import Performance from "./pages/Performance";
-import Avisos from "./pages/Avisos";
-import Veiculos from "./pages/Veiculos";
-import VisaoGeral from "./pages/VisaoGeral";
-import NotFound from "./pages/NotFound";
-import OSClienteAcompanhamento from "./pages/OSClienteAcompanhamento";
-import OSClienteOrcamento from "./pages/OSClienteOrcamento";
+import TrocarSenha from "./pages/TrocarSenha";
 
-// Admin pages
-// import AdminNovaOS from "./pages/admin/AdminNovaOS";
+// Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminDashboardOrcamentos from "./pages/admin/AdminDashboardOrcamentos";
-import OrdensServico from "./pages/admin/OrdensServico";
+import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
+import AdminOperacional from "./pages/admin/AdminOperacional";
+import AdminOrdensServico from "./pages/admin/AdminOrdensServico";
+import AdminNovaOS from "./pages/admin/AdminNovaOS";
+import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
+import AdminPatio from "./pages/admin/AdminPatio";
+import AdminPatioDetalhes from "./pages/admin/AdminPatioDetalhes";
+import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
+import AdminAgendaMecanicos from "./pages/admin/AdminAgendaMecanicos";
+import AdminClientes from "./pages/admin/AdminClientes";
+import AdminClientesPage from "./pages/admin/AdminClientesPage";
+import AdminServicos from "./pages/admin/AdminServicos";
+import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
+import AdminProdutividade from "./pages/admin/AdminProdutividade";
+import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
+import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
+import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
+import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminPendencias from "./pages/admin/AdminPendencias";
 import OSUltimate from "./pages/admin/OSUltimate";
 
-//import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
-import Clients from "./pages/admin/Clients";
-import AdminVeiculos from "./pages/admin/AdminVeiculos";
-import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
-import Pendencias from "./pages/admin/Pendencias";
-import MonitoramentoPatio from "./pages/admin/MonitoramentoPatio";
-import AdminOperational from "./pages/admin/AdminOperational";
-import AdminAgendaMecanicos from "./pages/admin/AdminAgendaMecanicos";
-import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
-import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
-import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
-import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
-import AdminProdutividade from "./pages/admin/AdminProdutividade";
-import AdminMelhorias from "./pages/admin/AdminMelhorias";
-import AdminParameters from "./pages/admin/AdminParameters";
-import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
-import AdminPatioDetalhes from "./pages/admin/AdminPatioDetalhes";
-import Cadastros from "./pages/admin/Cadastros";
-import AdminMetas from "./pages/admin/AdminMetas";
-import AdminMonitoramentoKommo from "./pages/admin/AdminMonitoramentoKommo";
-import AdminChecklist from "./pages/admin/AdminChecklist";
-import ImportarDados from "./pages/admin/ImportarDados";
-
-// Gestão pages
+// Gestao Pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
 import GestaoRH from "./pages/gestao/GestaoRH";
 import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
 import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
-import GestaoCommercial from "./pages/gestao/GestaoCommercial";
+import GestaoComercial from "./pages/gestao/GestaoComercial";
+import GestaoMelhorias from "./pages/gestao/GestaoMelhorias";
 
-const queryClient = new QueryClient();
+// Cliente Pages
+import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
 
-const ActiveOSBanner = () => {
-  const { activeOS } = useActiveOS();
-
-  if (!activeOS) return null;
-
+function Router() {
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <Link
-        to={`/os/${activeOS.id}`}
-        className="border p-4 rounded-lg flex justify-between items-center bg-red-50 shadow"
-      >
-        <div>
-          <p className="font-semibold">Serviço em andamento</p>
-          <p className="text-sm text-muted-foreground">
-            Veículo {activeOS.vehiclePlate}
-          </p>
-        </div>
-
-        <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-      </Link>
-    </div>
+    <Switch>
+      <Route path={"/"}>
+        <Redirect to="/login" />
+      </Route>
+      <Route path={"/login"} component={Login} />
+      <Route path={"/trocar-senha"} component={TrocarSenha} />
+      
+      {/* Admin Routes */}
+      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin/overview"} component={AdminDashboardOverview} />
+      <Route path={"/admin/operacional"} component={AdminOperacional} />
+      <Route path={"/admin/ordens-servico"} component={AdminOrdensServico} />
+      <Route path={"/admin/nova-os"} component={AdminNovaOS} />
+      <Route path={"/admin/os/:id"} component={AdminOSDetalhes} />
+      <Route path={"/admin/patio"} component={AdminPatio} />
+      <Route path={"/admin/patio/:id"} component={AdminPatioDetalhes} />
+      <Route path={"/admin/agendamentos"} component={AdminAgendamentos} />
+      <Route path={"/admin/agenda-mecanicos"} component={AdminAgendaMecanicos} />
+      <Route path={"/admin/clientes"} component={AdminClientesPage} />
+      <Route path={"/admin/servicos"} component={AdminServicos} />
+      <Route path={"/admin/financeiro"} component={AdminFinanceiro} />
+      <Route path={"/admin/produtividade"} component={AdminProdutividade} />
+      <Route path={"/admin/analytics-mecanicos"} component={AdminMechanicAnalytics} />
+      <Route path={"/admin/feedback-mecanicos"} component={AdminMechanicFeedback} />
+      <Route path={"/admin/documentacao"} component={AdminDocumentacao} />
+      <Route path={"/admin/configuracoes"} component={AdminConfiguracoes} />
+      <Route path={"/admin/pendencias"} component={AdminPendencias} />
+      <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
+      
+      {/* Gestao Routes */}
+      <Route path={"/gestao"} component={GestaoDashboards} />
+      <Route path={"/gestao/rh"} component={GestaoRH} />
+      <Route path={"/gestao/operacoes"} component={GestaoOperacoes} />
+      <Route path={"/gestao/financeiro"} component={GestaoFinanceiro} />
+      <Route path={"/gestao/tecnologia"} component={GestaoTecnologia} />
+      <Route path={"/gestao/comercial"} component={GestaoComercial} />
+      <Route path={"/gestao/melhorias"} component={GestaoMelhorias} />
+      
+      {/* Cliente Routes */}
+      <Route path={"/cliente/orcamento/:osId"} component={OrcamentoCliente} />
+      
+      <Route path={"/404"} component={NotFound} />
+      {/* Final fallback route */}
+      <Route component={NotFound} />
+    </Switch>
   );
-};
+}
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <BrowserRouter>
-        <Toaster />
-        <Sonner />
+function App() {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Routes>
-            {/* Public dev route - no auth required */}
-            <Route path="/__dev" element={<DevScreens />} />
-            
-            {/* All other routes wrapped with auth */}
-            <Route path="/*" element={
-              <AuthProvider>
-                <CompanyProvider>
-                  <ActiveOSBanner />
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/cliente/login" element={<LoginCliente />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/perfil" element={<Profile />} />
-                    <Route path="/agenda" element={<Agenda />} />
-                    <Route path="/historico" element={<Historico />} />
-                    <Route path="/novo-agendamento" element={<NovoAgendamento />} />
-                    <Route path="/agendamento-sucesso" element={<AgendamentoSucesso />} />
-                    <Route path="/configuracoes" element={<Configuracoes />} />
-                    <Route path="/performance" element={<Performance />} />
-                    <Route path="/avisos" element={<Avisos />} />
-                    <Route path="/veiculos" element={<Veiculos />} />
-                    <Route path="/visao-geral" element={<VisaoGeral />} />
-                    <Route path="/os/:id" element={<OSUltimateClient />} />
-                    <Route path="/os/:osId/acompanhamento" element={<OSClienteAcompanhamento />} />
-                    <Route path="/os/:osId/orcamento" element={<OSClienteOrcamento />} />
-
-<<<<<<< Updated upstream
-                    {/* Admin Routes */}
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/pendencias" element={<Pendencias />} />
-                    <Route path="/admin/ordens-servico" element={<OrdensServico />} />
-                    <Route path="/admin/os-ultimate" element={<OSUltimate />} />
-                    <Route path="/admin/clientes" element={<Clientes />} />
-                    <Route path="/admin/veiculos" element={<AdminVeiculos />} />
-                    <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
-                    <Route path="/admin/patio" element={<MonitoramentoPatio />} />
-                    <Route path="/admin/operacional" element={<AdminOperacional />} />
-                    <Route path="/admin/patio/:patioId" element={<AdminPatioDetalhes />} />
-                    <Route path="/admin/documentacao" element={<AdminDocumentacao />} />
-                    <Route path="/admin/agenda-mecanicos" element={<AdminAgendaMecanicos />} />
-                    <Route path="/admin/feedback-mecanicos" element={<AdminMechanicFeedback />} />
-                    <Route path="/admin/analytics-mecanicos" element={<AdminMechanicAnalytics />} />
-                    <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
-                    <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
-                    <Route path="/admin/produtividade" element={<AdminProdutividade />} />
-                    <Route path="/admin/melhorias" element={<AdminMelhorias />} />
-                    <Route path="/admin/parametros" element={<AdminParametros />} />
-                    <Route path="/admin/metas" element={<AdminMetas />} />
-                    <Route path="/admin/cadastros" element={<Cadastros />} />
-                    <Route path="/admin/monitoramento-kommo" element={<AdminMonitoramentoKommo />} />
-                    <Route path="/admin/orcamentos" element={<AdminDashboardOrcamentos />} />
-                    <Route path="/admin/checklist" element={<AdminChecklist />} />
-                    <Route path="/admin/importar" element={<ImportarDados />} />
-
-                    {/* Gestão Routes */}
-                    <Route path="/gestao" element={<GestaoDashboards />} />
-                    <Route path="/gestao/rh" element={<GestaoRH />} />
-                    <Route path="/gestao/operacoes" element={<GestaoOperacoes />} />
-                    <Route path="/gestao/financeiro" element={<GestaoFinanceiro />} />
-                    <Route path="/gestao/tecnologia" element={<GestaoTecnologia />} />
-                    <Route path="/gestao/comercial" element={<GestaoComercial />} />
-
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </CompanyProvider>
-              </AuthProvider>
-            } />
-          </Routes>
+          <Toaster />
+          <Router />
         </TooltipProvider>
-      </BrowserRouter>
-=======
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/perfil" element={<Profile />} />
-                <Route path="/agenda" element={<Agenda />} />
-                <Route path="/historico" element={<Historico />} />
-                <Route path="/novo-agendamento" element={<NovoAgendamento />} />
-                <Route
-                  path="/agendamento-sucesso"
-                  element={<AgendamentoSucesso />}
-                />
-                <Route path="/configuracoes" element={<Configuracoes />} />
-                <Route path="/performance" element={<Performance />} />
-                <Route path="/avisos" element={<Avisos />} />
-                <Route path="/veiculos" element={<Veiculos />} />
-                <Route path="/visao-geral" element={<VisaoGeral />} />
-
-                {/* Admin Routes */}
-                {/* <Route path="/admin/nova-os" element={<AdminNovaOS />} /> */}
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/pendencias" element={<Pendencias />} />
-                <Route path="/admin/ordens-servico" element={<OrdensServico />} />
-                <Route path="/admin/os-ultimate" element={<OSUltimate />} />
-                <Route path="/admin/clientes" element={<Clientes />} />
-                <Route path="/admin/veiculos" element={<AdminVeiculos />} />
-                <Route path="/admin/agendamentos" element={<AdminAgendamentos />} />
-                <Route path="/os/:osId/acompanhamento" element={<OSClienteAcompanhamento />} />
-                <Route path="/os/:osId/orcamento" element={<OSClienteOrcamento />} />
-
-                {/* IAs movidas para /gestao/tecnologia */}
-                {/* Nova Promoção movida para /gestao/comercial */}
-                <Route path="/admin/patio" element={<MonitoramentoPatio />} />
-                <Route path="/admin/operacional" element={<AdminOperacional />} />
-                <Route path="/admin/patio/:patioId" element={<AdminPatioDetalhes />} />
-                <Route path="/admin/documentacao" element={<AdminDocumentacao />} />
-                <Route path="/admin/agenda-mecanicos" element={<AdminAgendaMecanicos />} />
-                <Route path="/admin/feedback-mecanicos" element={<AdminMechanicFeedback />} />
-                <Route path="/admin/analytics-mecanicos" element={<AdminMechanicAnalytics />} />
-                <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
-                <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
-                <Route path="/admin/produtividade" element={<AdminProdutividade />} />
-                <Route path="/admin/melhorias" element={<AdminMelhorias />} />
-                <Route path="/admin/parametros" element={<AdminParametros />} />
-                <Route path="/admin/metas" element={<AdminMetas />} />
-                <Route path="/admin/cadastros" element={<Cadastros />} />
-                <Route
-                  path="/admin/monitoramento-kommo"
-                  element={<AdminMonitoramentoKommo />}
-                />
-                <Route path="/admin/orcamentos" element={<AdminDashboardOrcamentos />} />
-                <Route path="/admin/checklist" element={<AdminChecklist />} />
-
-                {/* Gestão Routes */}
-                <Route path="/gestao" element={<GestaoDashboards />} />
-                <Route path="/gestao/rh" element={<GestaoRH />} />
-                <Route path="/gestao/operacoes" element={<GestaoOperacoes />} />
-                <Route path="/gestao/financeiro" element={<GestaoFinanceiro />} />
-                <Route path="/gestao/tecnologia" element={<GestaoTecnologia />} />
-                <Route path="/gestao/comercial" element={<GestaoComercial />} />
-<<<<<<< Updated upstream
-=======
-                
-<Route path="/__dev" element={<DevScreens />} />
->>>>>>> Stashed changes
-
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-               
-
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </CompanyProvider>
-      </AuthProvider>
->>>>>>> Stashed changes
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
+}
 
 export default App;

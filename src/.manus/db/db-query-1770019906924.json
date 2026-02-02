@@ -1,0 +1,65 @@
+{
+  "query": "SELECT os.id, os.numeroOs, os.placa, os.status, os.km, os.motivoVisita, os.valorTotalOs, os.createdAt, c.nomeCompleto as cliente FROM ordens_servico os LEFT JOIN clientes c ON os.clienteId = c.id ORDER BY os.id DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT os.id, os.numeroOs, os.placa, os.status, os.km, os.motivoVisita, os.valorTotalOs, os.createdAt, c.nomeCompleto as cliente FROM ordens_servico os LEFT JOIN clientes c ON os.clienteId = c.id ORDER BY os.id DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "60002",
+      "numeroOs": "OS-20260202-005",
+      "placa": "ERR1B44",
+      "status": "diagnostico",
+      "km": "44544",
+      "motivoVisita": "",
+      "valorTotalOs": "0.00",
+      "createdAt": "2026-02-02 08:00:53",
+      "cliente": "NELSON VOLPATO"
+    },
+    {
+      "id": "60001",
+      "numeroOs": "OS-20260202-004",
+      "placa": "TST-1234",
+      "status": "diagnostico",
+      "km": "50000",
+      "motivoVisita": "Revisão completa",
+      "valorTotalOs": "0.00",
+      "createdAt": "2026-02-02 07:57:13",
+      "cliente": "João Teste"
+    },
+    {
+      "id": "30001",
+      "numeroOs": "OS-20260202-003",
+      "placa": "XYZ-9999",
+      "status": "diagnostico",
+      "km": "45000",
+      "motivoVisita": "Revisão completa",
+      "valorTotalOs": "0.00",
+      "createdAt": "2026-02-02 07:36:34",
+      "cliente": "NULL"
+    },
+    {
+      "id": "2",
+      "numeroOs": "OS-20260202-002",
+      "placa": "ABC-1234",
+      "status": "diagnostico",
+      "km": "0",
+      "motivoVisita": "Troca de Óleo, Revisão de Freios",
+      "valorTotalOs": "0.00",
+      "createdAt": "2026-02-02 01:16:20",
+      "cliente": "NULL"
+    },
+    {
+      "id": "1",
+      "numeroOs": "OS-20260202-001",
+      "placa": "ABC-1234",
+      "status": "diagnostico",
+      "km": "0",
+      "motivoVisita": "Troca de Óleo, Revisão de Freios",
+      "valorTotalOs": "0.00",
+      "createdAt": "2026-02-02 01:14:03",
+      "cliente": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnumeroOs\tplaca\tstatus\tkm\tmotivoVisita\tvalorTotalOs\tcreatedAt\tcliente\n60002\tOS-20260202-005\tERR1B44\tdiagnostico\t44544\t\t0.00\t2026-02-02 08:00:53\tNELSON VOLPATO\n60001\tOS-20260202-004\tTST-1234\tdiagnostico\t50000\tRevisão completa\t0.00\t2026-02-02 07:57:13\tJoão Teste\n30001\tOS-20260202-003\tXYZ-9999\tdiagnostico\t45000\tRevisão completa\t0.00\t2026-02-02 07:36:34\tNULL\n2\tOS-20260202-002\tABC-1234\tdiagnostico\t0\tTroca de Óleo, Revisão de Freios\t0.00\t2026-02-02 01:16:20\tNULL\n1\tOS-20260202-001\tABC-1234\tdiagnostico\t0\tTroca de Óleo, Revisão de Freios\t0.00\t2026-02-02 01:14:03\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

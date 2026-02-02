@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO recursos (nomeRecurso) VALUES \n('Elevador 1'),\n('Elevador 2'),\n('Elevador 3'),\n('Elevador 4'),\n('Elevador 5'),\n('Elevador 6'),\n('Elevador 7'),\n('Elevador 8'),\n('Elevador 9'),\n('Box 1'),\n('Box 2'),\n('Box 3'),\n('Box 4'),\n('Box 5'),\n('Rampa'),\n('Dinamômetro'),\n('VCDS'),\n('Remap'),\n('Vagas Extras');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute INSERT INTO recursos (nomeRecurso) VALUES \n('Elevador 1'),\n('Elevador 2'),\n('Elevador 3'),\n('Elevador 4'),\n('Elevador 5'),\n('Elevador 6'),\n('Elevador 7'),\n('Elevador 8'),\n('Elevador 9'),\n('Box 1'),\n('Box 2'),\n('Box 3'),\n('Box 4'),\n('Box 5'),\n('Rampa'),\n('Dinamômetro'),\n('VCDS'),\n('Remap'),\n('Vagas Extras');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 77
+}

@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO niveis_acesso (tipoUsuario, nivelAcesso, permissoes) VALUES \n('Direção', 1, 'Acesso total ao sistema inteiro'),\n('Gestão', 1, 'Acesso aos painéis das 3 empresas separadas'),\n('Consultor Técnico', 1, 'Acesso à oficina/administração da empresa (ID vinculado)'),\n('Mecânico', 2, 'Sem acesso (revogado)'),\n('Cliente', 1, 'Acesso somente à sua página (ID próprio)'),\n('Terceirizado', 2, 'Sem acesso (pode ser liberado para páginas específicas)');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute INSERT INTO niveis_acesso (tipoUsuario, nivelAcesso, permissoes) VALUES \n('Direção', 1, 'Acesso total ao sistema inteiro'),\n('Gestão', 1, 'Acesso aos painéis das 3 empresas separadas'),\n('Consultor Técnico', 1, 'Acesso à oficina/administração da empresa (ID vinculado)'),\n('Mecânico', 2, 'Sem acesso (revogado)'),\n('Cliente', 1, 'Acesso somente à sua página (ID próprio)'),\n('Terceirizado', 2, 'Sem acesso (pode ser liberado para páginas específicas)');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 75
+}

@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, nome, email, cargo FROM `01_colaboradores`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT id, nome, email, cargo FROM `01_colaboradores`;",
+  "rows": [
+    {
+      "id": "155000001",
+      "nome": "Sofia",
+      "email": "NULL",
+      "cargo": "Direção"
+    },
+    {
+      "id": "155000002",
+      "nome": "Francisco",
+      "email": "NULL",
+      "cargo": "Gestão"
+    },
+    {
+      "id": "155000003",
+      "nome": "Márcia",
+      "email": "NULL",
+      "cargo": "Gestão"
+    },
+    {
+      "id": "155000004",
+      "nome": "Pedro",
+      "email": "NULL",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "155000005",
+      "nome": "João",
+      "email": "NULL",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "156967155",
+      "nome": "Thales",
+      "email": "toliveira1802@gmail.com",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "414000001",
+      "nome": "Antônio",
+      "email": "NULL",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "414967386",
+      "nome": "THALES OLIVEIRA",
+      "email": "doctorauto.bosch@hotmail.com",
+      "cargo": "MASTER"
+    },
+    {
+      "id": "530000000",
+      "nome": "sophia ",
+      "email": "sophia.duarte1@hotmail.com",
+      "cargo": "master"
+    },
+    {
+      "id": "530000001",
+      "nome": "Rony",
+      "email": "NULL",
+      "cargo": "Consultor Técnico"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\temail\tcargo\n155000001\tSofia\tNULL\tDireção\n155000002\tFrancisco\tNULL\tGestão\n155000003\tMárcia\tNULL\tGestão\n155000004\tPedro\tNULL\tConsultor Técnico\n155000005\tJoão\tNULL\tConsultor Técnico\n156967155\tThales\ttoliveira1802@gmail.com\tConsultor Técnico\n414000001\tAntônio\tNULL\tConsultor Técnico\n414967386\tTHALES OLIVEIRA\tdoctorauto.bosch@hotmail.com\tMASTER\n530000000\tsophia \tsophia.duarte1@hotmail.com\tmaster\n530000001\tRony\tNULL\tConsultor Técnico\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

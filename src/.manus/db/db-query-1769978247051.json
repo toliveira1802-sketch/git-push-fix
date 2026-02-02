@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `pendencias` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`nomePendencia` varchar(255) NOT NULL,\n\t`responsavelId` int NOT NULL,\n\t`criadorId` int NOT NULL,\n\t`status` enum('pendente','feita','feita_ressalvas','nao_feita') NOT NULL DEFAULT 'pendente',\n\t`dataCriacao` timestamp NOT NULL DEFAULT (now()),\n\t`dataAtualizacao` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\t`observacoes` text,\n\t`empresaId` int,\n\tCONSTRAINT `pendencias_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute CREATE TABLE `pendencias` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`nomePendencia` varchar(255) NOT NULL,\n\t`responsavelId` int NOT NULL,\n\t`criadorId` int NOT NULL,\n\t`status` enum('pendente','feita','feita_ressalvas','nao_feita') NOT NULL DEFAULT 'pendente',\n\t`dataCriacao` timestamp NOT NULL DEFAULT (now()),\n\t`dataAtualizacao` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\t`observacoes` text,\n\t`empresaId` int,\n\tCONSTRAINT `pendencias_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1455
+}

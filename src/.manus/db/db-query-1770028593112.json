@@ -1,0 +1,67 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "00_empresas"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "01_colaboradores"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "02_nivelDeAcesso"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "03_mecanicos"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "04_lista_status"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "05_pendencias"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "06_recursos"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "97_ANALISE_PROMOCOES"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "agendamentos"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "clientes"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "crm"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "faturamento"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "ordens_servico"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "ordens_servico_historico"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "ordens_servico_itens"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "servicos_catalogo"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "users"
+    },
+    {
+      "Tables_in_TtWEMAUQLqjd2id2vAzp4o": "veiculos"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TtWEMAUQLqjd2id2vAzp4o\n00_empresas\n01_colaboradores\n02_nivelDeAcesso\n03_mecanicos\n04_lista_status\n05_pendencias\n06_recursos\n97_ANALISE_PROMOCOES\n__drizzle_migrations\nagendamentos\nclientes\ncrm\nfaturamento\nordens_servico\nordens_servico_historico\nordens_servico_itens\nservicos_catalogo\nusers\nveiculos\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

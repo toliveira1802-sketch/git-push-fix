@@ -1,0 +1,8 @@
+{
+  "query": "RENAME TABLE analise_promocoes TO `97_ANALISE_PROMOCOES`;\nRENAME TABLE servicos_catalogo TO `98_SERVICOS`;\nRENAME TABLE crm TO `99_CRM`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute RENAME TABLE analise_promocoes TO `97_ANALISE_PROMOCOES`;\nRENAME TABLE servicos_catalogo TO `98_SERVICOS`;\nRENAME TABLE crm TO `99_CRM`;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1050 (42S01) at line 1: Table 'TtWEMAUQLqjd2id2vAzp4o.97_ANALISE_PROMOCOES' already exists"
+  ]
+}
