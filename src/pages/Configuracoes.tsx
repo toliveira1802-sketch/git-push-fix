@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { 
   ArrowLeft, 
   Instagram, 
@@ -78,7 +78,7 @@ export default function Configuracoes() {
             variant="ghost" 
             size="icon" 
             className="text-primary-foreground hover:bg-primary-foreground/20"
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.back()}
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>

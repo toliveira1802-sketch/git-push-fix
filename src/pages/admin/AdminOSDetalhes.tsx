@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
+import { useRoute, useLocation } from "wouter";
 import {
   ArrowLeft, Save, Plus, Phone, Car, User,
   Calendar, FileText, Wrench, CheckCircle,
@@ -61,9 +62,13 @@ const checklistItems = [
 ];
 
 export default function AdminOSDetalhes() {
-  const { osId } = useParams<{ osId: string }>();
-  const [searchParams] = useSearchParams();
+  const [, routeParams] = useRoute("/admin/os/:id");
+  const osId = (routeParams as { id?: string } | null)?.id;
+  const [location] = useLocation();
   const navigate = useNavigate();
+  
+  // Parse search params from location
+  const searchParams = new URLSearchParams(location.split('?')[1] || '');
   
   // Determina se é modo criação: osId é "nova" ou não existe
   const isCreateMode = !osId || osId === "nova";

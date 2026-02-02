@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Home, Calendar, History, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,21 +11,20 @@ const navItems = [
 ];
 
 export function BottomNavigation() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [location, navigate] = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-[#111] border-t border-gray-800 px-4 py-3">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3">
       <div className="max-w-2xl mx-auto grid grid-cols-4 gap-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location === item.path;
           return (
             <Button
               key={item.path}
               variant="ghost"
               className={cn(
                 "flex flex-col items-center gap-1 h-auto py-2",
-                isActive ? "text-red-500" : "text-gray-400"
+                isActive ? "text-primary" : "text-muted-foreground"
               )}
               onClick={() => navigate(item.path)}
             >

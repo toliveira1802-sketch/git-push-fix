@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { 
   Calendar, Clock, Car, User, Phone, Wrench, 
   Plus, Filter, Search, CalendarDays, RefreshCw,

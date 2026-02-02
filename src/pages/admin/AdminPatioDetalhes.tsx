@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
+import { useRoute } from "wouter";
 import { 
   ArrowLeft, 
   Car, 
@@ -112,7 +113,8 @@ const statusOrder: OSStatus[] = [
 
 const AdminPatioDetalhes = () => {
   const navigate = useNavigate();
-  const { patioId } = useParams();
+  const [, routeParams] = useRoute("/admin/patio/:id");
+  const patioId = (routeParams as { id?: string } | null)?.id || "";
   const queryClient = useQueryClient();
 
   const [notes, setNotes] = useState("");

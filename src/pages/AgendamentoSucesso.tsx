@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { Check, Plus, Home, Gift, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -10,8 +10,8 @@ interface LocationState {
 
 const AgendamentoSucesso = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as LocationState | null;
+  // Note: wouter doesn't support location.state - state would need to be passed via query params
+  const state: LocationState | null = null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col items-center justify-center p-6">

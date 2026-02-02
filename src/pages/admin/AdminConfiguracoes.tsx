@@ -26,7 +26,7 @@ import {
   Lightbulb,
   ArrowRight,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 

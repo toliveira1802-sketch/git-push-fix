@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock, BarChart3, CalendarClock, Cog } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";

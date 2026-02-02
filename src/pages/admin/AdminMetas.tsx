@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/hooks/useNavigate';
 import { format, startOfMonth, endOfMonth, differenceInBusinessDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {

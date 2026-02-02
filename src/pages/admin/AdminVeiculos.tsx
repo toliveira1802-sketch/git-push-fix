@@ -18,7 +18,7 @@ import {
   Calendar,
   Loader2
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -176,9 +176,9 @@ export default function AdminVeiculos() {
       return;
     }
 
-    navigate('/admin/nova-promocao', { 
-      state: { selectedVehicles: selectedData }
-    });
+    // Note: wouter doesn't support state - using query params or sessionStorage instead
+    sessionStorage.setItem('selectedVehicles', JSON.stringify(selectedData));
+    navigate('/admin/nova-promocao');
   };
 
   const formatPlate = (plate: string) => {

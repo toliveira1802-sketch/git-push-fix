@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/hooks/useNavigate';
 import { ArrowLeft, User, Mail, Lock, ArrowRight, Eye, EyeOff, Phone, Car, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

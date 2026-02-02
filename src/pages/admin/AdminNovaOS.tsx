@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 import { 
   UserPlus, Search, Car, User, Phone, ArrowLeft, ArrowRight, 
   Loader2, CheckCircle, Zap, Users
