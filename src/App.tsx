@@ -30,6 +30,7 @@ import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
 import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminPendencias from "./pages/admin/AdminPendencias";
+import AdminChecklist from "./pages/admin/AdminChecklist";
 import OSUltimate from "./pages/admin/OSUltimate";
 
 // Gestao Pages
@@ -76,6 +77,7 @@ function Router() {
       <Route path={"/admin/documentacao"} component={AdminDocumentacao} />
       <Route path={"/admin/configuracoes"} component={AdminConfiguracoes} />
       <Route path={"/admin/pendencias"} component={AdminPendencias} />
+      <Route path={"/admin/checklist"} component={AdminChecklist} />
       <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
       
       {/* Gestao Routes */}
