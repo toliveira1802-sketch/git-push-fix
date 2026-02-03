@@ -74,12 +74,91 @@ serve(async (req: Request): Promise<Response> => {
     // Parse request body
     const body: CreateQuickClientRequest = await req.json();
     
+    // === COMPREHENSIVE INPUT VALIDATION ===
+    
+    // Validate required fields first
     if (!body.name || !body.phone || !body.vehiclePlate || !body.vehicleBrand || !body.vehicleModel) {
       return new Response(
         JSON.stringify({ error: "Nome, telefone, placa, marca e modelo são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Trim whitespace from all string inputs
+    const name = body.name.trim();
+    const phone = body.phone.replace(/\D/g, ''); // Remove non-digits
+    const vehiclePlate = body.vehiclePlate.trim().toUpperCase();
+    const vehicleBrand = body.vehicleBrand.trim();
+    const vehicleModel = body.vehicleModel.trim();
+    const vehicleColor = body.vehicleColor?.trim() || null;
+    const vehicleYear = body.vehicleYear || null;
+    const email = body.email?.trim() || null;
+
+    // Validate name (3-100 characters)
+    if (name.length < 3 || name.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Nome deve ter entre 3 e 100 caracteres" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate phone (10-11 digits after removing non-digits)
+    if (!/^\d{10,11}$/.test(phone)) {
+      return new Response(
+        JSON.stringify({ error: "Telefone inválido (deve conter 10-11 dígitos)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate vehicle plate (7 alphanumeric characters - old format or Mercosul)
+    if (!/^[A-Z0-9]{7}$/.test(vehiclePlate)) {
+      return new Response(
+        JSON.stringify({ error: "Placa inválida (7 caracteres alfanuméricos)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate brand (2-50 characters)
+    if (vehicleBrand.length < 2 || vehicleBrand.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Marca deve ter entre 2 e 50 caracteres" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate model (2-50 characters)
+    if (vehicleModel.length < 2 || vehicleModel.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Modelo deve ter entre 2 e 50 caracteres" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate year if provided (1900-2100)
+    if (vehicleYear !== null && (vehicleYear < 1900 || vehicleYear > 2100)) {
+      return new Response(
+        JSON.stringify({ error: "Ano do veículo inválido (1900-2100)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate color if provided (2-30 characters)
+    if (vehicleColor !== null && (vehicleColor.length < 2 || vehicleColor.length > 30)) {
+      return new Response(
+        JSON.stringify({ error: "Cor deve ter entre 2 e 30 caracteres" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate email format if provided
+    if (email !== null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Email inválido" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("create-quick-client: Input validation passed");
 
     // Use service role to bypass RLS
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -89,13 +168,13 @@ serve(async (req: Request): Promise<Response> => {
       },
     });
 
-    // 1. Create client
+    // 1. Create client (using validated/sanitized values)
     const { data: clientData, error: clientError } = await supabaseAdmin
       .from("clients")
       .insert({
-        name: body.name,
-        phone: body.phone,
-        email: body.email || null,
+        name: name,
+        phone: phone,
+        email: email,
         status: "active",
         registration_source: "admin",
         pending_review: false,
@@ -113,16 +192,16 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("create-quick-client: Client created:", clientData.id);
 
-    // 2. Create vehicle
+    // 2. Create vehicle (using validated/sanitized values)
     const { data: vehicleData, error: vehicleError } = await supabaseAdmin
       .from("vehicles")
       .insert({
         client_id: clientData.id,
-        plate: body.vehiclePlate.toUpperCase(),
-        brand: body.vehicleBrand,
-        model: body.vehicleModel,
-        year: body.vehicleYear || null,
-        color: body.vehicleColor || null,
+        plate: vehiclePlate,
+        brand: vehicleBrand,
+        model: vehicleModel,
+        year: vehicleYear,
+        color: vehicleColor,
         is_active: true,
       })
       .select("id")

@@ -4,10 +4,11 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { CompanyProvider } from "./contexts/CompanyContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
 import DevScreens from "./pages/__dev/DevScreens";
-
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
@@ -26,10 +27,15 @@ import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProdutividade from "./pages/admin/AdminProdutividade";
 import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
 import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
+import AdminMetas from "./pages/admin/AdminMetas";
+import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminPendencias from "./pages/admin/AdminPendencias";
+import AdminChecklist from "./pages/admin/AdminChecklist";
 import OSUltimate from "./pages/admin/OSUltimate";
+import ImportarVeiculosAntigos from "./pages/admin/ImportarVeiculosAntigos";
+import Cadastros from "./pages/admin/Cadastros";
 
 // Gestao Pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -39,9 +45,14 @@ import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import GestaoComercial from "./pages/gestao/GestaoComercial";
 import GestaoMelhorias from "./pages/gestao/GestaoMelhorias";
+import GestaoVeiculosOrfaos from "./pages/gestao/GestaoVeiculosOrfaos";
 
 // Cliente Pages
 import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
+
+// OS Pages (Client-facing)
+import OSAcompanhamento from "./pages/os/OSAcompanhamento";
+import OSOrcamento from "./pages/os/OSOrcamento";
 
 function Router() {
   return (
@@ -72,10 +83,16 @@ function Router() {
       <Route path={"/admin/produtividade"} component={AdminProdutividade} />
       <Route path={"/admin/analytics-mecanicos"} component={AdminMechanicAnalytics} />
       <Route path={"/admin/feedback-mecanicos"} component={AdminMechanicFeedback} />
+      <Route path={"/admin/metas"} component={AdminMetas} />
+      <Route path={"/admin/relatorios"} component={AdminRelatorios} />
       <Route path={"/admin/documentacao"} component={AdminDocumentacao} />
       <Route path={"/admin/configuracoes"} component={AdminConfiguracoes} />
       <Route path={"/admin/pendencias"} component={AdminPendencias} />
+      <Route path={"/admin/checklist"} component={AdminChecklist} />
+      <Route path={"/admin/os-ultimate"} component={OSUltimate} />
       <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
+      <Route path={"/admin/importar-veiculos-antigos"} component={ImportarVeiculosAntigos} />
+      <Route path={"/admin/cadastros"} component={Cadastros} />
       
       {/* Gestao Routes */}
       <Route path={"/gestao"} component={GestaoDashboards} />
@@ -85,9 +102,15 @@ function Router() {
       <Route path={"/gestao/tecnologia"} component={GestaoTecnologia} />
       <Route path={"/gestao/comercial"} component={GestaoComercial} />
       <Route path={"/gestao/melhorias"} component={GestaoMelhorias} />
+      <Route path={"/gestao/veiculos-orfaos"} component={GestaoVeiculosOrfaos} />
       
       {/* Cliente Routes */}
       <Route path={"/cliente/orcamento/:osId"} component={OrcamentoCliente} />
+      
+      {/* OS Routes (Client-facing) */}
+      <Route path={"/os/:id"} component={OSAcompanhamento} />
+      <Route path={"/os/:id/acompanhamento"} component={OSAcompanhamento} />
+      <Route path={"/os/:id/orcamento"} component={OSOrcamento} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
@@ -99,11 +122,15 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+      <ThemeProvider defaultTheme="dark" switchable={true}>
+        <AuthProvider>
+          <CompanyProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </CompanyProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

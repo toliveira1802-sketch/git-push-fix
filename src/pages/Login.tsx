@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { DEV_BYPASS } from '@/config/devBypass';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -14,6 +15,15 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  // DEV_BYPASS: Redireciona diretamente para /admin sem login
+  useEffect(() => {
+    if (DEV_BYPASS) {
+      console.log('[DEV_BYPASS] Redirecionando diretamente para /admin');
+      toast.info('Modo desenvolvimento ativo - bypass de login');
+      setLocation('/admin');
+    }
+  }, [setLocation]);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = password.length >= 4;

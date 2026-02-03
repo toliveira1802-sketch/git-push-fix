@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, differenceInBusinessDays, startOfDay, endOfDay } from "date-fns";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export interface VehicleFinanceInfo {
   id: string;
@@ -40,6 +41,7 @@ export interface MetaConfig {
 }
 
 export function useFinanceiroDashboard() {
+  const { currentCompany } = useCompany();
   const [metrics, setMetrics] = useState<FinanceMetrics>({
     metaMensal: 300000,
     realizado: 0,
@@ -104,12 +106,18 @@ export function useFinanceiroDashboard() {
       }
 
       // 1. OSs entregues no mês (faturado/realizado)
-      const { data: ossEntregues } = await supabase
+      let queryEntregues = supabase
         .from('ordens_servico')
-        .select('id, total, completed_at, itens_ordem_servico(total_price, status)')
+        .select('id, total, completed_at, client_id, itens_ordem_servico(total_price, status), clientes!inner(empresa_id)')
         .eq('status', 'entregue')
         .gte('completed_at', inicioMes.toISOString())
         .lte('completed_at', fimMes.toISOString());
+
+      if (currentCompany?.id) {
+        queryEntregues = queryEntregues.eq('clientes.empresa_id', currentCompany.id);
+      }
+
+      const { data: ossEntregues } = await queryEntregues;
 
       let faturado = 0;
       (ossEntregues || []).forEach((os: any) => {
@@ -119,7 +127,7 @@ export function useFinanceiroDashboard() {
       const ticketMedio = entregues > 0 ? faturado / entregues : 0;
 
       // 2. OSs ativas no pátio (exceto entregue)
-      const { data: ossAtivas } = await supabase
+      let queryAtivas = supabase
         .from('ordens_servico')
         .select(`
           id,
@@ -129,9 +137,15 @@ export function useFinanceiroDashboard() {
           created_at,
           itens_ordem_servico(total_price, status),
           veiculos(plate, model, brand),
-          clientes(name)
+          clientes!inner(name, empresa_id)
         `)
         .neq('status', 'entregue');
+
+      if (currentCompany?.id) {
+        queryAtivas = queryAtivas.eq('clientes.empresa_id', currentCompany.id);
+      }
+
+      const { data: ossAtivas } = await queryAtivas;
 
       // Aprovado no pátio = soma de todos aprovados ativos
       let aprovadoPatio = 0;
@@ -250,7 +264,7 @@ export function useFinanceiroDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, currentCompany?.id]);
 
   return {
     metrics,
