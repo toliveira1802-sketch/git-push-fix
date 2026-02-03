@@ -80,6 +80,7 @@ function Router() {
       <Route path={"/admin/configuracoes"} component={AdminConfiguracoes} />
       <Route path={"/admin/pendencias"} component={AdminPendencias} />
       <Route path={"/admin/checklist"} component={AdminChecklist} />
+      <Route path={"/admin/os-ultimate"} component={OSUltimate} />
       <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
       <Route path={"/admin/importar-veiculos-antigos"} component={ImportarVeiculosAntigos} />
       
