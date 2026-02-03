@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock, BarChart3, CalendarClock, Cog } from "lucide-react";
+import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock, BarChart3, CalendarClock, Cog, LayoutDashboard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -87,7 +87,19 @@ const AdminDashboard = () => {
         </Card>
 
         {/* Quick Dashboard Buttons */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-5 gap-3">
+          <Card
+            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-slate-500/10 to-slate-600/5"
+            onClick={() => navigate('/admin/overview')}
+          >
+            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-lg bg-slate-500/20 flex items-center justify-center mb-2">
+                <LayoutDashboard className="w-5 h-5 text-slate-400" />
+              </div>
+              <span className="text-xs font-medium text-foreground">Visão Geral</span>
+            </CardContent>
+          </Card>
+
           <Card
             className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-cyan-500/10 to-cyan-600/5"
             onClick={() => navigate('/admin/operacional')}
