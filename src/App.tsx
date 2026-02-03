@@ -32,6 +32,7 @@ import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminPendencias from "./pages/admin/AdminPendencias";
 import AdminChecklist from "./pages/admin/AdminChecklist";
 import OSUltimate from "./pages/admin/OSUltimate";
+import ImportarVeiculosAntigos from "./pages/admin/ImportarVeiculosAntigos";
 
 // Gestao Pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -79,6 +80,7 @@ function Router() {
       <Route path={"/admin/pendencias"} component={AdminPendencias} />
       <Route path={"/admin/checklist"} component={AdminChecklist} />
       <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
+      <Route path={"/admin/importar-veiculos-antigos"} component={ImportarVeiculosAntigos} />
       
       {/* Gestao Routes */}
       <Route path={"/gestao"} component={GestaoDashboards} />
