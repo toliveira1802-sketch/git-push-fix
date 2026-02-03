@@ -42,6 +42,7 @@ import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import GestaoComercial from "./pages/gestao/GestaoComercial";
 import GestaoMelhorias from "./pages/gestao/GestaoMelhorias";
+import GestaoVeiculosOrfaos from "./pages/gestao/GestaoVeiculosOrfaos";
 
 // Cliente Pages
 import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
@@ -90,6 +91,7 @@ function Router() {
       <Route path={"/gestao/tecnologia"} component={GestaoTecnologia} />
       <Route path={"/gestao/comercial"} component={GestaoComercial} />
       <Route path={"/gestao/melhorias"} component={GestaoMelhorias} />
+      <Route path={"/gestao/veiculos-orfaos"} component={GestaoVeiculosOrfaos} />
       
       {/* Cliente Routes */}
       <Route path={"/cliente/orcamento/:osId"} component={OrcamentoCliente} />
