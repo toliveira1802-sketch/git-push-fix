@@ -208,27 +208,14 @@ export type Database = {
           email: string | null
           empresa_id: string | null
           id: string
-          indicacoes_feitas: number | null
-          indicado_por: string | null
-          last_service_date: string | null
-          motivo_contato: string | null
           name: string
-          nivel_satisfacao: number | null
           notes: string | null
-          origem: string | null
           pending_review: boolean
           phone: string
-          preferencias: string | null
-          proximo_contato: string | null
-          reclamacoes: number | null
           registration_source: string
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
-          status_crm: string | null
-          tags: string[] | null
-          total_spent: number | null
-          ultima_interacao: string | null
           updated_at: string
           user_id: string | null
         }
@@ -241,27 +228,14 @@ export type Database = {
           email?: string | null
           empresa_id?: string | null
           id?: string
-          indicacoes_feitas?: number | null
-          indicado_por?: string | null
-          last_service_date?: string | null
-          motivo_contato?: string | null
           name: string
-          nivel_satisfacao?: number | null
           notes?: string | null
-          origem?: string | null
           pending_review?: boolean
           phone: string
-          preferencias?: string | null
-          proximo_contato?: string | null
-          reclamacoes?: number | null
           registration_source?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
-          status_crm?: string | null
-          tags?: string[] | null
-          total_spent?: number | null
-          ultima_interacao?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -274,27 +248,14 @@ export type Database = {
           email?: string | null
           empresa_id?: string | null
           id?: string
-          indicacoes_feitas?: number | null
-          indicado_por?: string | null
-          last_service_date?: string | null
-          motivo_contato?: string | null
           name?: string
-          nivel_satisfacao?: number | null
           notes?: string | null
-          origem?: string | null
           pending_review?: boolean
           phone?: string
-          preferencias?: string | null
-          proximo_contato?: string | null
-          reclamacoes?: number | null
           registration_source?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
-          status_crm?: string | null
-          tags?: string[] | null
-          total_spent?: number | null
-          ultima_interacao?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -306,17 +267,146 @@ export type Database = {
             referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      clientes_crm: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          id: string
+          indicacoes_feitas: number | null
+          indicado_por: string | null
+          motivo_contato: string | null
+          nivel_satisfacao: number | null
+          origem: string | null
+          preferencias: string | null
+          proximo_contato: string | null
+          reclamacoes: number | null
+          status_crm: string | null
+          tags: string[] | null
+          ultima_interacao: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          id?: string
+          indicacoes_feitas?: number | null
+          indicado_por?: string | null
+          motivo_contato?: string | null
+          nivel_satisfacao?: number | null
+          origem?: string | null
+          preferencias?: string | null
+          proximo_contato?: string | null
+          reclamacoes?: number | null
+          status_crm?: string | null
+          tags?: string[] | null
+          ultima_interacao?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          id?: string
+          indicacoes_feitas?: number | null
+          indicado_por?: string | null
+          motivo_contato?: string | null
+          nivel_satisfacao?: number | null
+          origem?: string | null
+          preferencias?: string | null
+          proximo_contato?: string | null
+          reclamacoes?: number | null
+          status_crm?: string | null
+          tags?: string[] | null
+          ultima_interacao?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "clients_indicado_por_fkey"
+            foreignKeyName: "clientes_crm_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "client_service_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "clientes_crm_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_crm_indicado_por_fkey"
             columns: ["indicado_por"]
             isOneToOne: false
             referencedRelation: "client_service_history"
             referencedColumns: ["client_id"]
           },
           {
-            foreignKeyName: "clients_indicado_por_fkey"
+            foreignKeyName: "clientes_crm_indicado_por_fkey"
             columns: ["indicado_por"]
             isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clientes_metricas: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          dias_sem_visita: number | null
+          id: string
+          last_service_date: string | null
+          ticket_medio: number | null
+          total_ordens: number | null
+          total_spent: number | null
+          total_veiculos: number | null
+          updated_at: string | null
+          valor_medio_mao_obra: number | null
+          valor_medio_peca: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          dias_sem_visita?: number | null
+          id?: string
+          last_service_date?: string | null
+          ticket_medio?: number | null
+          total_ordens?: number | null
+          total_spent?: number | null
+          total_veiculos?: number | null
+          updated_at?: string | null
+          valor_medio_mao_obra?: number | null
+          valor_medio_peca?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          dias_sem_visita?: number | null
+          id?: string
+          last_service_date?: string | null
+          ticket_medio?: number | null
+          total_ordens?: number | null
+          total_spent?: number | null
+          total_veiculos?: number | null
+          updated_at?: string | null
+          valor_medio_mao_obra?: number | null
+          valor_medio_peca?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_metricas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "client_service_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "clientes_metricas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
             referencedRelation: "clientes"
             referencedColumns: ["id"]
           },

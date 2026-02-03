@@ -61,9 +61,10 @@ export default function Profile() {
       }
 
       // Buscar dados do client para pegar cpf e data_aniversario
+      // Buscar dados do cliente com métricas
       const { data: clientData, error: clientError } = await supabase
         .from("clientes")
-        .select("id, name, phone, cpf, data_aniversario, total_spent")
+        .select("id, name, phone, cpf, data_aniversario, clientes_metricas(total_spent)")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -80,7 +81,7 @@ export default function Profile() {
           cpf: (clientData as any)?.cpf || null,
           avatar_url: (profileData as any)?.avatar_url || null,
           birthday: (profileData as any)?.birthday || (clientData as any)?.data_aniversario || null,
-          loyalty_points: (profileData as any)?.loyalty_points || Math.round(((clientData as any)?.total_spent || 0) / 10),
+          loyalty_points: (profileData as any)?.loyalty_points || Math.round(((clientData as any)?.clientes_metricas?.total_spent || 0) / 10),
           loyalty_level: (profileData as any)?.loyalty_level || "bronze",
         });
 
