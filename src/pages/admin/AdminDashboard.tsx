@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Loader2, TrendingUp, RotateCcw, XCircle, Car, Clock, BarChart3, CalendarClock, Cog, LayoutDashboard } from "lucide-react";
+import { Calendar, DollarSign, Loader2, TrendingUp, Car, Wrench, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -7,42 +7,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 
-// Corinthians SVG Symbol - Timão
-const CorinthiansIcon = ({ size = 40 }: { size?: number }) => (
-  <svg viewBox="0 0 100 100" style={{ width: size, height: size }}>
-    <circle cx="50" cy="50" r="48" fill="#000000" />
-    <circle cx="50" cy="50" r="42" fill="none" stroke="#FFFFFF" strokeWidth="3" />
-    <path
-      d="M50 15 L55 35 L75 35 L60 48 L67 68 L50 55 L33 68 L40 48 L25 35 L45 35 Z"
-      fill="#FFFFFF"
-    />
-    <text x="50" y="88" textAnchor="middle" fill="#FFFFFF" fontSize="14" fontWeight="bold">SCCP</text>
-  </svg>
-);
-
-
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const {
     stats,
     loading,
     todayAppointments,
-    newClients,
-    readyToDeliver,
     returnVehicles,
-    cancelledAppointments,
     vehiclesInYard,
-    awaitingApproval,
   } = useAdminDashboard();
 
   // Modal states
   const [showAppointments, setShowAppointments] = useState(false);
-  const [showNewClients, setShowNewClients] = useState(false);
-  const [showReadyToDeliver, setShowReadyToDeliver] = useState(false);
   const [showReturns, setShowReturns] = useState(false);
-  const [showCancelled, setShowCancelled] = useState(false);
   const [showVehiclesInYard, setShowVehiclesInYard] = useState(false);
-  const [showAwaitingApproval, setShowAwaitingApproval] = useState(false);
 
   const statusLabels: Record<string, string> = {
     pendente: "Pendente",
@@ -68,97 +46,69 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
-        {/* Pendências do dia - Botão com quantidade */}
-        <Card
-          className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-primary/5 to-primary/10"
-          onClick={() => navigate('/admin/pendencias')}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <CorinthiansIcon size={48} />
-                <div>
-                  <span className="text-xl font-semibold text-foreground">Pendências do dia</span>
-                  <p className="text-sm text-muted-foreground">Tarefas da equipe</p>
-                </div>
+        {/* Pendências do dia */}
+        <Card className="border border-border bg-card">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <h2 className="text-base font-semibold text-foreground">Pendências do dia</h2>
               </div>
+              <button 
+                onClick={() => navigate('/admin/pendencias')}
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                Ver todas
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
+            <p className="text-sm text-muted-foreground">Nenhuma pendência para hoje. Bom trabalho!</p>
           </CardContent>
         </Card>
 
-        {/* Quick Dashboard Buttons */}
-        <div className="grid grid-cols-5 gap-3">
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-slate-500/10 to-slate-600/5"
-            onClick={() => navigate('/admin/overview')}
-          >
-            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-lg bg-slate-500/20 flex items-center justify-center mb-2">
-                <LayoutDashboard className="w-5 h-5 text-slate-400" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Visão Geral</span>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-cyan-500/10 to-cyan-600/5"
+        {/* Quick Navigation Tabs */}
+        <div className="flex items-center gap-6 border-b border-border pb-2">
+          <button 
             onClick={() => navigate('/admin/operacional')}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pb-2"
           >
-            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-2">
-                <Cog className="w-5 h-5 text-cyan-500" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Operacional</span>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-emerald-500/10 to-emerald-600/5"
+            <Wrench className="w-4 h-4" />
+            Operacional
+          </button>
+          <button 
             onClick={() => navigate('/admin/financeiro')}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pb-2"
           >
-            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-2">
-                <DollarSign className="w-5 h-5 text-emerald-500" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Financeiro</span>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-blue-500/10 to-blue-600/5"
+            <DollarSign className="w-4 h-4" />
+            Financeiro
+          </button>
+          <button 
             onClick={() => navigate('/admin/produtividade')}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pb-2"
           >
-            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center mb-2">
-                <BarChart3 className="w-5 h-5 text-blue-500" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Produtividade</span>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-purple-500/10 to-purple-600/5"
+            <TrendingUp className="w-4 h-4" />
+            Produtividade
+          </button>
+          <button 
             onClick={() => navigate('/admin/agenda-mecanicos')}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pb-2"
           >
-            <CardContent className="p-3 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-2">
-                <CalendarClock className="w-5 h-5 text-purple-500" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Agenda Mec.</span>
-            </CardContent>
-          </Card>
+            <Calendar className="w-4 h-4" />
+            Agenda Mec.
+          </button>
         </div>
 
+        {/* Stats Grid - 2x2 */}
         <div className="grid grid-cols-2 gap-4">
           {/* Veículos no Pátio */}
           <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-blue-500/10 to-blue-600/5"
+            className="border border-border bg-card cursor-pointer hover:bg-accent/50 transition-colors"
             onClick={() => setShowVehiclesInYard(true)}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <Car className="w-6 h-6 text-blue-500" />
+                <div className="w-11 h-11 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Car className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-foreground">{stats.vehiclesInYard}</p>
@@ -168,36 +118,33 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Aguardando Aprovação */}
+          {/* Agendamentos Hoje */}
           <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform bg-gradient-to-br from-amber-500/10 to-amber-600/5"
-            onClick={() => setShowAwaitingApproval(true)}
+            className="border border-border bg-card cursor-pointer hover:bg-accent/50 transition-colors"
+            onClick={() => setShowAppointments(true)}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-amber-500" />
+                <div className="w-11 h-11 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-foreground">{stats.awaitingApproval}</p>
-                  <p className="text-sm text-muted-foreground">Aguardando APV</p>
+                  <p className="text-3xl font-bold text-foreground">{stats.appointmentsToday}</p>
+                  <p className="text-sm text-muted-foreground">Agendamentos Hoje</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Indicadores Secundários */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Faturado Mês */}
-          <Card className="border">
-            <CardContent className="p-4">
+          {/* Faturado (Mês) */}
+          <Card className="border border-border bg-card">
+            <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-emerald-500" />
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-3xl font-bold text-foreground">
                     R$ {stats.monthlyRevenue.toLocaleString("pt-BR")}
                   </p>
                   <p className="text-sm text-muted-foreground">Faturado (Mês)</p>
@@ -206,93 +153,19 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Agendamentos Hoje */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform"
-            onClick={() => setShowAppointments(true)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.appointmentsToday}</p>
-                  <p className="text-sm text-muted-foreground">Agendamentos Hoje</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Novos Clientes */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform"
-            onClick={() => setShowNewClients(true)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-cyan-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.newClientsMonth}</p>
-                  <p className="text-sm text-muted-foreground">Novos Clientes (Mês)</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Retorno do Mês */}
           <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform"
+            className="border border-border bg-card cursor-pointer hover:bg-accent/50 transition-colors"
             onClick={() => setShowReturns(true)}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                  <RotateCcw className="w-6 h-6 text-purple-500" />
+                <div className="w-11 h-11 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.returnsMonth}</p>
+                  <p className="text-3xl font-bold text-foreground">{stats.returnsMonth}</p>
                   <p className="text-sm text-muted-foreground">Retorno do Mês</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Valor para Sair */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform"
-            onClick={() => setShowReadyToDeliver(true)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">
-                    R$ {stats.valueTodayDelivery.toLocaleString("pt-BR")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Valor p/ Sair Hoje</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Agendamentos Cancelados */}
-          <Card
-            className="border cursor-pointer hover:scale-[1.02] transition-transform"
-            onClick={() => setShowCancelled(true)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.cancelledMonth}</p>
-                  <p className="text-sm text-muted-foreground">Cancelados (Mês)</p>
                 </div>
               </div>
             </CardContent>
@@ -305,7 +178,7 @@ const AdminDashboard = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
+              <Calendar className="w-5 h-5 text-blue-400" />
               Agendamentos de Hoje
             </DialogTitle>
           </DialogHeader>
@@ -334,77 +207,12 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Novos Clientes */}
-      <Dialog open={showNewClients} onOpenChange={setShowNewClients}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-cyan-500" />
-              Novos Clientes do Mês
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            {newClients.length > 0 ? (
-              <div className="space-y-3">
-                {newClients.map((client) => (
-                  <div key={client.id} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{client.full_name}</p>
-                        <p className="text-sm text-muted-foreground">{client.phone}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{client.created_at}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-8 text-muted-foreground">Nenhum cliente novo este mês</p>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Valor para Sair */}
-      <Dialog open={showReadyToDeliver} onOpenChange={setShowReadyToDeliver}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-amber-500" />
-              Prontos para Retirada
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            {readyToDeliver.length > 0 ? (
-              <div className="space-y-3">
-                {readyToDeliver.map((os) => (
-                  <div key={os.id} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{os.client_name}</p>
-                        <p className="text-sm text-muted-foreground">{os.vehicle}</p>
-                        <p className="text-xs text-muted-foreground">{os.numero_os}</p>
-                      </div>
-                      <p className="font-bold text-emerald-500">
-                        R$ {os.valor_final.toLocaleString("pt-BR")}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-8 text-muted-foreground">Nenhum veículo pronto para retirada</p>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
       {/* Modal Retorno do Mês */}
       <Dialog open={showReturns} onOpenChange={setShowReturns}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="w-5 h-5 text-purple-500" />
+              <TrendingUp className="w-5 h-5 text-purple-400" />
               Retornos do Mês
             </DialogTitle>
           </DialogHeader>
@@ -431,44 +239,12 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Agendamentos Cancelados */}
-      <Dialog open={showCancelled} onOpenChange={setShowCancelled}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-500" />
-              Agendamentos Cancelados
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            {cancelledAppointments.length > 0 ? (
-              <div className="space-y-3">
-                {cancelledAppointments.map((ca) => (
-                  <div key={ca.id} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{ca.client_name}</p>
-                        <p className="text-sm text-muted-foreground">{ca.phone}</p>
-                        <p className="text-xs text-muted-foreground">{ca.vehicle}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{ca.cancelled_at}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-8 text-muted-foreground">Nenhum cancelamento este mês</p>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
       {/* Modal Veículos no Pátio */}
       <Dialog open={showVehiclesInYard} onOpenChange={setShowVehiclesInYard}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Car className="w-5 h-5 text-blue-500" />
+              <Car className="w-5 h-5 text-purple-400" />
               Veículos no Pátio
             </DialogTitle>
           </DialogHeader>
@@ -476,62 +252,29 @@ const AdminDashboard = () => {
             {vehiclesInYard.length > 0 ? (
               <div className="space-y-3">
                 {vehiclesInYard.map((v) => (
-                  <div key={v.id} className="p-3 rounded-lg bg-muted/50">
+                  <div 
+                    key={v.id} 
+                    className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                    onClick={() => {
+                      setShowVehiclesInYard(false);
+                      navigate(`/admin/patio/${v.id}`);
+                    }}
+                  >
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-mono font-bold text-primary">{v.plate}</p>
                         <p className="text-sm text-muted-foreground">{v.vehicle}</p>
                         <p className="text-xs text-muted-foreground">{v.client_name}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{v.status}</p>
-                        <p className="text-xs text-muted-foreground">{v.etapa}</p>
-                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {statusLabels[v.status] || v.status}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <p className="text-center py-8 text-muted-foreground">Nenhum veículo no pátio</p>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Aguardando Aprovação */}
-      <Dialog open={showAwaitingApproval} onOpenChange={setShowAwaitingApproval}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-500" />
-              Aguardando Aprovação
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            {awaitingApproval.length > 0 ? (
-              <div className="space-y-3">
-                {awaitingApproval.map((os) => (
-                  <div key={os.id} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-mono text-xs text-muted-foreground">{os.numero_os}</p>
-                        <p className="font-medium">{os.client_name}</p>
-                        <p className="text-sm text-muted-foreground">{os.vehicle}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-emerald-500">
-                          R$ {os.valor.toLocaleString("pt-BR")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {os.dias_aguardando === 0 ? 'Hoje' : `${os.dias_aguardando}d aguardando`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-8 text-muted-foreground">Nenhum orçamento aguardando aprovação</p>
             )}
           </ScrollArea>
         </DialogContent>
