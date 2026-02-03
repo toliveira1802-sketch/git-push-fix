@@ -3,11 +3,14 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from '@/hooks/useNavigate';
 import { format, startOfMonth, endOfMonth, differenceInBusinessDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Target,
   TrendingUp,
@@ -28,6 +31,10 @@ import {
   RefreshCw,
   Zap,
   BarChart3,
+  UserCog,
+  ExternalLink,
+  Save,
+  MessageSquare,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -58,6 +65,16 @@ interface MetaProgresso {
   historico: { dia: string; valor: number }[];
 }
 
+interface Funcionario {
+  id: string;
+  name: string;
+  specialty: string | null;
+  is_active: boolean;
+  avatar_url?: string | null;
+  nota_meta?: string;
+  ultima_conversa?: string;
+}
+
 const tipoIcons: Record<string, React.ReactNode> = {
   financeira: <DollarSign className="h-5 w-5" />,
   crescimento: <Users className="h-5 w-5" />,
@@ -78,11 +95,15 @@ export default function AdminMetas() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [metas, setMetas] = useState<MetaProgresso[]>([]);
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [notas, setNotas] = useState<Record<string, { nota: string; ultimaConversa: string }>>({});
+  const [savingNota, setSavingNota] = useState<string | null>(null);
   const [periodoVigente, setPeriodoVigente] = useState({ mes: new Date().getMonth() + 1, ano: new Date().getFullYear() });
   const [diasInfo, setDiasInfo] = useState({ trabalhados: 0, restantes: 0, total: 0 });
   const [expandedSections, setExpandedSections] = useState({
     resumo: true,
     metas: true,
+    funcionarios: true,
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -91,7 +112,76 @@ export default function AdminMetas() {
 
   useEffect(() => {
     fetchData();
+    fetchFuncionarios();
   }, []);
+
+  const fetchFuncionarios = async () => {
+    try {
+      const { data: mecanicos, error } = await supabase
+        .from('mecanicos')
+        .select('id, name, specialty, is_active')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+
+      // Buscar notas salvas
+      const { data: notasConfig } = await supabase
+        .from('system_config')
+        .select('value')
+        .eq('key', 'notas_metas_funcionarios')
+        .single();
+
+      const notasSalvas = (notasConfig?.value as Record<string, { nota: string; ultimaConversa: string }>) || {};
+      setNotas(notasSalvas);
+
+      setFuncionarios(mecanicos || []);
+    } catch (error) {
+      console.error('Erro ao buscar funcionários:', error);
+    }
+  };
+
+  const handleSaveNota = async (funcionarioId: string) => {
+    setSavingNota(funcionarioId);
+    try {
+      const notasAtualizadas = { ...notas };
+      
+      // Verificar se já existe o registro
+      const { data: existing } = await supabase
+        .from('system_config')
+        .select('id')
+        .eq('key', 'notas_metas_funcionarios')
+        .single();
+
+      if (existing) {
+        await supabase
+          .from('system_config')
+          .update({ value: notasAtualizadas })
+          .eq('key', 'notas_metas_funcionarios');
+      } else {
+        await supabase
+          .from('system_config')
+          .insert({ key: 'notas_metas_funcionarios', value: notasAtualizadas });
+      }
+
+      toast.success('Anotação salva!');
+    } catch (error) {
+      console.error('Erro ao salvar nota:', error);
+      toast.error('Erro ao salvar anotação');
+    } finally {
+      setSavingNota(null);
+    }
+  };
+
+  const updateNota = (funcionarioId: string, field: 'nota' | 'ultimaConversa', value: string) => {
+    setNotas(prev => ({
+      ...prev,
+      [funcionarioId]: {
+        ...prev[funcionarioId],
+        [field]: value,
+      }
+    }));
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -478,6 +568,142 @@ export default function AdminMetas() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Acompanhamento por Funcionário - Nova Seção */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="card-lovable"
+              >
+                <div
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => toggleSection('funcionarios')}
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-muted-foreground" />
+                    <h2 className="font-semibold">Acompanhamento por Funcionário</h2>
+                    <Badge variant="outline">{funcionarios.length}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/gestao/rh');
+                      }}
+                      className="gap-1"
+                    >
+                      <UserCog className="h-4 w-4" />
+                      <span className="hidden sm:inline">Gestão RH</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                    {expandedSections.funcionarios ? (
+                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {expandedSections.funcionarios && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {funcionarios.map((func) => (
+                          <div
+                            key={func.id}
+                            className="bg-secondary/30 rounded-xl p-4 space-y-3"
+                          >
+                            {/* Header do Funcionário */}
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={func.avatar_url || undefined} />
+                                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                  {func.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{func.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {func.specialty || 'Geral'}
+                                </p>
+                              </div>
+                              <Badge variant="outline" className="shrink-0">
+                                Ativo
+                              </Badge>
+                            </div>
+
+                            {/* Última Conversa */}
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Última conversa sobre metas
+                              </label>
+                              <input
+                                type="date"
+                                value={notas[func.id]?.ultimaConversa || ''}
+                                onChange={(e) => updateNota(func.id, 'ultimaConversa', e.target.value)}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              />
+                            </div>
+
+                            {/* Campo de Anotações */}
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MessageSquare className="h-3 w-3" />
+                                Anotações sobre metas
+                              </label>
+                              <Textarea
+                                value={notas[func.id]?.nota || ''}
+                                onChange={(e) => updateNota(func.id, 'nota', e.target.value)}
+                                placeholder="Registre conversas, feedbacks, acordos..."
+                                className="min-h-[80px] text-sm bg-background/50 resize-none"
+                              />
+                            </div>
+
+                            {/* Botão Salvar */}
+                            <Button
+                              size="sm"
+                              className="w-full gap-2"
+                              onClick={() => handleSaveNota(func.id)}
+                              disabled={savingNota === func.id}
+                            >
+                              {savingNota === func.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Save className="h-4 w-4" />
+                              )}
+                              Salvar Anotação
+                            </Button>
+                          </div>
+                        ))}
+
+                        {funcionarios.length === 0 && (
+                          <div className="col-span-full text-center py-8 text-muted-foreground">
+                            <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                            <p>Nenhum funcionário ativo encontrado</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-3"
+                              onClick={() => navigate('/gestao/rh')}
+                            >
+                              Ir para Gestão RH
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
