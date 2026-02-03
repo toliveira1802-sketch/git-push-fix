@@ -64,13 +64,11 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { icon: Home, label: 'Visão Geral', path: '/admin' },
-  { icon: Plus, label: 'Nova OS', path: '/admin/os-ultimate', highlight: true },
+  { icon: Home, label: 'Dashboard', path: '/admin' },
+  { icon: Layers, label: 'Visão Geral', path: '/admin/overview' },
+  { icon: Plus, label: '+Nova OS', path: '/admin/os-ultimate', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
-  { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
-  { icon: AlertCircle, label: 'Pendências', path: '/admin/pendencias' },
-  { icon: ClipboardCheck, label: 'Checklist', path: '/admin/checklist' },
-  { icon: Wrench, label: 'Serviços', path: '/admin/servicos' },
+  { icon: Calendar, label: 'Agenda', path: '/admin/agendamentos' },
   { 
     icon: FolderOpen, 
     label: 'Cadastros', 
@@ -97,7 +95,7 @@ const systemMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Documentação', path: '/admin/documentacao' },
   { 
     icon: Settings, 
-    label: 'Configurações', 
+    label: 'Sistema', 
     path: '/admin/configuracoes',
     subItems: [
       { icon: Lightbulb, label: 'Melhorias', path: '/admin/melhorias' },
