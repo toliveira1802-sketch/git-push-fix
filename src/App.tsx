@@ -49,6 +49,10 @@ import GestaoVeiculosOrfaos from "./pages/gestao/GestaoVeiculosOrfaos";
 // Cliente Pages
 import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
 
+// OS Pages (Client-facing)
+import OSAcompanhamento from "./pages/os/OSAcompanhamento";
+import OSOrcamento from "./pages/os/OSOrcamento";
+
 function Router() {
   return (
     <Switch>
@@ -100,6 +104,11 @@ function Router() {
       
       {/* Cliente Routes */}
       <Route path={"/cliente/orcamento/:osId"} component={OrcamentoCliente} />
+      
+      {/* OS Routes (Client-facing) */}
+      <Route path={"/os/:id"} component={OSAcompanhamento} />
+      <Route path={"/os/:id/acompanhamento"} component={OSAcompanhamento} />
+      <Route path={"/os/:id/orcamento"} component={OSOrcamento} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
