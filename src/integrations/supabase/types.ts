@@ -1322,6 +1322,63 @@ export type Database = {
           },
         ]
       }
+      veiculos_orfaos: {
+        Row: {
+          ano: string | null
+          chassi: string | null
+          client_id_original: string | null
+          combustivel: string | null
+          cor: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          km: number | null
+          marca: string | null
+          modelo: string | null
+          notas: string | null
+          origem_contato: string | null
+          placa: string | null
+          updated_at: string | null
+          versao: string | null
+        }
+        Insert: {
+          ano?: string | null
+          chassi?: string | null
+          client_id_original?: string | null
+          combustivel?: string | null
+          cor?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          km?: number | null
+          marca?: string | null
+          modelo?: string | null
+          notas?: string | null
+          origem_contato?: string | null
+          placa?: string | null
+          updated_at?: string | null
+          versao?: string | null
+        }
+        Update: {
+          ano?: string | null
+          chassi?: string | null
+          client_id_original?: string | null
+          combustivel?: string | null
+          cor?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          km?: number | null
+          marca?: string | null
+          modelo?: string | null
+          notas?: string | null
+          origem_contato?: string | null
+          placa?: string | null
+          updated_at?: string | null
+          versao?: string | null
+        }
+        Relationships: []
+      }
       workflow_etapas: {
         Row: {
           cor: string
