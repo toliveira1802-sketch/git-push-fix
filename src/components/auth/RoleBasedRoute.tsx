@@ -102,10 +102,10 @@ export function getDefaultRouteForRole(role: AppRole | null): string {
     case 'dev':
     case 'admin':
     case 'gestao':
-      return '/admin/dashboard';
+      return '/admin';
     case 'user':
     default:
-      return '/app/garagem';
+      return '/minha-garagem';
   }
 }
 
