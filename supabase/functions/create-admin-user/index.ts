@@ -8,10 +8,9 @@ const corsHeaders = {
 
 interface CreateAdminUserRequest {
   email: string;
-  fullName: string;
-  phone?: string;
-  password?: string;
-  role: "admin" | "gestao" | "dev";
+  password: string;
+  name?: string;
+  role?: "admin" | "gestao" | "dev" | "user";
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -23,76 +22,22 @@ serve(async (req: Request): Promise<Response> => {
   try {
     console.log("create-admin-user: Starting request processing");
 
-    // Get the authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.error("create-admin-user: No authorization header");
-      return new Response(
-        JSON.stringify({ error: "Não autorizado" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create Supabase client with user's token
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Client with user token to verify permissions
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    // Get the user making the request
-    const { data: { user: requestingUser }, error: userError } = await supabaseUser.auth.getUser();
-    
-    if (userError || !requestingUser) {
-      console.error("create-admin-user: Error getting user", userError);
-      return new Response(
-        JSON.stringify({ error: "Não autorizado" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("create-admin-user: Requesting user:", requestingUser.id);
-
-    // Only dev users can create other admin/dev users
-    const { data: roleData, error: roleError } = await supabaseUser
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", requestingUser.id)
-      .eq("role", "dev")
-      .limit(1)
-      .maybeSingle();
-
-    if (roleError || !roleData) {
-      console.error("create-admin-user: User doesn't have dev permission", roleError);
-      return new Response(
-        JSON.stringify({ error: "Apenas usuários Master podem criar administradores" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("create-admin-user: User has dev role, proceeding...");
 
     // Parse request body
     const body: CreateAdminUserRequest = await req.json();
     
-    if (!body.email || !body.fullName || !body.role) {
+    if (!body.email || !body.password) {
       console.error("create-admin-user: Missing required fields");
       return new Response(
-        JSON.stringify({ error: "Email, nome e role são obrigatórios" }),
+        JSON.stringify({ error: "Email e senha são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Validate role
-    if (!["admin", "gestao", "dev"].includes(body.role)) {
-      return new Response(
-        JSON.stringify({ error: "Role inválida. Use: admin, gestao ou dev" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const role = body.role || "admin";
+    const fullName = body.name || "Admin";
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -103,9 +48,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const password = body.password || "123456";
-
-    console.log("create-admin-user: Creating auth user for:", body.email, "with role:", body.role);
+    console.log("create-admin-user: Creating user for:", body.email, "with role:", role);
 
     // Create admin client for user creation
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -115,26 +58,49 @@ serve(async (req: Request): Promise<Response> => {
       },
     });
 
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === body.email);
+
+    if (existingUser) {
+      console.log("create-admin-user: User already exists, updating role to", role);
+      
+      // Update role
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .upsert(
+          { user_id: existingUser.id, role: role },
+          { onConflict: "user_id" }
+        );
+
+      if (roleError) {
+        console.error("create-admin-user: Error updating role", roleError);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: `Usuário já existia. Role atualizada para ${role.toUpperCase()}.`,
+          userId: existingUser.id,
+          email: body.email,
+          role: role,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
-      password: password,
+      password: body.password,
       email_confirm: true,
       user_metadata: {
-        full_name: body.fullName,
+        full_name: fullName,
       },
     });
 
     if (authError) {
       console.error("create-admin-user: Error creating auth user", authError);
-      
-      if (authError.message.includes("already been registered")) {
-        return new Response(
-          JSON.stringify({ error: "Este email já está cadastrado" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
       return new Response(
         JSON.stringify({ error: authError.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -144,15 +110,14 @@ serve(async (req: Request): Promise<Response> => {
     const newUserId = authData.user.id;
     console.log("create-admin-user: Auth user created:", newUserId);
 
-    // Update profile to set must_change_password = true
+    // Update profile (trigger already created it with user role)
     const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .update({ 
-        must_change_password: true,
-        full_name: body.fullName,
-        phone: body.phone || null,
-      })
-      .eq("user_id", newUserId);
+      .from("colaboradores")
+      .upsert({ 
+        user_id: newUserId,
+        full_name: fullName,
+        must_change_password: false,
+      }, { onConflict: "user_id" });
 
     if (profileError) {
       console.error("create-admin-user: Error updating profile", profileError);
@@ -161,40 +126,33 @@ serve(async (req: Request): Promise<Response> => {
     // Update user_roles to the specified role (trigger creates 'user' role by default)
     const { error: roleUpdateError } = await supabaseAdmin
       .from("user_roles")
-      .update({ role: body.role })
-      .eq("user_id", newUserId);
+      .upsert(
+        { user_id: newUserId, role: role },
+        { onConflict: "user_id" }
+      );
 
     if (roleUpdateError) {
       console.error("create-admin-user: Error updating role", roleUpdateError);
-      // Try inserting if update failed
-      await supabaseAdmin
-        .from("user_roles")
-        .insert({ user_id: newUserId, role: body.role });
     }
 
-    console.log("create-admin-user: Success! User created with role:", body.role);
-
-    // Generate login URL
-    const loginUrl = `${supabaseUrl.replace('.supabase.co', '')}/login`;
+    console.log("create-admin-user: Success! User created with role:", role);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: `Usuário ${body.role.toUpperCase()} criado com sucesso!`,
+        message: `Usuário ${role.toUpperCase()} criado com sucesso!`,
         userId: newUserId,
         email: body.email,
-        role: body.role,
-        password: password,
-        mustChangePassword: true,
-        loginUrl: loginUrl,
+        role: role,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("create-admin-user: Unexpected error", error);
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     return new Response(
-      JSON.stringify({ error: "Erro interno do servidor" }),
+      JSON.stringify({ error: "Erro interno do servidor: " + errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
