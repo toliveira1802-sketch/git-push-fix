@@ -27,6 +27,8 @@ import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProdutividade from "./pages/admin/AdminProdutividade";
 import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
 import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
+import AdminMetas from "./pages/admin/AdminMetas";
+import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminPendencias from "./pages/admin/AdminPendencias";
@@ -76,10 +78,13 @@ function Router() {
       <Route path={"/admin/produtividade"} component={AdminProdutividade} />
       <Route path={"/admin/analytics-mecanicos"} component={AdminMechanicAnalytics} />
       <Route path={"/admin/feedback-mecanicos"} component={AdminMechanicFeedback} />
+      <Route path={"/admin/metas"} component={AdminMetas} />
+      <Route path={"/admin/relatorios"} component={AdminRelatorios} />
       <Route path={"/admin/documentacao"} component={AdminDocumentacao} />
       <Route path={"/admin/configuracoes"} component={AdminConfiguracoes} />
       <Route path={"/admin/pendencias"} component={AdminPendencias} />
       <Route path={"/admin/checklist"} component={AdminChecklist} />
+      <Route path={"/admin/os-ultimate"} component={OSUltimate} />
       <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
       <Route path={"/admin/importar-veiculos-antigos"} component={ImportarVeiculosAntigos} />
       

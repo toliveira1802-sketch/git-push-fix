@@ -288,3 +288,27 @@
 - [ ] Ler KanbanCardDetails.tsx enviado
 - [ ] Adaptar componentes para o projeto atual
 - [ ] Testar funcionamento
+
+## Header - Sistema de Notificações
+- [ ] Criar sininho de avisos no header principal
+- [ ] Vincular avisos ao user_id do usuário logado
+- [ ] Buscar avisos da tabela gestao_alerts
+- [ ] Mostrar badge com contador de não lidos
+- [ ] Popup/dropdown com lista de avisos recentes
+- [ ] Marcar aviso como lido ao clicar
+
+## Dashboard Gestão - Visão Pendências por Cabeça
+- [ ] Criar seção "Pendências por Funcionário" no dash de gestão
+- [ ] Cards individuais por mecânico/consultor
+- [ ] Mostrar total de pendências abertas por pessoa
+- [ ] Mostrar status (pendente, em andamento, resolvido)
+- [ ] Filtro por tipo de pendência
+- [ ] Drill-down para lista detalhada
+
+## Menu IA - Procurar Peça na Rede
+- [ ] Criar funcionalidade de busca de peça via IA
+- [ ] Integrar com Lovable AI (gemini-3-flash-preview)
+- [ ] Input: código/descrição da peça + veículo
+- [ ] Output: preços estimados, disponibilidade, fornecedores
+- [ ] Gerar dados de cotação automática
+- [ ] Salvar histórico de buscas
