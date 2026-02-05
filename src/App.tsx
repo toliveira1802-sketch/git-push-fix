@@ -27,15 +27,12 @@ import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProdutividade from "./pages/admin/AdminProdutividade";
 import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
 import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
-import AdminMetas from "./pages/admin/AdminMetas";
-import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminPendencias from "./pages/admin/AdminPendencias";
 import AdminChecklist from "./pages/admin/AdminChecklist";
 import OSUltimate from "./pages/admin/OSUltimate";
 import ImportarVeiculosAntigos from "./pages/admin/ImportarVeiculosAntigos";
-import Cadastros from "./pages/admin/Cadastros";
 
 // Gestao Pages
 import GestaoDashboards from "./pages/gestao/GestaoDashboards";
@@ -49,10 +46,6 @@ import GestaoVeiculosOrfaos from "./pages/gestao/GestaoVeiculosOrfaos";
 
 // Cliente Pages
 import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
-
-// OS Pages (Client-facing)
-import OSAcompanhamento from "./pages/os/OSAcompanhamento";
-import OSOrcamento from "./pages/os/OSOrcamento";
 
 function Router() {
   return (
@@ -83,16 +76,12 @@ function Router() {
       <Route path={"/admin/produtividade"} component={AdminProdutividade} />
       <Route path={"/admin/analytics-mecanicos"} component={AdminMechanicAnalytics} />
       <Route path={"/admin/feedback-mecanicos"} component={AdminMechanicFeedback} />
-      <Route path={"/admin/metas"} component={AdminMetas} />
-      <Route path={"/admin/relatorios"} component={AdminRelatorios} />
       <Route path={"/admin/documentacao"} component={AdminDocumentacao} />
       <Route path={"/admin/configuracoes"} component={AdminConfiguracoes} />
       <Route path={"/admin/pendencias"} component={AdminPendencias} />
       <Route path={"/admin/checklist"} component={AdminChecklist} />
-      <Route path={"/admin/os-ultimate"} component={OSUltimate} />
       <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
       <Route path={"/admin/importar-veiculos-antigos"} component={ImportarVeiculosAntigos} />
-      <Route path={"/admin/cadastros"} component={Cadastros} />
       
       {/* Gestao Routes */}
       <Route path={"/gestao"} component={GestaoDashboards} />
@@ -106,11 +95,6 @@ function Router() {
       
       {/* Cliente Routes */}
       <Route path={"/cliente/orcamento/:osId"} component={OrcamentoCliente} />
-      
-      {/* OS Routes (Client-facing) */}
-      <Route path={"/os/:id"} component={OSAcompanhamento} />
-      <Route path={"/os/:id/acompanhamento"} component={OSAcompanhamento} />
-      <Route path={"/os/:id/orcamento"} component={OSOrcamento} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

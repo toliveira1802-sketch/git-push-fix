@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "@/hooks/useNavigate";
 import { 
   Calendar, Clock, Car, User, Phone, Wrench, 
-  Plus, Search, CalendarDays, RefreshCw,
-  X, Check, ClipboardCheck, UserPlus, Database
+  Plus, Filter, Search, CalendarDays, RefreshCw,
+  X, MessageSquare, ExternalLink, Check, ClipboardCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -37,23 +37,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 
 interface Agendamento {
   id: string;
   cliente_nome: string;
   cliente_telefone: string;
-  cliente_id?: string;
   veiculo: string;
-  veiculo_id?: string;
   placa: string;
   servicos: string[];
   data: string;
@@ -61,22 +50,6 @@ interface Agendamento {
   origem: 'cliente' | 'kommo' | 'manual';
   status: 'confirmado' | 'aguardando' | 'reagendado' | 'cancelado' | 'concluido';
   observacoes?: string;
-}
-
-interface Cliente {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-}
-
-interface Veiculo {
-  id: string;
-  plate: string;
-  brand: string;
-  model: string;
-  year?: number;
-  client_id: string;
 }
 
 const origemConfig: Record<string, { label: string; color: string; icon: string }> = {
@@ -93,6 +66,59 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   concluido: { label: 'Concluído', color: 'bg-muted text-muted-foreground border-border' },
 };
 
+// Mock data
+const mockAgendamentos: Agendamento[] = [
+  {
+    id: 'ag-1',
+    cliente_nome: 'João Silva',
+    cliente_telefone: '11999887766',
+    veiculo: 'Volkswagen Golf GTI 2020',
+    placa: 'ABC-1234',
+    servicos: ['Troca de Óleo', 'Revisão de Freios'],
+    data: '2024-01-25',
+    horario: '09:00',
+    origem: 'cliente',
+    status: 'confirmado',
+  },
+  {
+    id: 'ag-2',
+    cliente_nome: 'Maria Santos',
+    cliente_telefone: '11988776655',
+    veiculo: 'Honda Civic 2022',
+    placa: 'XYZ-5678',
+    servicos: ['Diagnóstico Elétrico'],
+    data: '2024-01-25',
+    horario: '10:30',
+    origem: 'kommo',
+    status: 'aguardando',
+    observacoes: 'Lead do Kommo - primeiro contato',
+  },
+  {
+    id: 'ag-3',
+    cliente_nome: 'Carlos Oliveira',
+    cliente_telefone: '11977665544',
+    veiculo: 'Toyota Corolla 2021',
+    placa: 'DEF-9012',
+    servicos: ['Alinhamento e Balanceamento'],
+    data: '2024-01-26',
+    horario: '14:00',
+    origem: 'manual',
+    status: 'confirmado',
+  },
+  {
+    id: 'ag-4',
+    cliente_nome: 'Ana Costa',
+    cliente_telefone: '11966554433',
+    veiculo: 'Fiat Argo 2023',
+    placa: 'GHI-3456',
+    servicos: ['Revisão Completa'],
+    data: '2024-01-24',
+    horario: '08:00',
+    origem: 'cliente',
+    status: 'concluido',
+  },
+];
+
 const timeSlots = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
   "11:00", "11:30", "14:00", "14:30", "15:00", "15:30",
@@ -101,14 +127,11 @@ const timeSlots = [
 
 export default function AdminAgendamentos() {
   const navigate = useNavigate();
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>(mockAgendamentos);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOrigem, setFilterOrigem] = useState<string>("todos");
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
   
   // Dialogs
   const [showNovoDialog, setShowNovoDialog] = useState(false);
@@ -117,12 +140,6 @@ export default function AdminAgendamentos() {
   const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null);
   
   // Novo agendamento form
-  const [clienteMode, setClienteMode] = useState<'novo' | 'existente'>('existente');
-  const [selectedClienteId, setSelectedClienteId] = useState<string>('');
-  const [selectedVeiculoId, setSelectedVeiculoId] = useState<string>('');
-  const [clienteSearch, setClienteSearch] = useState('');
-  const [showClienteDropdown, setShowClienteDropdown] = useState(false);
-  
   const [novoAgendamento, setNovoAgendamento] = useState({
     cliente_nome: '',
     cliente_telefone: '',
@@ -140,70 +157,6 @@ export default function AdminAgendamentos() {
   
   // Cancelar
   const [motivoCancelamento, setMotivoCancelamento] = useState('');
-
-  // Fetch data
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch agendamentos
-      const { data: agData } = await supabase
-        .from('agendamentos')
-        .select(`
-          *,
-          clientes:client_id(id, name, phone),
-          veiculos:vehicle_id(id, plate, brand, model, year)
-        `)
-        .order('scheduled_date', { ascending: true });
-
-      if (agData) {
-        const formatted = agData.map(ag => ({
-          id: ag.id,
-          cliente_nome: ag.clientes?.name || 'Cliente não encontrado',
-          cliente_telefone: ag.clientes?.phone || '',
-          cliente_id: ag.client_id,
-          veiculo: ag.veiculos ? `${ag.veiculos.brand} ${ag.veiculos.model} ${ag.veiculos.year || ''}` : '',
-          veiculo_id: ag.vehicle_id,
-          placa: ag.veiculos?.plate || '',
-          servicos: ag.service_type ? [ag.service_type] : [],
-          data: ag.scheduled_date,
-          horario: ag.scheduled_time,
-          origem: (ag.origin || 'manual') as 'cliente' | 'kommo' | 'manual',
-          status: ag.status as 'confirmado' | 'aguardando' | 'reagendado' | 'cancelado' | 'concluido',
-          observacoes: ag.notes || ag.description,
-        }));
-        setAgendamentos(formatted);
-      }
-
-      // Fetch clientes
-      const { data: clientesData } = await supabase
-        .from('clientes')
-        .select('id, name, phone, email')
-        .eq('status', 'active')
-        .order('name');
-      
-      if (clientesData) setClientes(clientesData);
-
-      // Fetch veiculos
-      const { data: veiculosData } = await supabase
-        .from('veiculos')
-        .select('id, plate, brand, model, year, client_id')
-        .eq('is_active', true);
-      
-      if (veiculosData) setVeiculos(veiculosData);
-
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Filtrar veículos pelo cliente selecionado
-  const veiculosDoCliente = veiculos.filter(v => v.client_id === selectedClienteId);
 
   // Filtros
   const agendamentosFiltrados = agendamentos.filter(ag => {
@@ -223,7 +176,28 @@ export default function AdminAgendamentos() {
   const aguardandoConfirmacao = agendamentos.filter(a => a.status === 'aguardando').length;
   const doKommo = agendamentos.filter(a => a.origem === 'kommo' && a.status !== 'cancelado').length;
 
-  const resetNovoAgendamento = () => {
+  const handleNovoAgendamento = () => {
+    if (!novoAgendamento.cliente_nome || !novoAgendamento.data || !novoAgendamento.horario) {
+      toast.error("Preencha os campos obrigatórios");
+      return;
+    }
+    
+    const novo: Agendamento = {
+      id: `ag-${Date.now()}`,
+      cliente_nome: novoAgendamento.cliente_nome,
+      cliente_telefone: novoAgendamento.cliente_telefone,
+      veiculo: novoAgendamento.veiculo,
+      placa: novoAgendamento.placa,
+      servicos: novoAgendamento.servicos.split(',').map(s => s.trim()).filter(Boolean),
+      data: format(novoAgendamento.data, 'yyyy-MM-dd'),
+      horario: novoAgendamento.horario,
+      origem: 'manual',
+      status: 'confirmado',
+      observacoes: novoAgendamento.observacoes,
+    };
+    
+    setAgendamentos([novo, ...agendamentos]);
+    setShowNovoDialog(false);
     setNovoAgendamento({
       cliente_nome: '',
       cliente_telefone: '',
@@ -234,195 +208,55 @@ export default function AdminAgendamentos() {
       horario: '',
       observacoes: '',
     });
-    setClienteMode('existente');
-    setSelectedClienteId('');
-    setSelectedVeiculoId('');
-    setClienteSearch('');
+    toast.success("Agendamento criado!");
   };
 
-  const handleNovoAgendamento = async () => {
-    // Validação
-    if (clienteMode === 'existente') {
-      if (!selectedClienteId) {
-        toast.error("Selecione um cliente existente");
-        return;
-      }
-    } else {
-      if (!novoAgendamento.cliente_nome || !novoAgendamento.cliente_telefone) {
-        toast.error("Preencha nome e telefone do cliente");
-        return;
-      }
-    }
-
-    if (!novoAgendamento.data || !novoAgendamento.horario) {
-      toast.error("Preencha data e horário");
-      return;
-    }
-
-    try {
-      let clientId = selectedClienteId;
-      let vehicleId = selectedVeiculoId || null;
-
-      // Se for novo cliente, criar primeiro
-      if (clienteMode === 'novo') {
-        const { data: novoCliente, error: clienteError } = await supabase
-          .from('clientes')
-          .insert({
-            name: novoAgendamento.cliente_nome,
-            phone: novoAgendamento.cliente_telefone,
-            registration_source: 'admin',
-          })
-          .select()
-          .single();
-
-        if (clienteError) throw clienteError;
-        clientId = novoCliente.id;
-
-        // Se informou veículo, criar também
-        if (novoAgendamento.placa) {
-          const { data: novoVeiculo, error: veiculoError } = await supabase
-            .from('veiculos')
-            .insert({
-              client_id: clientId,
-              plate: novoAgendamento.placa.toUpperCase(),
-              brand: novoAgendamento.veiculo.split(' ')[0] || 'N/I',
-              model: novoAgendamento.veiculo.split(' ').slice(1).join(' ') || 'N/I',
-            })
-            .select()
-            .single();
-
-          if (!veiculoError && novoVeiculo) {
-            vehicleId = novoVeiculo.id;
-          }
-        }
-      }
-
-      // Criar agendamento
-      const { error } = await supabase
-        .from('agendamentos')
-        .insert({
-          client_id: clientId,
-          vehicle_id: vehicleId,
-          scheduled_date: format(novoAgendamento.data, 'yyyy-MM-dd'),
-          scheduled_time: novoAgendamento.horario,
-          service_type: novoAgendamento.servicos || 'Serviço Geral',
-          status: 'aguardando',
-          origin: 'manual',
-          notes: novoAgendamento.observacoes,
-        });
-
-      if (error) throw error;
-
-      toast.success("Agendamento criado com sucesso!");
-      setShowNovoDialog(false);
-      resetNovoAgendamento();
-      fetchData();
-
-    } catch (error: any) {
-      console.error('Error creating agendamento:', error);
-      toast.error(error.message || "Erro ao criar agendamento");
-    }
-  };
-
-  const handleConfirmar = async (agendamento: Agendamento) => {
-    try {
-      // Atualizar status do agendamento
-      const { error: agError } = await supabase
-        .from('agendamentos')
-        .update({ 
-          status: 'confirmado',
-          confirmed_at: new Date().toISOString()
-        })
-        .eq('id', agendamento.id);
-
-      if (agError) throw agError;
-
-      // Gerar número da OS
-      const orderNumber = `OS-${Date.now().toString().slice(-8)}`;
-
-      // Criar OS no status de diagnóstico
-      const { error: osError } = await supabase
-        .from('ordens_servico')
-        .insert({
-          order_number: orderNumber,
-          client_id: agendamento.cliente_id,
-          vehicle_id: agendamento.veiculo_id,
-          status: 'diagnostico',
-          problem_description: agendamento.observacoes || agendamento.servicos.join(', '),
-        });
-
-      if (osError) throw osError;
-
-      toast.success("Agendamento confirmado! OS criada e enviada para diagnóstico.");
-      fetchData();
-
-    } catch (error: any) {
-      console.error('Error confirming:', error);
-      toast.error(error.message || "Erro ao confirmar agendamento");
-    }
-  };
-
-  const handleReagendar = async () => {
+  const handleReagendar = () => {
     if (!selectedAgendamento || !novaData || !novoHorario) {
       toast.error("Selecione data e horário");
       return;
     }
     
-    try {
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({
-          scheduled_date: format(novaData, 'yyyy-MM-dd'),
-          scheduled_time: novoHorario,
-          status: 'reagendado',
-        })
-        .eq('id', selectedAgendamento.id);
-
-      if (error) throw error;
-
-      setShowReagendarDialog(false);
-      setSelectedAgendamento(null);
-      setNovaData(undefined);
-      setNovoHorario('');
-      toast.success("Agendamento reagendado!");
-      fetchData();
-
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao reagendar");
-    }
+    setAgendamentos(agendamentos.map(ag => 
+      ag.id === selectedAgendamento.id 
+        ? { ...ag, data: format(novaData, 'yyyy-MM-dd'), horario: novoHorario, status: 'reagendado' as const }
+        : ag
+    ));
+    
+    setShowReagendarDialog(false);
+    setSelectedAgendamento(null);
+    setNovaData(undefined);
+    setNovoHorario('');
+    toast.success("Agendamento reagendado!");
   };
 
-  const handleCancelar = async () => {
+  const handleCancelar = () => {
     if (!selectedAgendamento) return;
     
-    try {
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({
-          status: 'cancelado',
-          cancel_reason: motivoCancelamento,
-          cancelled_at: new Date().toISOString(),
-        })
-        .eq('id', selectedAgendamento.id);
-
-      if (error) throw error;
-
-      setShowCancelarDialog(false);
-      setSelectedAgendamento(null);
-      setMotivoCancelamento('');
-      toast.success("Agendamento cancelado");
-      fetchData();
-
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao cancelar");
-    }
+    setAgendamentos(agendamentos.map(ag => 
+      ag.id === selectedAgendamento.id 
+        ? { ...ag, status: 'cancelado' as const, observacoes: `${ag.observacoes || ''}\nCancelado: ${motivoCancelamento}`.trim() }
+        : ag
+    ));
+    
+    setShowCancelarDialog(false);
+    setSelectedAgendamento(null);
+    setMotivoCancelamento('');
+    toast.success("Agendamento cancelado");
   };
 
-  // Clientes filtrados pela busca
-  const clientesFiltrados = clientes.filter(c => 
-    c.name.toLowerCase().includes(clienteSearch.toLowerCase()) ||
-    c.phone.includes(clienteSearch)
-  ).slice(0, 10);
+  const handleConfirmar = (agendamento: Agendamento) => {
+    setAgendamentos(agendamentos.map(ag => 
+      ag.id === agendamento.id ? { ...ag, status: 'confirmado' as const } : ag
+    ));
+    toast.success("Agendamento confirmado!");
+  };
+
+  const handleWhatsApp = (agendamento: Agendamento) => {
+    const phone = agendamento.cliente_telefone.replace(/\D/g, '');
+    const mensagem = `Olá ${agendamento.cliente_nome}! 🚗\n\nConfirmando seu agendamento:\n📅 ${format(new Date(agendamento.data), "dd/MM/yyyy", { locale: ptBR })}\n⏰ ${agendamento.horario}\n🚘 ${agendamento.veiculo}\n\nDoctor Auto Prime`;
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+  };
 
   return (
     <AdminLayout>
@@ -430,7 +264,7 @@ export default function AdminAgendamentos() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Agenda</h1>
+            <h1 className="text-2xl font-bold text-foreground">Agendamentos</h1>
             <p className="text-muted-foreground text-sm">Gerencie os agendamentos da oficina</p>
           </div>
           <div className="flex items-center gap-2">
@@ -477,7 +311,7 @@ export default function AdminAgendamentos() {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-purple-500/10">
-                  <Database className="w-5 h-5 text-purple-600" />
+                  <ExternalLink className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{doKommo}</p>
@@ -567,13 +401,7 @@ export default function AdminAgendamentos() {
 
         {/* Agendamentos List */}
         <div className="space-y-3">
-          {loading ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">Carregando...</p>
-              </CardContent>
-            </Card>
-          ) : agendamentosFiltrados.length === 0 ? (
+          {agendamentosFiltrados.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -585,6 +413,7 @@ export default function AdminAgendamentos() {
               const origem = origemConfig[agendamento.origem];
               const status = statusConfig[agendamento.status];
               const isToday = agendamento.data === hoje;
+              const isPast = new Date(agendamento.data) < new Date(hoje);
               
               return (
                 <Card 
@@ -621,41 +450,53 @@ export default function AdminAgendamentos() {
                             <Clock className="w-3 h-3" />
                             {agendamento.horario}
                           </span>
-                          {agendamento.placa && (
-                            <span className="flex items-center gap-1">
-                              <Car className="w-3 h-3" />
-                              {agendamento.placa}
-                            </span>
-                          )}
-                          {agendamento.veiculo && (
-                            <span className="text-xs">{agendamento.veiculo}</span>
-                          )}
+                          <span className="flex items-center gap-1">
+                            <Car className="w-3 h-3" />
+                            {agendamento.veiculo}
+                          </span>
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                            {agendamento.placa}
+                          </span>
                         </div>
                         
-                        {agendamento.servicos.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {agendamento.servicos.map((servico, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs">
-                                <Wrench className="w-3 h-3 mr-1" />
-                                {servico}
-                              </Badge>
-                            ))}
-                          </div>
+                        <div className="flex flex-wrap gap-1">
+                          {agendamento.servicos.map((servico, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              <Wrench className="w-3 h-3 mr-1" />
+                              {servico}
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        {agendamento.observacoes && (
+                          <p className="text-xs text-muted-foreground italic">
+                            {agendamento.observacoes}
+                          </p>
                         )}
                       </div>
                       
                       {/* Actions */}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex gap-2 flex-wrap">
                         {agendamento.status === 'aguardando' && (
                           <Button 
                             size="sm" 
+                            variant="outline" 
+                            className="text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
                             onClick={() => handleConfirmar(agendamento)}
-                            className="bg-emerald-600 hover:bg-emerald-700"
                           >
                             <Check className="w-4 h-4 mr-1" />
                             Confirmar
                           </Button>
                         )}
+                        
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleWhatsApp(agendamento)}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-1" />
+                          WhatsApp
+                        </Button>
                         
                         {agendamento.status !== 'cancelado' && agendamento.status !== 'concluido' && (
                           <>
@@ -698,164 +539,56 @@ export default function AdminAgendamentos() {
       </div>
 
       {/* Dialog: Novo Agendamento */}
-      <Dialog open={showNovoDialog} onOpenChange={(open) => {
-        setShowNovoDialog(open);
-        if (!open) resetNovoAgendamento();
-      }}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={showNovoDialog} onOpenChange={setShowNovoDialog}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5" />
-              Novo Agendamento
+              Novo Agendamento Manual
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Toggle Cliente Novo/Existente */}
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={clienteMode === 'existente' ? 'default' : 'outline'}
-                className="flex-1"
-                onClick={() => setClienteMode('existente')}
-              >
-                <Database className="w-4 h-4 mr-2" />
-                Cliente Existente
-              </Button>
-              <Button
-                type="button"
-                variant={clienteMode === 'novo' ? 'default' : 'outline'}
-                className="flex-1"
-                onClick={() => setClienteMode('novo')}
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Novo Cliente
-              </Button>
-            </div>
-
-            {clienteMode === 'existente' ? (
-              <>
-                {/* Buscar Cliente */}
-                <div className="space-y-2">
-                  <Label>Buscar Cliente *</Label>
-                  <Popover open={showClienteDropdown} onOpenChange={setShowClienteDropdown}>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start font-normal"
-                        onClick={() => setShowClienteDropdown(true)}
-                      >
-                        {selectedClienteId ? (
-                          clientes.find(c => c.id === selectedClienteId)?.name
-                        ) : (
-                          <span className="text-muted-foreground">Buscar por nome ou telefone...</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
-                      <Command>
-                        <CommandInput 
-                          placeholder="Buscar cliente..." 
-                          value={clienteSearch}
-                          onValueChange={setClienteSearch}
-                        />
-                        <CommandList>
-                          <CommandEmpty>Nenhum cliente encontrado</CommandEmpty>
-                          <CommandGroup>
-                            {clientesFiltrados.map((cliente) => (
-                              <CommandItem
-                                key={cliente.id}
-                                value={cliente.id}
-                                onSelect={() => {
-                                  setSelectedClienteId(cliente.id);
-                                  setSelectedVeiculoId('');
-                                  setShowClienteDropdown(false);
-                                }}
-                              >
-                                <User className="w-4 h-4 mr-2" />
-                                <div className="flex-1">
-                                  <p className="font-medium">{cliente.name}</p>
-                                  <p className="text-xs text-muted-foreground">{cliente.phone}</p>
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Veículos do Cliente */}
-                {selectedClienteId && (
-                  <div className="space-y-2">
-                    <Label>Veículo</Label>
-                    <Select value={selectedVeiculoId} onValueChange={setSelectedVeiculoId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o veículo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {veiculosDoCliente.length === 0 ? (
-                          <SelectItem value="none" disabled>Nenhum veículo cadastrado</SelectItem>
-                        ) : (
-                          veiculosDoCliente.map(v => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.plate} - {v.brand} {v.model}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Novo Cliente Form */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <Label>Nome do Cliente *</Label>
-                    <Input 
-                      value={novoAgendamento.cliente_nome}
-                      onChange={(e) => setNovoAgendamento({...novoAgendamento, cliente_nome: e.target.value})}
-                      placeholder="João Silva"
-                    />
-                  </div>
-                  <div>
-                    <Label>Telefone *</Label>
-                    <Input 
-                      value={novoAgendamento.cliente_telefone}
-                      onChange={(e) => setNovoAgendamento({...novoAgendamento, cliente_telefone: e.target.value})}
-                      placeholder="11999887766"
-                    />
-                  </div>
-                  <div>
-                    <Label>Placa</Label>
-                    <Input 
-                      value={novoAgendamento.placa}
-                      onChange={(e) => setNovoAgendamento({...novoAgendamento, placa: e.target.value.toUpperCase()})}
-                      placeholder="ABC-1234"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Veículo</Label>
-                    <Input 
-                      value={novoAgendamento.veiculo}
-                      onChange={(e) => setNovoAgendamento({...novoAgendamento, veiculo: e.target.value})}
-                      placeholder="Volkswagen Golf GTI 2020"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Campos comuns */}
-            <div>
-              <Label>Serviços</Label>
-              <Input 
-                value={novoAgendamento.servicos}
-                onChange={(e) => setNovoAgendamento({...novoAgendamento, servicos: e.target.value})}
-                placeholder="Troca de Óleo, Revisão de Freios"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label>Nome do Cliente *</Label>
+                <Input 
+                  value={novoAgendamento.cliente_nome}
+                  onChange={(e) => setNovoAgendamento({...novoAgendamento, cliente_nome: e.target.value})}
+                  placeholder="João Silva"
+                />
+              </div>
+              <div>
+                <Label>Telefone</Label>
+                <Input 
+                  value={novoAgendamento.cliente_telefone}
+                  onChange={(e) => setNovoAgendamento({...novoAgendamento, cliente_telefone: e.target.value})}
+                  placeholder="11999887766"
+                />
+              </div>
+              <div>
+                <Label>Placa</Label>
+                <Input 
+                  value={novoAgendamento.placa}
+                  onChange={(e) => setNovoAgendamento({...novoAgendamento, placa: e.target.value.toUpperCase()})}
+                  placeholder="ABC-1234"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label>Veículo</Label>
+                <Input 
+                  value={novoAgendamento.veiculo}
+                  onChange={(e) => setNovoAgendamento({...novoAgendamento, veiculo: e.target.value})}
+                  placeholder="Volkswagen Golf GTI 2020"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label>Serviços (separados por vírgula)</Label>
+                <Input 
+                  value={novoAgendamento.servicos}
+                  onChange={(e) => setNovoAgendamento({...novoAgendamento, servicos: e.target.value})}
+                  placeholder="Troca de Óleo, Revisão de Freios"
+                />
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">

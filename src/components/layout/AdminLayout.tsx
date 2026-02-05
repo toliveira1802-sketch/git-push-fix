@@ -22,13 +22,7 @@ import {
   FileText,
   SlidersHorizontal,
   CalendarClock,
-  ClipboardCheck,
-  AlertCircle,
-  Target,
-  BookOpen,
-  MessageSquare,
-  BarChart3,
-  Wrench
+  ClipboardCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -64,11 +58,11 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { icon: Home, label: 'Dashboard', path: '/admin' },
-  { icon: Layers, label: 'Visão Geral', path: '/admin/overview' },
-  { icon: Plus, label: '+Nova OS', path: '/admin/os-ultimate', highlight: true },
+  { icon: Home, label: 'Visão Geral', path: '/admin' },
+  { icon: Plus, label: 'Nova OS', path: '/admin/os-ultimate', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
-  { icon: Calendar, label: 'Agenda', path: '/admin/agendamentos' },
+  { icon: Calendar, label: 'Agendamentos', path: '/admin/agendamentos' },
+  { icon: ClipboardCheck, label: 'Checklist', path: '/admin/checklist' },
   { 
     icon: FolderOpen, 
     label: 'Cadastros', 
@@ -79,23 +73,12 @@ const companyMenuItems: MenuItem[] = [
       { icon: Car, label: 'Veículos', path: '/admin/veiculos' },
     ]
   },
-  { 
-    icon: BarChart3, 
-    label: 'Relatórios', 
-    path: '/admin/relatorios',
-    subItems: [
-      { icon: Target, label: 'Metas', path: '/admin/metas' },
-      { icon: BarChart3, label: 'Analytics Mecânicos', path: '/admin/analytics-mecanicos' },
-      { icon: MessageSquare, label: 'Feedback Mecânicos', path: '/admin/feedback-mecanicos' },
-    ]
-  },
 ];
 
 const systemMenuItems: MenuItem[] = [
-  { icon: BookOpen, label: 'Documentação', path: '/admin/documentacao' },
   { 
     icon: Settings, 
-    label: 'Sistema', 
+    label: 'Configurações', 
     path: '/admin/configuracoes',
     subItems: [
       { icon: Lightbulb, label: 'Melhorias', path: '/admin/melhorias' },
@@ -167,18 +150,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   );
   const isOnCadastrosRoute = pathname === '/admin/cadastros' || isOnCadastrosSubRoute;
   
-  const isOnRelatoriosSubRoute = ['/admin/metas', '/admin/analytics-mecanicos', '/admin/feedback-mecanicos'].some(
-    path => pathname.startsWith(path)
-  );
-  const isOnRelatoriosRoute = pathname === '/admin/relatorios' || isOnRelatoriosSubRoute;
-  
-  const isOnConfigSubRoute = ['/admin/melhorias', '/admin/configuracoes', '/admin/parametros'].some(
+  const isOnConfigSubRoute = ['/admin/melhorias', '/admin/configuracoes'].some(
     path => pathname === path
   );
 
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
     '/admin/cadastros': isOnCadastrosRoute,
-    '/admin/relatorios': isOnRelatoriosRoute,
     '/admin/configuracoes': isOnConfigSubRoute,
   });
 
@@ -187,13 +164,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     if (isOnCadastrosRoute && !expandedItems['/admin/cadastros']) {
       setExpandedItems(prev => ({ ...prev, '/admin/cadastros': true }));
     }
-    if (isOnRelatoriosRoute && !expandedItems['/admin/relatorios']) {
-      setExpandedItems(prev => ({ ...prev, '/admin/relatorios': true }));
-    }
     if (isOnConfigSubRoute && !expandedItems['/admin/configuracoes']) {
       setExpandedItems(prev => ({ ...prev, '/admin/configuracoes': true }));
     }
-  }, [pathname, isOnCadastrosRoute, isOnRelatoriosRoute, isOnConfigSubRoute]);
+  }, [pathname, isOnCadastrosRoute, isOnConfigSubRoute]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev => ({ ...prev, [path]: !prev[path] }));

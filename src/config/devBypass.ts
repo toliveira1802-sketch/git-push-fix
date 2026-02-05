@@ -1,6 +1,6 @@
-// DEV_BYPASS - Ativado para desenvolvimento
-// Permite acesso direto sem login
-export const DEV_BYPASS = true;
+// DEV_BYPASS - Only enabled in development mode with explicit flag
+// In production, this is always false regardless of environment variables
+export const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS === 'true';
 
 // Dados fake para desenvolvimento
 export const DEV_USER = {
