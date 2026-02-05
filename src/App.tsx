@@ -10,6 +10,11 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
 import DevScreens from "./pages/__dev/DevScreens";
+
+// New Dashboard Views
+import DashboardCockpit from "./pages/DashboardCockpit";
+import MinhaGaragem from "./pages/MinhaGaragem";
+
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
@@ -61,6 +66,10 @@ function Router() {
       </Route>
       <Route path={"/login"} component={Login} />
       <Route path={"/trocar-senha"} component={TrocarSenha} />
+      
+      {/* New Dashboard Views - Protected */}
+      <Route path={"/dashboard-cockpit"}>{() => <ProtectedRoute><DashboardCockpit /></ProtectedRoute>}</Route>
+      <Route path={"/minha-garagem"}>{() => <ProtectedRoute><MinhaGaragem /></ProtectedRoute>}</Route>
       
       {/* Admin Routes - Protected */}
       <Route path={"/admin"}>{() => <ProtectedRoute><AdminDashboard /></ProtectedRoute>}</Route>

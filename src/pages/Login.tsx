@@ -16,18 +16,48 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  // DEV_BYPASS: Redireciona diretamente para /admin sem login
+  // DEV_BYPASS: Redireciona diretamente para /dashboard-cockpit sem login
   useEffect(() => {
     if (DEV_BYPASS) {
-      console.log('[DEV_BYPASS] Redirecionando diretamente para /admin');
+      console.log('[DEV_BYPASS] Redirecionando diretamente para /dashboard-cockpit');
       toast.info('Modo desenvolvimento ativo - bypass de login');
-      setLocation('/admin');
+      setLocation('/dashboard-cockpit');
     }
   }, [setLocation]);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = password.length >= 4;
   const isFormValid = isValidEmail && isValidPassword;
+
+  // Role-based redirect helper
+  const redirectByRole = async (userId: string) => {
+    try {
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (roleError) {
+        console.error('Erro ao buscar role:', roleError);
+        // Default to client view if no role found
+        setLocation('/minha-garagem');
+        return;
+      }
+
+      const role = roleData?.role;
+      
+      // Role mapping: admin/gestao/dev -> staff view, user -> client view
+      if (role === 'admin' || role === 'gestao' || role === 'dev') {
+        setLocation('/dashboard-cockpit');
+      } else {
+        setLocation('/minha-garagem');
+      }
+    } catch (error) {
+      console.error('Erro ao redirecionar:', error);
+      setLocation('/minha-garagem');
+    }
+  };
 
   const handleLogin = async () => {
     if (!isFormValid) {
@@ -55,7 +85,8 @@ export default function Login() {
 
       if (data.user) {
         toast.success('Login realizado com sucesso!');
-        setLocation('/admin');
+        // Redirect based on user role
+        await redirectByRole(data.user.id);
       }
     } catch (error) {
       toast.error('Erro ao fazer login. Tente novamente.');
