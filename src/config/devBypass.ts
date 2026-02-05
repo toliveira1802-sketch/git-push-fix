@@ -1,6 +1,6 @@
-// DEV_BYPASS - Only enabled in development mode with explicit flag
-// In production, this is always false regardless of environment variables
-export const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS === 'true';
+// DEV_BYPASS - Enabled automatically in development mode
+// In production, this is always false
+export const DEV_BYPASS = import.meta.env.DEV;
 
 // Dados fake para desenvolvimento
 export const DEV_USER = {
