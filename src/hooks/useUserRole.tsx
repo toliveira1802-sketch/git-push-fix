@@ -74,8 +74,8 @@ export function getHomeRouteForRole(role: AppRole | null): string {
     case "dev":
     case "admin":
     case "gestao":
-      // Staff roles go to cockpit dashboard
-      return "/dashboard-cockpit";
+      // Staff roles go to admin dashboard
+      return "/admin";
     case "user":
     default:
       // Client role goes to garage view
