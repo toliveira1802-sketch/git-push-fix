@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
 import DevScreens from "./pages/__dev/DevScreens";
@@ -61,42 +62,42 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/trocar-senha"} component={TrocarSenha} />
       
-      {/* Admin Routes */}
-      <Route path={"/admin"} component={AdminDashboard} />
-      <Route path={"/admin/overview"} component={AdminDashboardOverview} />
-      <Route path={"/admin/operacional"} component={AdminOperacional} />
-      <Route path={"/admin/ordens-servico"} component={AdminOrdensServico} />
-      <Route path={"/admin/nova-os"} component={AdminNovaOS} />
-      <Route path={"/admin/os/:id"} component={AdminOSDetalhes} />
-      <Route path={"/admin/patio"} component={AdminPatio} />
-      <Route path={"/admin/patio/:id"} component={AdminPatioDetalhes} />
-      <Route path={"/admin/agendamentos"} component={AdminAgendamentos} />
-      <Route path={"/admin/agenda-mecanicos"} component={AdminAgendaMecanicos} />
-      <Route path={"/admin/clientes"} component={AdminClientesPage} />
-      <Route path={"/admin/servicos"} component={AdminServicos} />
-      <Route path={"/admin/financeiro"} component={AdminFinanceiro} />
-      <Route path={"/admin/produtividade"} component={AdminProdutividade} />
-      <Route path={"/admin/analytics-mecanicos"} component={AdminMechanicAnalytics} />
-      <Route path={"/admin/feedback-mecanicos"} component={AdminMechanicFeedback} />
-      <Route path={"/admin/metas"} component={AdminMetas} />
-      <Route path={"/admin/relatorios"} component={AdminRelatorios} />
-      <Route path={"/admin/documentacao"} component={AdminDocumentacao} />
-      <Route path={"/admin/configuracoes"} component={AdminConfiguracoes} />
-      <Route path={"/admin/pendencias"} component={AdminPendencias} />
-      <Route path={"/admin/checklist"} component={AdminChecklist} />
-      <Route path={"/admin/os-ultimate"} component={OSUltimate} />
-      <Route path={"/admin/os-ultimate/:id"} component={OSUltimate} />
-      <Route path={"/admin/importar-veiculos-antigos"} component={ImportarVeiculosAntigos} />
+      {/* Admin Routes - Protected */}
+      <Route path={"/admin"}>{() => <ProtectedRoute><AdminDashboard /></ProtectedRoute>}</Route>
+      <Route path={"/admin/overview"}>{() => <ProtectedRoute><AdminDashboardOverview /></ProtectedRoute>}</Route>
+      <Route path={"/admin/operacional"}>{() => <ProtectedRoute><AdminOperacional /></ProtectedRoute>}</Route>
+      <Route path={"/admin/ordens-servico"}>{() => <ProtectedRoute><AdminOrdensServico /></ProtectedRoute>}</Route>
+      <Route path={"/admin/nova-os"}>{() => <ProtectedRoute><AdminNovaOS /></ProtectedRoute>}</Route>
+      <Route path={"/admin/os/:id"}>{() => <ProtectedRoute><AdminOSDetalhes /></ProtectedRoute>}</Route>
+      <Route path={"/admin/patio"}>{() => <ProtectedRoute><AdminPatio /></ProtectedRoute>}</Route>
+      <Route path={"/admin/patio/:id"}>{() => <ProtectedRoute><AdminPatioDetalhes /></ProtectedRoute>}</Route>
+      <Route path={"/admin/agendamentos"}>{() => <ProtectedRoute><AdminAgendamentos /></ProtectedRoute>}</Route>
+      <Route path={"/admin/agenda-mecanicos"}>{() => <ProtectedRoute><AdminAgendaMecanicos /></ProtectedRoute>}</Route>
+      <Route path={"/admin/clientes"}>{() => <ProtectedRoute><AdminClientesPage /></ProtectedRoute>}</Route>
+      <Route path={"/admin/servicos"}>{() => <ProtectedRoute><AdminServicos /></ProtectedRoute>}</Route>
+      <Route path={"/admin/financeiro"}>{() => <ProtectedRoute><AdminFinanceiro /></ProtectedRoute>}</Route>
+      <Route path={"/admin/produtividade"}>{() => <ProtectedRoute><AdminProdutividade /></ProtectedRoute>}</Route>
+      <Route path={"/admin/analytics-mecanicos"}>{() => <ProtectedRoute><AdminMechanicAnalytics /></ProtectedRoute>}</Route>
+      <Route path={"/admin/feedback-mecanicos"}>{() => <ProtectedRoute><AdminMechanicFeedback /></ProtectedRoute>}</Route>
+      <Route path={"/admin/metas"}>{() => <ProtectedRoute><AdminMetas /></ProtectedRoute>}</Route>
+      <Route path={"/admin/relatorios"}>{() => <ProtectedRoute><AdminRelatorios /></ProtectedRoute>}</Route>
+      <Route path={"/admin/documentacao"}>{() => <ProtectedRoute><AdminDocumentacao /></ProtectedRoute>}</Route>
+      <Route path={"/admin/configuracoes"}>{() => <ProtectedRoute><AdminConfiguracoes /></ProtectedRoute>}</Route>
+      <Route path={"/admin/pendencias"}>{() => <ProtectedRoute><AdminPendencias /></ProtectedRoute>}</Route>
+      <Route path={"/admin/checklist"}>{() => <ProtectedRoute><AdminChecklist /></ProtectedRoute>}</Route>
+      <Route path={"/admin/os-ultimate"}>{() => <ProtectedRoute><OSUltimate /></ProtectedRoute>}</Route>
+      <Route path={"/admin/os-ultimate/:id"}>{() => <ProtectedRoute><OSUltimate /></ProtectedRoute>}</Route>
+      <Route path={"/admin/importar-veiculos-antigos"}>{() => <ProtectedRoute><ImportarVeiculosAntigos /></ProtectedRoute>}</Route>
       
-      {/* Gestao Routes */}
-      <Route path={"/gestao"} component={GestaoDashboards} />
-      <Route path={"/gestao/rh"} component={GestaoRH} />
-      <Route path={"/gestao/operacoes"} component={GestaoOperacoes} />
-      <Route path={"/gestao/financeiro"} component={GestaoFinanceiro} />
-      <Route path={"/gestao/tecnologia"} component={GestaoTecnologia} />
-      <Route path={"/gestao/comercial"} component={GestaoComercial} />
-      <Route path={"/gestao/melhorias"} component={GestaoMelhorias} />
-      <Route path={"/gestao/veiculos-orfaos"} component={GestaoVeiculosOrfaos} />
+      {/* Gestao Routes - Protected */}
+      <Route path={"/gestao"}>{() => <ProtectedRoute><GestaoDashboards /></ProtectedRoute>}</Route>
+      <Route path={"/gestao/rh"}>{() => <ProtectedRoute><GestaoRH /></ProtectedRoute>}</Route>
+      <Route path={"/gestao/operacoes"}>{() => <ProtectedRoute><GestaoOperacoes /></ProtectedRoute>}</Route>
+      <Route path={"/gestao/financeiro"}>{() => <ProtectedRoute><GestaoFinanceiro /></ProtectedRoute>}</Route>
+      <Route path={"/gestao/tecnologia"}>{() => <ProtectedRoute><GestaoTecnologia /></ProtectedRoute>}</Route>
+      <Route path={"/gestao/comercial"}>{() => <ProtectedRoute><GestaoComercial /></ProtectedRoute>}</Route>
+      <Route path={"/gestao/melhorias"}>{() => <ProtectedRoute><GestaoMelhorias /></ProtectedRoute>}</Route>
+      <Route path={"/gestao/veiculos-orfaos"}>{() => <ProtectedRoute><GestaoVeiculosOrfaos /></ProtectedRoute>}</Route>
       
       {/* Cliente Routes */}
       <Route path={"/cliente/orcamento/:osId"} component={OrcamentoCliente} />
