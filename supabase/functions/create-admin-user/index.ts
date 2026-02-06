@@ -22,7 +22,48 @@ Deno.serve(async (req: Request): Promise<Response> => {
     console.log("create-admin-user: Starting request processing");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // === AUTHENTICATION CHECK ===
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("create-admin-user: No authorization header");
+      return new Response(
+        JSON.stringify({ error: "Não autorizado - Token não fornecido" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create client with user's auth token to validate
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.error("create-admin-user: Auth error", authError);
+      return new Response(
+        JSON.stringify({ error: "Não autorizado - Token inválido" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("create-admin-user: User authenticated:", user.email);
+
+    // Check if user has dev role (only dev can create admins)
+    const { data: hasDev } = await supabaseAuth.rpc('has_role', { _user_id: user.id, _role: 'dev' });
+
+    if (!hasDev) {
+      console.error("create-admin-user: User lacks dev role");
+      return new Response(
+        JSON.stringify({ error: "Apenas usuários DEV podem criar novos admins" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("create-admin-user: User has dev role, proceeding");
+    // === END AUTHENTICATION CHECK ===
 
     // Parse request body
     const body: CreateAdminUserRequest = await req.json();
