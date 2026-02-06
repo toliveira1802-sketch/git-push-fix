@@ -14,6 +14,7 @@ interface CreateClientUserData {
 interface CreateClientUserResult {
   success: boolean;
   message?: string;
+  tempPassword?: string;
   userId?: string;
   clientId?: string;
   error?: string;
@@ -55,7 +56,7 @@ export function useCreateClientUser() {
 
       toast({
         title: "Cliente criado!",
-        description: "Senha padrão: 123456 - O cliente deverá trocar no primeiro acesso.",
+        description: `Senha temporária: ${result.tempPassword} - O cliente deverá trocar no primeiro acesso.`,
       });
 
       return result;
