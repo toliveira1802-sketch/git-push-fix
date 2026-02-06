@@ -67,7 +67,7 @@ export const colaboradores = mysqlTable("01_colaboradores", {
   email: varchar("email", { length: 320 }),
   telefone: varchar("telefone", { length: 20 }),
   cpf: varchar("cpf", { length: 14 }),
-  senha: varchar("senha", { length: 255 }).default("123456"),
+  senha: varchar("senha", { length: 255 }), // Senha temporária gerada pelo sistema
   primeiroAcesso: boolean("primeiroAcesso").default(true),
   nivelAcessoId: int("nivelAcessoId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -136,7 +136,7 @@ export const clientes = mysqlTable("07_clientes", {
   cidade: varchar("cidade", { length: 100 }),
   estado: varchar("estado", { length: 2 }),
   origemCadastro: varchar("origemCadastro", { length: 100 }),
-  senha: varchar("senha", { length: 255 }).default("123456"),
+  senha: varchar("senha", { length: 255 }), // Senha temporária gerada pelo sistema
   primeiroAcesso: boolean("primeiroAcesso").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
