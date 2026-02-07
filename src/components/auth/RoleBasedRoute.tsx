@@ -3,6 +3,7 @@ import { Redirect, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { DEV_BYPASS } from '@/config/devBypass';
 
 type AppRole = 'user' | 'admin' | 'gestao' | 'dev';
 
@@ -14,22 +15,28 @@ interface RoleBasedRouteProps {
 
 /**
  * RoleBasedRoute - O Porteiro Inteligente
- * 
+ *
  * Controla acesso às rotas baseado na role do usuário:
  * - admin/gestao/dev = acesso ao painel administrativo
  * - user = acesso à área do cliente (garagem)
+ *
+ * DEV_BYPASS: ativado via ?dev=true na URL — pula auth completamente
+ * Persiste no sessionStorage para toda a sessão do navegador.
  */
-export default function RoleBasedRoute({ 
-  children, 
+export default function RoleBasedRoute({
+  children,
   allowedRoles,
-  redirectTo 
+  redirectTo
 }: RoleBasedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [role, setRole] = useState<AppRole | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(!DEV_BYPASS);
 
   useEffect(() => {
+    // Se DEV_BYPASS ativo, não precisa buscar role
+    if (DEV_BYPASS) return;
+
     const fetchRole = async () => {
       if (!user) {
         setRole(null);
@@ -48,7 +55,7 @@ export default function RoleBasedRoute({
 
         if (error) {
           console.error('Erro ao buscar role:', error);
-          setRole('user'); // Default para user se erro
+          setRole('user');
         } else {
           setRole(data?.role as AppRole || 'user');
         }
@@ -62,6 +69,11 @@ export default function RoleBasedRoute({
 
     fetchRole();
   }, [user]);
+
+  // DEV_BYPASS — pula auth e renderiza direto
+  if (DEV_BYPASS) {
+    return <>{children}</>;
+  }
 
   // Loading state
   if (authLoading || roleLoading) {
@@ -83,9 +95,8 @@ export default function RoleBasedRoute({
   // Se allowedRoles definido, verificar se tem permissão
   if (allowedRoles && allowedRoles.length > 0) {
     const hasPermission = role && allowedRoles.includes(role);
-    
+
     if (!hasPermission) {
-      // Redireciona para a área apropriada baseado na role
       const targetRoute = getDefaultRouteForRole(role);
       return <Redirect to={redirectTo || targetRoute} />;
     }
@@ -105,7 +116,7 @@ export function getDefaultRouteForRole(role: AppRole | null): string {
       return '/admin';
     case 'user':
     default:
-      return '/minha-garagem';
+      return '/app/garagem';
   }
 }
 
