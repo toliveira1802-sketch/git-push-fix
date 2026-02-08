@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -55,58 +56,70 @@ import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
 // Dev Tools
 import DevScreens from "./pages/__dev/DevScreens";
 
-// ========== ÓRFÃS (sem rota oficial — acessíveis via DevLab) ==========
+// ========== ÓRFÃS (lazy-loaded — acessíveis via DevLab) ==========
 // Raiz
-import OrphanAgenda from "./pages/Agenda";
-import OrphanAgendamentoSucesso from "./pages/AgendamentoSucesso";
-import OrphanAvisos from "./pages/Avisos";
-import OrphanComponentShowcase from "./pages/ComponentShowcase";
-import OrphanConfiguracoes from "./pages/Configuracoes";
-import OrphanDashboardCockpit from "./pages/DashboardCockpit";
-import OrphanHistorico from "./pages/Historico";
-import OrphanHome from "./pages/Home";
-import OrphanIndex from "./pages/Index";
-import OrphanLoginOld from "./pages/Login";
-import OrphanMinhaGaragem from "./pages/MinhaGaragem";
-import OrphanNovoAgendamento from "./pages/NovoAgendamento";
-import OrphanOSClienteAcompanhamento from "./pages/OSClienteAcompanhamento";
-import OrphanOSClienteOrcamento from "./pages/OSClienteOrcamento";
-import OrphanPerformance from "./pages/Performance";
-import OrphanProfile from "./pages/Profile";
-import OrphanRegister from "./pages/Register";
-import OrphanVeiculos from "./pages/Veiculos";
-import OrphanVisaoGeral from "./pages/VisaoGeral";
+const OrphanAgenda = lazy(() => import("./pages/Agenda"));
+const OrphanAgendamentoSucesso = lazy(() => import("./pages/AgendamentoSucesso"));
+const OrphanAvisos = lazy(() => import("./pages/Avisos"));
+const OrphanComponentShowcase = lazy(() => import("./pages/ComponentShowcase"));
+const OrphanConfiguracoes = lazy(() => import("./pages/Configuracoes"));
+const OrphanDashboardCockpit = lazy(() => import("./pages/DashboardCockpit"));
+const OrphanHistorico = lazy(() => import("./pages/Historico"));
+const OrphanHome = lazy(() => import("./pages/Home"));
+const OrphanIndex = lazy(() => import("./pages/Index"));
+const OrphanLoginOld = lazy(() => import("./pages/Login"));
+const OrphanMinhaGaragem = lazy(() => import("./pages/MinhaGaragem"));
+const OrphanNovoAgendamento = lazy(() => import("./pages/NovoAgendamento"));
+const OrphanOSClienteAcompanhamento = lazy(() => import("./pages/OSClienteAcompanhamento"));
+const OrphanOSClienteOrcamento = lazy(() => import("./pages/OSClienteOrcamento"));
+const OrphanPerformance = lazy(() => import("./pages/Performance"));
+const OrphanProfile = lazy(() => import("./pages/Profile"));
+const OrphanRegister = lazy(() => import("./pages/Register"));
+const OrphanVeiculos = lazy(() => import("./pages/Veiculos"));
+const OrphanVisaoGeral = lazy(() => import("./pages/VisaoGeral"));
 // Admin órfãs
-import OrphanAdminClientes from "./pages/admin/AdminClientes";
-import OrphanAdminDashboard from "./pages/admin/AdminDashboard";
-import OrphanAdminDashboardIAs from "./pages/admin/AdminDashboardIAs";
-import OrphanAdminDashboardOrcamentos from "./pages/admin/AdminDashboardOrcamentos";
-import OrphanAdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
-import OrphanAdminLogin from "./pages/admin/AdminLogin";
-import OrphanAdminMelhorias from "./pages/admin/AdminMelhorias";
-import OrphanAdminMonitoramentoKommo from "./pages/admin/AdminMonitoramentoKommo";
-import OrphanAdminOperacional from "./pages/admin/AdminOperacional";
-import OrphanAdminPainelTV from "./pages/admin/AdminPainelTV";
-import OrphanAdminParametros from "./pages/admin/AdminParametros";
-import OrphanAdminVeiculos from "./pages/admin/AdminVeiculos";
-import OrphanCadastros from "./pages/admin/Cadastros";
-import OrphanClientes from "./pages/admin/Clientes";
-import OrphanImportarDados from "./pages/admin/ImportarDados";
-import OrphanMonitoramentoPatio from "./pages/admin/MonitoramentoPatio";
-import OrphanNovaOS from "./pages/admin/NovaOS";
-import OrphanOrdensServico from "./pages/admin/OrdensServico";
-import OrphanPendencias from "./pages/admin/Pendencias";
+const OrphanAdminClientes = lazy(() => import("./pages/admin/AdminClientes"));
+const OrphanAdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const OrphanAdminDashboardIAs = lazy(() => import("./pages/admin/AdminDashboardIAs"));
+const OrphanAdminDashboardOrcamentos = lazy(() => import("./pages/admin/AdminDashboardOrcamentos"));
+const OrphanAdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
+const OrphanAdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const OrphanAdminMelhorias = lazy(() => import("./pages/admin/AdminMelhorias"));
+const OrphanAdminMonitoramentoKommo = lazy(() => import("./pages/admin/AdminMonitoramentoKommo"));
+const OrphanAdminOperacional = lazy(() => import("./pages/admin/AdminOperacional"));
+const OrphanAdminPainelTV = lazy(() => import("./pages/admin/AdminPainelTV"));
+const OrphanAdminParametros = lazy(() => import("./pages/admin/AdminParametros"));
+const OrphanAdminVeiculos = lazy(() => import("./pages/admin/AdminVeiculos"));
+const OrphanCadastros = lazy(() => import("./pages/admin/Cadastros"));
+const OrphanClientes = lazy(() => import("./pages/admin/Clientes"));
+const OrphanImportarDados = lazy(() => import("./pages/admin/ImportarDados"));
+const OrphanMonitoramentoPatio = lazy(() => import("./pages/admin/MonitoramentoPatio"));
+const OrphanNovaOS = lazy(() => import("./pages/admin/NovaOS"));
+const OrphanOrdensServico = lazy(() => import("./pages/admin/OrdensServico"));
+const OrphanPendencias = lazy(() => import("./pages/admin/Pendencias"));
 // Gestão órfãs
-import OrphanKommoV2 from "./pages/gestao/AdminMonitoramentoKommo-v2";
+const OrphanKommoV2 = lazy(() => import("./pages/gestao/AdminMonitoramentoKommo-v2"));
 // Cliente órfãs
-import OrphanLoginCliente from "./pages/cliente/LoginCliente";
+const OrphanLoginCliente = lazy(() => import("./pages/cliente/LoginCliente"));
 // OS órfãs
-import OrphanOSUltimateClient from "./pages/os/OSUltimateClient";
+const OrphanOSUltimateClient = lazy(() => import("./pages/os/OSUltimateClient"));
 
 // Roles permitidas para área admin
 const ADMIN_ROLES = ['admin', 'gestao', 'dev'] as const;
 // Role de cliente
 const CLIENT_ROLES = ['user'] as const;
+
+/** Loading fallback para páginas órfãs lazy-loaded */
+function OrphanLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground">Carregando página...</p>
+      </div>
+    </div>
+  );
+}
 
 function Router() {
   return (
@@ -370,53 +383,53 @@ function Router() {
         )}
       </Route>
 
-      {/* ========== ÓRFÃS — acessíveis via DevLab ========== */}
+      {/* ========== ÓRFÃS — lazy-loaded via DevLab ========== */}
       {/* Raiz */}
-      <Route path="/__orphan/agenda" component={OrphanAgenda} />
-      <Route path="/__orphan/agendamento-sucesso" component={OrphanAgendamentoSucesso} />
-      <Route path="/__orphan/avisos" component={OrphanAvisos} />
-      <Route path="/__orphan/component-showcase" component={OrphanComponentShowcase} />
-      <Route path="/__orphan/configuracoes" component={OrphanConfiguracoes} />
-      <Route path="/__orphan/dashboard-cockpit" component={OrphanDashboardCockpit} />
-      <Route path="/__orphan/historico" component={OrphanHistorico} />
-      <Route path="/__orphan/home" component={OrphanHome} />
-      <Route path="/__orphan/index" component={OrphanIndex} />
-      <Route path="/__orphan/login-old" component={OrphanLoginOld} />
-      <Route path="/__orphan/minha-garagem" component={OrphanMinhaGaragem} />
-      <Route path="/__orphan/novo-agendamento" component={OrphanNovoAgendamento} />
-      <Route path="/__orphan/os-acompanhamento" component={OrphanOSClienteAcompanhamento} />
-      <Route path="/__orphan/os-orcamento" component={OrphanOSClienteOrcamento} />
-      <Route path="/__orphan/performance" component={OrphanPerformance} />
-      <Route path="/__orphan/profile" component={OrphanProfile} />
-      <Route path="/__orphan/register" component={OrphanRegister} />
-      <Route path="/__orphan/veiculos" component={OrphanVeiculos} />
-      <Route path="/__orphan/visao-geral" component={OrphanVisaoGeral} />
+      <Route path="/__orphan/agenda">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAgenda /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/agendamento-sucesso">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAgendamentoSucesso /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/avisos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAvisos /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/component-showcase">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanComponentShowcase /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/configuracoes">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanConfiguracoes /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/dashboard-cockpit">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanDashboardCockpit /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/historico">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanHistorico /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/home">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanHome /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/index">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanIndex /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/login-old">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanLoginOld /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/minha-garagem">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanMinhaGaragem /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/novo-agendamento">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanNovoAgendamento /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/os-acompanhamento">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanOSClienteAcompanhamento /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/os-orcamento">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanOSClienteOrcamento /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/performance">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanPerformance /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/profile">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanProfile /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/register">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanRegister /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/veiculos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanVeiculos /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/visao-geral">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanVisaoGeral /></ErrorBoundary></Suspense>}</Route>
       {/* Admin órfãs */}
-      <Route path="/__orphan/admin-clientes" component={OrphanAdminClientes} />
-      <Route path="/__orphan/admin-dashboard-old" component={OrphanAdminDashboard} />
-      <Route path="/__orphan/admin-dashboard-ias" component={OrphanAdminDashboardIAs} />
-      <Route path="/__orphan/admin-dashboard-orcamentos" component={OrphanAdminDashboardOrcamentos} />
-      <Route path="/__orphan/admin-dashboard-overview" component={OrphanAdminDashboardOverview} />
-      <Route path="/__orphan/admin-login" component={OrphanAdminLogin} />
-      <Route path="/__orphan/admin-melhorias" component={OrphanAdminMelhorias} />
-      <Route path="/__orphan/admin-monitoramento-kommo" component={OrphanAdminMonitoramentoKommo} />
-      <Route path="/__orphan/admin-operacional" component={OrphanAdminOperacional} />
-      <Route path="/__orphan/admin-painel-tv" component={OrphanAdminPainelTV} />
-      <Route path="/__orphan/admin-parametros" component={OrphanAdminParametros} />
-      <Route path="/__orphan/admin-veiculos" component={OrphanAdminVeiculos} />
-      <Route path="/__orphan/cadastros" component={OrphanCadastros} />
-      <Route path="/__orphan/clientes-legacy" component={OrphanClientes} />
-      <Route path="/__orphan/importar-dados" component={OrphanImportarDados} />
-      <Route path="/__orphan/monitoramento-patio" component={OrphanMonitoramentoPatio} />
-      <Route path="/__orphan/nova-os-legacy" component={OrphanNovaOS} />
-      <Route path="/__orphan/ordens-servico-legacy" component={OrphanOrdensServico} />
-      <Route path="/__orphan/pendencias-legacy" component={OrphanPendencias} />
+      <Route path="/__orphan/admin-clientes">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminClientes /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-dashboard-old">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminDashboard /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-dashboard-ias">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminDashboardIAs /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-dashboard-orcamentos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminDashboardOrcamentos /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-dashboard-overview">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminDashboardOverview /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-login">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminLogin /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-melhorias">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminMelhorias /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-monitoramento-kommo">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminMonitoramentoKommo /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-operacional">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminOperacional /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-painel-tv">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminPainelTV /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-parametros">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminParametros /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/admin-veiculos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminVeiculos /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/cadastros">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanCadastros /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/clientes-legacy">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanClientes /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/importar-dados">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanImportarDados /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/monitoramento-patio">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanMonitoramentoPatio /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/nova-os-legacy">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanNovaOS /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/ordens-servico-legacy">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanOrdensServico /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/__orphan/pendencias-legacy">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanPendencias /></ErrorBoundary></Suspense>}</Route>
       {/* Gestão órfãs */}
-      <Route path="/__orphan/kommo-v2" component={OrphanKommoV2} />
+      <Route path="/__orphan/kommo-v2">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanKommoV2 /></ErrorBoundary></Suspense>}</Route>
       {/* Cliente órfãs */}
-      <Route path="/__orphan/login-cliente" component={OrphanLoginCliente} />
+      <Route path="/__orphan/login-cliente">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanLoginCliente /></ErrorBoundary></Suspense>}</Route>
       {/* OS órfãs */}
-      <Route path="/__orphan/os-ultimate-client" component={OrphanOSUltimateClient} />
+      <Route path="/__orphan/os-ultimate-client">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanOSUltimateClient /></ErrorBoundary></Suspense>}</Route>
 
       {/* ========== FALLBACK ========== */}
       <Route path="/404" component={NotFound} />
