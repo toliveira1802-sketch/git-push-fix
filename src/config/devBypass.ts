@@ -1,5 +1,5 @@
-// DEV_BYPASS - Ativado automaticamente em dev OU via ?dev=true na URL
-// Em produção: acesse qualquer página com ?dev=true para bypass de auth
+// DEV_BYPASS - Ativado APENAS via ?dev=true na URL (não mais automático em dev)
+// Acesse qualquer página com ?dev=true para bypass de auth
 const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
 const devQueryParam = urlParams?.get('dev') === 'true';
 
@@ -8,7 +8,12 @@ if (devQueryParam && typeof window !== 'undefined') {
   sessionStorage.setItem('DEV_BYPASS', 'true');
 }
 
-export const DEV_BYPASS = import.meta.env.DEV || devQueryParam ||
+// Para desativar o bypass, use ?dev=false
+if (urlParams?.get('dev') === 'false' && typeof window !== 'undefined') {
+  sessionStorage.removeItem('DEV_BYPASS');
+}
+
+export const DEV_BYPASS = devQueryParam ||
   (typeof window !== 'undefined' && sessionStorage.getItem('DEV_BYPASS') === 'true');
 
 // Dados fake para desenvolvimento
