@@ -34,6 +34,7 @@ import AdminDocumentacao from "./pages/admin/AdminDocumentacao";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminPendencias from "./pages/admin/AdminPendencias";
 import AdminChecklist from "./pages/admin/AdminChecklist";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import OSUltimate from "./pages/admin/OSUltimate";
 import ImportarVeiculosAntigos from "./pages/admin/ImportarVeiculosAntigos";
 
@@ -321,6 +322,13 @@ function Router() {
         {() => (
           <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
             <ImportarVeiculosAntigos />
+          </RoleBasedRoute>
+        )}
+      </Route>
+      <Route path="/admin/usuarios">
+        {() => (
+          <RoleBasedRoute allowedRoles={['dev']}>
+            <AdminUsuarios />
           </RoleBasedRoute>
         )}
       </Route>
