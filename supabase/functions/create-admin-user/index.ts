@@ -40,9 +40,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user) {
-      console.error("create-admin-user: Auth error", authError);
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      console.error("create-admin-user: Auth error", userError);
       return new Response(
         JSON.stringify({ error: "Não autorizado - Token inválido" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -130,7 +130,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // Create auth user
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: authData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
       password: body.password,
       email_confirm: true,
@@ -139,15 +139,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       },
     });
 
-    if (authError) {
-      console.error("create-admin-user: Error creating auth user", authError);
+    if (createError) {
+      console.error("create-admin-user: Error creating auth user", createError);
       return new Response(
-        JSON.stringify({ error: authError.message }),
+        JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const newUserId = authData.user.id;
+    const newUserId = authData.user!.id;
     console.log("create-admin-user: Auth user created:", newUserId);
 
     // Update profile (trigger already created it with user role)
