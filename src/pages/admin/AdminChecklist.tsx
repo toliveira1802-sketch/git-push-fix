@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,7 @@ const itensChecklistPadrao: ChecklistItem[] = [
   { id: "12", nome: "Correia", tipo: "seguranca", verificado: false, observacao: "" },
 ];
 
-const API_URL = "https://us-central1-doctor-auto-prime-core.cloudfunctions.net/analisar-checklist";
+// API calls are proxied through edge function for authentication
 
 export default function AdminChecklist() {
   // Estado do cliente
@@ -127,21 +128,15 @@ export default function AdminChecklist() {
     };
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      const { data, error } = await supabase.functions.invoke('proxy-checklist', {
+        body: payload,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Erro na API:", response.status, errorText);
-        throw new Error(`Erro ${response.status}: ${errorText || "Falha ao sincronizar"}`);
+      if (error) {
+        console.error("Erro na API:", error);
+        throw new Error(error.message || "Falha ao sincronizar");
       }
 
-      const data = await response.json();
       console.log("Resposta da API:", data);
 
       toast.success("Checklist Sincronizado com Doctor Auto Prime Core", {

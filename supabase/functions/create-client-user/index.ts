@@ -146,9 +146,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const newUserId = authData.user.id;
     console.log("create-client-user: Auth user created:", newUserId);
 
-    // Update profile to set must_change_password = true
+    // Update colaboradores to set must_change_password = true
     const { error: profileError } = await supabaseAdmin
-      .from("profiles")
+      .from("colaboradores")
       .update({ 
         must_change_password: true,
         full_name: body.name,
@@ -163,7 +163,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Create client record linked to the new user
     const { data: clientData, error: clientError } = await supabaseAdmin
-      .from("clients")
+      .from("clientes")
       .insert({
         user_id: newUserId,
         name: body.name,

@@ -169,7 +169,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // 1. Create client (using validated/sanitized values)
     const { data: clientData, error: clientError } = await supabaseAdmin
-      .from("clients")
+      .from("clientes")
       .insert({
         name: name,
         phone: phone,
@@ -193,7 +193,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // 2. Create vehicle (using validated/sanitized values)
     const { data: vehicleData, error: vehicleError } = await supabaseAdmin
-      .from("vehicles")
+      .from("veiculos")
       .insert({
         client_id: clientData.id,
         plate: vehiclePlate,
@@ -209,7 +209,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (vehicleError) {
       console.error("create-quick-client: Error creating vehicle", vehicleError);
       // Rollback client creation
-      await supabaseAdmin.from("clients").delete().eq("id", clientData.id);
+      await supabaseAdmin.from("clientes").delete().eq("id", clientData.id);
       return new Response(
         JSON.stringify({ error: `Erro ao criar veículo: ${vehicleError.message}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -221,7 +221,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // 3. Generate order number and create service order
     const year = new Date().getFullYear();
     const { data: lastOrder } = await supabaseAdmin
-      .from("service_orders")
+      .from("ordens_servico")
       .select("order_number")
       .like("order_number", `${year}-%`)
       .order("order_number", { ascending: false })
@@ -238,7 +238,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const orderNumber = `${year}-${nextNumber.toString().padStart(5, "0")}`;
 
     const { data: osData, error: osError } = await supabaseAdmin
-      .from("service_orders")
+      .from("ordens_servico")
       .insert({
         order_number: orderNumber,
         client_id: clientData.id,
@@ -251,8 +251,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (osError) {
       console.error("create-quick-client: Error creating service order", osError);
       // Rollback
-      await supabaseAdmin.from("vehicles").delete().eq("id", vehicleData.id);
-      await supabaseAdmin.from("clients").delete().eq("id", clientData.id);
+      await supabaseAdmin.from("veiculos").delete().eq("id", vehicleData.id);
+      await supabaseAdmin.from("clientes").delete().eq("id", clientData.id);
       return new Response(
         JSON.stringify({ error: `Erro ao criar OS: ${osError.message}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

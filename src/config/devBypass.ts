@@ -1,20 +1,6 @@
-// DEV_BYPASS - Ativado APENAS via ?dev=true na URL (não mais automático em dev)
-// Acesse qualquer página com ?dev=true para bypass de auth
-const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-const devQueryParam = urlParams?.get('dev') === 'true';
-
-// Persiste no sessionStorage para não precisar passar ?dev=true em toda navegação
-if (devQueryParam && typeof window !== 'undefined') {
-  sessionStorage.setItem('DEV_BYPASS', 'true');
-}
-
-// Para desativar o bypass, use ?dev=false
-if (urlParams?.get('dev') === 'false' && typeof window !== 'undefined') {
-  sessionStorage.removeItem('DEV_BYPASS');
-}
-
-export const DEV_BYPASS = devQueryParam ||
-  (typeof window !== 'undefined' && sessionStorage.getItem('DEV_BYPASS') === 'true');
+// DEV_BYPASS - Only active in development builds (Vite tree-shakes this in production)
+// This ensures the bypass CANNOT be activated in production under any circumstances
+export const DEV_BYPASS = import.meta.env.DEV;
 
 // Dados fake para desenvolvimento
 export const DEV_USER = {
