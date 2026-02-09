@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
@@ -15,9 +14,17 @@ interface CreateClientUserRequest {
   city?: string;
 }
 
-const DEFAULT_PASSWORD = "123456";
+// Gera senha temporária aleatória de 12 caracteres
+const generateTempPassword = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
 
-serve(async (req: Request): Promise<Response> => {
+Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -109,9 +116,11 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     // Create auth user with default password
+    const tempPassword = generateTempPassword();
+    
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
-      password: DEFAULT_PASSWORD,
+      password: tempPassword,
       email_confirm: true, // Auto-confirm email
       user_metadata: {
         full_name: body.name,
@@ -180,7 +189,8 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: "Cliente criado com sucesso. Senha padrão: 123456",
+        message: `Cliente criado com sucesso. Senha temporária: ${tempPassword}`,
+        tempPassword: tempPassword,
         userId: newUserId,
         clientId: clientData?.id,
       }),

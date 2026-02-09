@@ -73,11 +73,12 @@ export function getHomeRouteForRole(role: AppRole | null): string {
   switch (role) {
     case "dev":
     case "admin":
-      return "/admin";
     case "gestao":
-      return "/gestao";
+      // Staff roles go to admin dashboard
+      return "/admin";
     case "user":
     default:
-      return "/";
+      // Client role goes to garage view
+      return "/minha-garagem";
   }
 }

@@ -24,9 +24,6 @@ const ForcePasswordChange = ({ onSuccess }: ForcePasswordChangeProps) => {
     if (password.length < 6) {
       return "A senha deve ter no mínimo 6 caracteres";
     }
-    if (password === "123456") {
-      return "Escolha uma senha diferente da senha padrão";
-    }
     return null;
   };
 
