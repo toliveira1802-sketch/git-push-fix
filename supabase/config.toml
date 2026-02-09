@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.import-veiculos-orfaos]
 verify_jwt = false
 
+[functions.proxy-checklist]
+verify_jwt = false
+
 [functions.sync-trello]
 verify_jwt = false
 
