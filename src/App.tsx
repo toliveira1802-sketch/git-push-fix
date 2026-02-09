@@ -56,6 +56,7 @@ import OrcamentoCliente from "./pages/cliente/OrcamentoCliente";
 
 // Dev Tools
 import DevScreens from "./pages/__dev/DevScreens";
+const DevExplorer = lazy(() => import("./pages/__dev/DevExplorer"));
 
 // ========== ÓRFÃS (lazy-loaded — acessíveis via DevLab) ==========
 // Raiz
@@ -137,6 +138,7 @@ function Router() {
       
       {/* Dev tools (apenas em desenvolvimento) */}
       <Route path="/__dev" component={DevScreens} />
+      <Route path="/__dev/explorer">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><DevExplorer /></ErrorBoundary></Suspense>}</Route>
 
       {/* ========== ÁREA DO CLIENTE (Garagem Virtual) ========== */}
       <Route path="/app/garagem">
