@@ -1,9 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  'https://pushy-pal-files.lovable.app',
+  'https://id-preview--7175ffd2-29ee-4bd1-8af6-4ee556488123.lovable.app',
+  'https://anlazsytwwedfayfwupu.supabase.co',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.find(o => origin.startsWith(o)) || ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 interface CreateClientUserRequest {
   email: string;
@@ -25,6 +35,8 @@ const generateTempPassword = (): string => {
 };
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -146,9 +158,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const newUserId = authData.user.id;
     console.log("create-client-user: Auth user created:", newUserId);
 
-    // Update profile to set must_change_password = true
+    // Update colaboradores to set must_change_password = true
     const { error: profileError } = await supabaseAdmin
-      .from("profiles")
+      .from("colaboradores")
       .update({ 
         must_change_password: true,
         full_name: body.name,
@@ -163,7 +175,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Create client record linked to the new user
     const { data: clientData, error: clientError } = await supabaseAdmin
-      .from("clients")
+      .from("clientes")
       .insert({
         user_id: newUserId,
         name: body.name,

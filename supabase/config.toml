@@ -1,1 +1,25 @@
 project_id = "anlazsytwwedfayfwupu"
+
+[functions.ai-oficina]
+verify_jwt = false
+
+[functions.create-admin-user]
+verify_jwt = false
+
+[functions.create-client-user]
+verify_jwt = false
+
+[functions.create-quick-client]
+verify_jwt = false
+
+[functions.import-veiculos-orfaos]
+verify_jwt = false
+
+[functions.proxy-checklist]
+verify_jwt = false
+
+[functions.sync-trello]
+verify_jwt = false
+
+[functions.trello-boards]
+verify_jwt = false

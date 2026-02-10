@@ -1,9 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  'https://pushy-pal-files.lovable.app',
+  'https://id-preview--7175ffd2-29ee-4bd1-8af6-4ee556488123.lovable.app',
+  'https://anlazsytwwedfayfwupu.supabase.co',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.find(o => origin.startsWith(o)) || ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 interface CreateQuickClientRequest {
   name: string;
@@ -17,6 +27,8 @@ interface CreateQuickClientRequest {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -169,7 +181,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // 1. Create client (using validated/sanitized values)
     const { data: clientData, error: clientError } = await supabaseAdmin
-      .from("clients")
+      .from("clientes")
       .insert({
         name: name,
         phone: phone,
@@ -193,7 +205,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // 2. Create vehicle (using validated/sanitized values)
     const { data: vehicleData, error: vehicleError } = await supabaseAdmin
-      .from("vehicles")
+      .from("veiculos")
       .insert({
         client_id: clientData.id,
         plate: vehiclePlate,
@@ -209,7 +221,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (vehicleError) {
       console.error("create-quick-client: Error creating vehicle", vehicleError);
       // Rollback client creation
-      await supabaseAdmin.from("clients").delete().eq("id", clientData.id);
+      await supabaseAdmin.from("clientes").delete().eq("id", clientData.id);
       return new Response(
         JSON.stringify({ error: `Erro ao criar veículo: ${vehicleError.message}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -221,7 +233,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // 3. Generate order number and create service order
     const year = new Date().getFullYear();
     const { data: lastOrder } = await supabaseAdmin
-      .from("service_orders")
+      .from("ordens_servico")
       .select("order_number")
       .like("order_number", `${year}-%`)
       .order("order_number", { ascending: false })
@@ -238,7 +250,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const orderNumber = `${year}-${nextNumber.toString().padStart(5, "0")}`;
 
     const { data: osData, error: osError } = await supabaseAdmin
-      .from("service_orders")
+      .from("ordens_servico")
       .insert({
         order_number: orderNumber,
         client_id: clientData.id,
@@ -251,8 +263,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (osError) {
       console.error("create-quick-client: Error creating service order", osError);
       // Rollback
-      await supabaseAdmin.from("vehicles").delete().eq("id", vehicleData.id);
-      await supabaseAdmin.from("clients").delete().eq("id", clientData.id);
+      await supabaseAdmin.from("veiculos").delete().eq("id", vehicleData.id);
+      await supabaseAdmin.from("clientes").delete().eq("id", clientData.id);
       return new Response(
         JSON.stringify({ error: `Erro ao criar OS: ${osError.message}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

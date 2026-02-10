@@ -93,6 +93,7 @@ const companyMenuItems: MenuItem[] = [
 
 const systemMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Documentação', path: '/admin/documentacao' },
+  { icon: Users, label: 'Usuários', path: '/admin/usuarios' },
   { 
     icon: Settings, 
     label: 'Sistema', 
