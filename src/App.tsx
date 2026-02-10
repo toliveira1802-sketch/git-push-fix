@@ -7,7 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import RoleBasedRoute from "./components/auth/RoleBasedRoute";
+
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -106,10 +106,6 @@ const OrphanLoginCliente = lazy(() => import("./pages/cliente/LoginCliente"));
 // OS órfãs
 const OrphanOSUltimateClient = lazy(() => import("./pages/os/OSUltimateClient"));
 
-// Roles permitidas para área admin
-const ADMIN_ROLES = ['admin', 'gestao', 'dev'] as const;
-// Role de cliente
-const CLIENT_ROLES = ['user'] as const;
 
 /** Loading fallback para páginas órfãs lazy-loaded */
 function OrphanLoading() {
@@ -128,7 +124,7 @@ function Router() {
     <Switch>
       {/* ========== ROTAS PÚBLICAS ========== */}
       <Route path="/">
-        <Redirect to="/login" />
+        <Redirect to="/admin/dashboard" />
       </Route>
       <Route path="/login" component={Login} />
       <Route path="/trocar-senha" component={TrocarSenha} />
@@ -141,257 +137,59 @@ function Router() {
       <Route path="/__dev/explorer">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><DevExplorer /></ErrorBoundary></Suspense>}</Route>
 
       {/* ========== ÁREA DO CLIENTE (Garagem Virtual) ========== */}
-      <Route path="/app/garagem">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...CLIENT_ROLES]}>
-            <ClienteGaragem />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/app/garagem" component={ClienteGaragem} />
 
       {/* ========== ÁREA ADMINISTRATIVA ========== */}
       {/* Dashboard Principal */}
-      <Route path="/admin/dashboard">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminDashboard />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin">
         <Redirect to="/admin/dashboard" />
       </Route>
 
       {/* Ordens de Serviço */}
-      <Route path="/admin/ordens-servico">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminOrdensServico />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/nova-os">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminNovaOS />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/os/:id">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminOSDetalhes />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/os-ultimate">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <OSUltimate />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/os-ultimate/:id">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <OSUltimate />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/admin/ordens-servico" component={AdminOrdensServico} />
+      <Route path="/admin/nova-os" component={AdminNovaOS} />
+      <Route path="/admin/os/:id" component={AdminOSDetalhes} />
+      <Route path="/admin/os-ultimate" component={OSUltimate} />
+      <Route path="/admin/os-ultimate/:id" component={OSUltimate} />
 
       {/* Pátio */}
-      <Route path="/admin/patio">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminPatio />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/patio/:id">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminPatioDetalhes />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/admin/patio" component={AdminPatio} />
+      <Route path="/admin/patio/:id" component={AdminPatioDetalhes} />
 
       {/* Agenda */}
-      <Route path="/admin/agendamentos">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminAgendamentos />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/agenda-mecanicos">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminAgendaMecanicos />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/admin/agendamentos" component={AdminAgendamentos} />
+      <Route path="/admin/agenda-mecanicos" component={AdminAgendaMecanicos} />
 
       {/* Clientes e Serviços */}
-      <Route path="/admin/clientes">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminClientesPage />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/servicos">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminServicos />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/admin/clientes" component={AdminClientesPage} />
+      <Route path="/admin/servicos" component={AdminServicos} />
 
       {/* Financeiro e Produtividade */}
-      <Route path="/admin/financeiro">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminFinanceiro />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/produtividade">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminProdutividade />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/analytics-mecanicos">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminMechanicAnalytics />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/feedback-mecanicos">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminMechanicFeedback />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/metas">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminMetas />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/admin/financeiro" component={AdminFinanceiro} />
+      <Route path="/admin/produtividade" component={AdminProdutividade} />
+      <Route path="/admin/analytics-mecanicos" component={AdminMechanicAnalytics} />
+      <Route path="/admin/feedback-mecanicos" component={AdminMechanicFeedback} />
+      <Route path="/admin/metas" component={AdminMetas} />
 
       {/* Relatórios e Config */}
-      <Route path="/admin/relatorios">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminRelatorios />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/documentacao">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminDocumentacao />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/configuracoes">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminConfiguracoes />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/pendencias">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminPendencias />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/checklist">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <AdminChecklist />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/importar-veiculos-antigos">
-        {() => (
-          <RoleBasedRoute allowedRoles={[...ADMIN_ROLES]}>
-            <ImportarVeiculosAntigos />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/admin/usuarios">
-        {() => (
-          <RoleBasedRoute allowedRoles={['dev']}>
-            <AdminUsuarios />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/admin/relatorios" component={AdminRelatorios} />
+      <Route path="/admin/documentacao" component={AdminDocumentacao} />
+      <Route path="/admin/configuracoes" component={AdminConfiguracoes} />
+      <Route path="/admin/pendencias" component={AdminPendencias} />
+      <Route path="/admin/checklist" component={AdminChecklist} />
+      <Route path="/admin/importar-veiculos-antigos" component={ImportarVeiculosAntigos} />
+      <Route path="/admin/usuarios" component={AdminUsuarios} />
 
       {/* ========== ÁREA GESTÃO ========== */}
-      <Route path="/gestao">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoDashboards />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/gestao/rh">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoRH />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/gestao/operacoes">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoOperacoes />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/gestao/financeiro">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoFinanceiro />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/gestao/tecnologia">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoTecnologia />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/gestao/comercial">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoComercial />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/gestao/melhorias">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoMelhorias />
-          </RoleBasedRoute>
-        )}
-      </Route>
-      <Route path="/gestao/veiculos-orfaos">
-        {() => (
-          <RoleBasedRoute allowedRoles={['gestao', 'dev']}>
-            <GestaoVeiculosOrfaos />
-          </RoleBasedRoute>
-        )}
-      </Route>
+      <Route path="/gestao" component={GestaoDashboards} />
+      <Route path="/gestao/rh" component={GestaoRH} />
+      <Route path="/gestao/operacoes" component={GestaoOperacoes} />
+      <Route path="/gestao/financeiro" component={GestaoFinanceiro} />
+      <Route path="/gestao/tecnologia" component={GestaoTecnologia} />
+      <Route path="/gestao/comercial" component={GestaoComercial} />
+      <Route path="/gestao/melhorias" component={GestaoMelhorias} />
+      <Route path="/gestao/veiculos-orfaos" component={GestaoVeiculosOrfaos} />
 
       {/* ========== ÓRFÃS — lazy-loaded via DevLab ========== */}
       {/* Raiz */}
