@@ -12,8 +12,8 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  LogOut
 } from 'lucide-react';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 
 interface DashboardMetrics {
   totalOS: number;
@@ -85,10 +85,6 @@ export default function AdminDashboard() {
     fetchData();
   }, [user]);
 
-  const handleLogout = async () => {
-    await signOut();
-    window.location.href = '/login';
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -98,34 +94,8 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Car className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-bold text-xl">Doctor Auto Prime</h1>
-              <p className="text-sm text-muted-foreground">Painel Administrativo</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Olá, <span className="font-medium text-foreground">{userName}</span>
-            </span>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="container mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="p-4 md:p-6 space-y-6">
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-2">Dashboard</h2>
           <p className="text-muted-foreground">
@@ -247,7 +217,7 @@ export default function AdminDashboard() {
             </p>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
