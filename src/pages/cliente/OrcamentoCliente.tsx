@@ -83,7 +83,7 @@ export default function OrcamentoCliente() {
         .from("ordens_servico")
         .select(`
           id, order_number, status, created_at, problem_description, diagnosis,
-          clientes (id, name, phone, birthday),
+          clientes (id, name, phone, data_aniversario),
           veiculos (id, plate, brand, model, year)
         `)
         .eq("id", osId)
@@ -98,7 +98,7 @@ export default function OrcamentoCliente() {
         vehicle: osData.veiculos ? `${osData.veiculos.brand} ${osData.veiculos.model}${osData.veiculos.year ? ` ${osData.veiculos.year}` : ''}` : '-',
         client_name: osData.clientes?.name || null,
         client_phone: osData.clientes?.phone || null,
-        client_birthday: (osData.clientes as any)?.birthday || null,
+        client_birthday: (osData.clientes as any)?.data_aniversario || null,
         status: osData.status,
         data_entrada: osData.created_at,
         descricao_problema: osData.problem_description,
