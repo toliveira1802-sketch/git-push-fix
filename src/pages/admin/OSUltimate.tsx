@@ -50,6 +50,7 @@ import {
   Medal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 
 // ============================================
 // TIPOS
@@ -395,6 +396,7 @@ export default function OSUltimate() {
   const EtapaIcon = etapaAtual.icon;
 
   return (
+    <AdminLayout>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-border">
@@ -1287,6 +1289,7 @@ export default function OSUltimate() {
       </div>
     </div>
     </div>
+    </AdminLayout>
   );
 }
 

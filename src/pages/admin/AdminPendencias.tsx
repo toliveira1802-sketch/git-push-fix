@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 
 interface Colaborador {
   id: string;
@@ -133,14 +134,17 @@ export default function AdminPendencias() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
+    <AdminLayout>
+    <div className="p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link href="/admin">
@@ -276,5 +280,6 @@ export default function AdminPendencias() {
         )}
       </div>
     </div>
+    </AdminLayout>
   );
 }
