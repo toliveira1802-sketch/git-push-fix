@@ -39,6 +39,17 @@ import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import OSUltimate from "./pages/admin/OSUltimate";
 import ImportarVeiculosAntigos from "./pages/admin/ImportarVeiculosAntigos";
 
+// Admin Pages promovidas de órfãs (lazy-loaded)
+const AdminOperacional = lazy(() => import("./pages/admin/AdminOperacional"));
+const AdminParametros = lazy(() => import("./pages/admin/AdminParametros"));
+const AdminMelhorias = lazy(() => import("./pages/admin/AdminMelhorias"));
+const AdminVeiculos = lazy(() => import("./pages/admin/AdminVeiculos"));
+
+// Páginas promovidas de órfãs (lazy-loaded)
+const Avisos = lazy(() => import("./pages/Avisos"));
+const Profile = lazy(() => import("./pages/Profile"));
+const VisaoGeral = lazy(() => import("./pages/VisaoGeral"));
+
 // Client Pages (Garagem Virtual)
 import ClienteGaragem from "./pages/app/Garagem";
 
@@ -137,6 +148,10 @@ function Router() {
       <Route path="/__dev" component={DevScreens} />
       <Route path="/__dev/explorer">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><DevExplorer /></ErrorBoundary></Suspense>}</Route>
 
+      {/* Avisos e Perfil */}
+      <Route path="/avisos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><Avisos /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/perfil">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><Profile /></ErrorBoundary></Suspense>}</Route>
+
       {/* ========== ÁREA DO CLIENTE (Garagem Virtual) ========== */}
       <Route path="/app/garagem" component={ClienteGaragem} />
 
@@ -146,6 +161,10 @@ function Router() {
       <Route path="/admin">
         <Redirect to="/admin/dashboard" />
       </Route>
+
+      {/* Visão Geral e Operacional */}
+      <Route path="/admin/overview">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><VisaoGeral /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/admin/operacional">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminOperacional /></ErrorBoundary></Suspense>}</Route>
 
       {/* Ordens de Serviço */}
       <Route path="/admin/ordens-servico" component={AdminOrdensServico} />
@@ -162,8 +181,9 @@ function Router() {
       <Route path="/admin/agendamentos" component={AdminAgendamentos} />
       <Route path="/admin/agenda-mecanicos" component={AdminAgendaMecanicos} />
 
-      {/* Clientes e Serviços */}
+      {/* Clientes, Veículos e Serviços */}
       <Route path="/admin/clientes" component={AdminClientesPage} />
+      <Route path="/admin/veiculos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminVeiculos /></ErrorBoundary></Suspense>}</Route>
       <Route path="/admin/servicos" component={AdminServicos} />
 
       {/* Financeiro e Produtividade */}
@@ -179,6 +199,8 @@ function Router() {
       <Route path="/admin/configuracoes" component={AdminConfiguracoes} />
       <Route path="/admin/pendencias" component={AdminPendencias} />
       <Route path="/admin/checklist" component={AdminChecklist} />
+      <Route path="/admin/melhorias">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminMelhorias /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/admin/parametros">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminParametros /></ErrorBoundary></Suspense>}</Route>
       <Route path="/admin/importar-veiculos-antigos" component={ImportarVeiculosAntigos} />
       <Route path="/admin/usuarios" component={AdminUsuarios} />
 
