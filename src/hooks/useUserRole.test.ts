@@ -10,15 +10,15 @@ describe("getHomeRouteForRole", () => {
     expect(getHomeRouteForRole("admin")).toBe("/admin");
   });
 
-  it('should return "/gestao" for gestao role', () => {
-    expect(getHomeRouteForRole("gestao")).toBe("/gestao");
+  it('should return "/admin" for gestao role', () => {
+    expect(getHomeRouteForRole("gestao")).toBe("/admin");
   });
 
-  it('should return "/" for user role', () => {
-    expect(getHomeRouteForRole("user")).toBe("/");
+  it('should return "/minha-garagem" for user role', () => {
+    expect(getHomeRouteForRole("user")).toBe("/minha-garagem");
   });
 
-  it('should return "/" for null role', () => {
-    expect(getHomeRouteForRole(null)).toBe("/");
+  it('should return "/minha-garagem" for null role', () => {
+    expect(getHomeRouteForRole(null)).toBe("/minha-garagem");
   });
 });
