@@ -6,7 +6,7 @@
  * - Company interface shape
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import React from "react";
 
 // Mock supabase and devBypass BEFORE importing
@@ -20,35 +20,27 @@ vi.mock("@/config/devBypass", () => ({
   },
 }));
 
-const mockSubscription = { unsubscribe: vi.fn() };
+vi.mock("@/integrations/supabase/client", () => {
+  const mockSubscription = { unsubscribe: vi.fn() };
 
-const mockAuth = {
-  onAuthStateChange: vi.fn((cb: any) => {
-    return { data: { subscription: mockSubscription } };
-  }),
-  getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-};
-
-const mockQueryBuilder = {
-  select: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  order: vi.fn().mockReturnThis(),
-  limit: vi.fn().mockReturnThis(),
-  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-};
-
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    auth: mockAuth,
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-    })),
-  },
-}));
+  return {
+    supabase: {
+      auth: {
+        onAuthStateChange: vi.fn((cb: any) => {
+          return { data: { subscription: mockSubscription } };
+        }),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+      },
+      from: vi.fn(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    },
+  };
+});
 
 import { CompanyProvider, useCompany } from "./CompanyContext";
 import type { Company } from "./CompanyContext";
