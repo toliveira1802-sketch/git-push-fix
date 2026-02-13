@@ -198,11 +198,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     console.log("create-client-user: Success! Client ID:", clientData?.id);
 
+    // Log password server-side only for admin reference (never sent to client)
+    console.log(`create-client-user: Temp password for ${body.email} generated. Admin should use password reset flow if needed.`);
+
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: `Cliente criado com sucesso. Senha temporária: ${tempPassword}`,
-        tempPassword: tempPassword,
+        message: `Cliente criado com sucesso. Uma senha temporária foi gerada. O cliente deverá usar "Esqueci minha senha" para definir o acesso.`,
         userId: newUserId,
         clientId: clientData?.id,
       }),

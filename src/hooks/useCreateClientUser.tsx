@@ -56,7 +56,7 @@ export function useCreateClientUser() {
 
       toast({
         title: "Cliente criado!",
-        description: `Senha temporária: ${result.tempPassword} - O cliente deverá trocar no primeiro acesso.`,
+        description: result.message || "Cliente criado com sucesso. O cliente deverá usar 'Esqueci minha senha' para definir o acesso.",
       });
 
       return result;
