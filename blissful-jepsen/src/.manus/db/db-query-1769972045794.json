@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, nome, email FROM colaboradores LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT id, nome, email FROM colaboradores LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "THALES OLIVEIRA",
+      "email": "doctorauto.bosch@hotmail.com"
+    },
+    {
+      "id": "2",
+      "nome": "sophia ",
+      "email": "sophia.duarte1@hotmail.com"
+    },
+    {
+      "id": "3",
+      "nome": "Thales oliveira",
+      "email": "toliveira1802@gmail.com"
+    },
+    {
+      "id": "4",
+      "nome": "Sofia",
+      "email": "NULL"
+    },
+    {
+      "id": "5",
+      "nome": "Francisco",
+      "email": "NULL"
+    },
+    {
+      "id": "6",
+      "nome": "Márcia",
+      "email": "NULL"
+    },
+    {
+      "id": "7",
+      "nome": "Pedro",
+      "email": "NULL"
+    },
+    {
+      "id": "8",
+      "nome": "João",
+      "email": "NULL"
+    },
+    {
+      "id": "9",
+      "nome": "Rony",
+      "email": "NULL"
+    },
+    {
+      "id": "10",
+      "nome": "Antônio",
+      "email": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\temail\n1\tTHALES OLIVEIRA\tdoctorauto.bosch@hotmail.com\n2\tsophia \tsophia.duarte1@hotmail.com\n3\tThales oliveira\ttoliveira1802@gmail.com\n4\tSofia\tNULL\n5\tFrancisco\tNULL\n6\tMárcia\tNULL\n7\tPedro\tNULL\n8\tJoão\tNULL\n9\tRony\tNULL\n10\tAntônio\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

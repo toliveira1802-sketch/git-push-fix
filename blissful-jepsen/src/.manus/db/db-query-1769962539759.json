@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO colaboradores (nome, cargo, senha, primeiroAcesso) VALUES \n('Thalles', 'Direção', '123456', true),\n('Sofia', 'Direção', '123456', true),\n('Francisco', 'Gestão', '123456', true),\n('Márcia', 'Gestão', '123456', true),\n('Pedro', 'Consultor Técnico', '123456', true),\n('João', 'Consultor Técnico', '123456', true),\n('Rony', 'Consultor Técnico', '123456', true),\n('Antônio', 'Consultor Técnico', '123456', true);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute INSERT INTO colaboradores (nome, cargo, senha, primeiroAcesso) VALUES \n('Thalles', 'Direção', '123456', true),\n('Sofia', 'Direção', '123456', true),\n('Francisco', 'Gestão', '123456', true),\n('Márcia', 'Gestão', '123456', true),\n('Pedro', 'Consultor Técnico', '123456', true),\n('João', 'Consultor Técnico', '123456', true),\n('Rony', 'Consultor Técnico', '123456', true),\n('Antônio', 'Consultor Técnico', '123456', true);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 64
+}

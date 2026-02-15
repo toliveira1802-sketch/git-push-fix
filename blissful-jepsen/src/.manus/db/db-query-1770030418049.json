@@ -1,0 +1,80 @@
+{
+  "query": "SELECT id, nome, email, senha, cargo FROM `01_colaboradores`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT id, nome, email, senha, cargo FROM `01_colaboradores`;",
+  "rows": [
+    {
+      "id": "155000001",
+      "nome": "Sofia",
+      "email": "NULL",
+      "senha": "123456",
+      "cargo": "Direção"
+    },
+    {
+      "id": "155000002",
+      "nome": "Francisco",
+      "email": "NULL",
+      "senha": "123456",
+      "cargo": "Gestão"
+    },
+    {
+      "id": "155000003",
+      "nome": "Márcia",
+      "email": "NULL",
+      "senha": "123456",
+      "cargo": "Gestão"
+    },
+    {
+      "id": "155000004",
+      "nome": "Pedro",
+      "email": "NULL",
+      "senha": "123456",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "155000005",
+      "nome": "João",
+      "email": "NULL",
+      "senha": "123456",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "156967155",
+      "nome": "Thales",
+      "email": "toliveira1802@gmail.com",
+      "senha": "12345678",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "414000001",
+      "nome": "Antônio",
+      "email": "NULL",
+      "senha": "123456",
+      "cargo": "Consultor Técnico"
+    },
+    {
+      "id": "414967386",
+      "nome": "THALES OLIVEIRA",
+      "email": "doctorauto.bosch@hotmail.com",
+      "senha": "123456",
+      "cargo": "MASTER"
+    },
+    {
+      "id": "530000000",
+      "nome": "sophia ",
+      "email": "sophia.duarte1@hotmail.com",
+      "senha": "123456",
+      "cargo": "master"
+    },
+    {
+      "id": "530000001",
+      "nome": "Rony",
+      "email": "NULL",
+      "senha": "123456",
+      "cargo": "Consultor Técnico"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\temail\tsenha\tcargo\n155000001\tSofia\tNULL\t123456\tDireção\n155000002\tFrancisco\tNULL\t123456\tGestão\n155000003\tMárcia\tNULL\t123456\tGestão\n155000004\tPedro\tNULL\t123456\tConsultor Técnico\n155000005\tJoão\tNULL\t123456\tConsultor Técnico\n156967155\tThales\ttoliveira1802@gmail.com\t12345678\tConsultor Técnico\n414000001\tAntônio\tNULL\t123456\tConsultor Técnico\n414967386\tTHALES OLIVEIRA\tdoctorauto.bosch@hotmail.com\t123456\tMASTER\n530000000\tsophia \tsophia.duarte1@hotmail.com\t123456\tmaster\n530000001\tRony\tNULL\t123456\tConsultor Técnico\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

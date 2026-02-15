@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO empresas (razaoSocial, nomeEmpresa) VALUES \n('DOCTOR AUTO PRIME', 'DOCTOR AUTO PRIME'),\n('POMBAL', 'DOCTOR AUTO BOSCH'),\n('GARAGEM 1347', 'GARAGE 347');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute INSERT INTO empresas (razaoSocial, nomeEmpresa) VALUES \n('DOCTOR AUTO PRIME', 'DOCTOR AUTO PRIME'),\n('POMBAL', 'DOCTOR AUTO BOSCH'),\n('GARAGEM 1347', 'GARAGE 347');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 75
+}

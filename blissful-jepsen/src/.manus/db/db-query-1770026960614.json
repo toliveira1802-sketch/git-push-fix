@@ -1,0 +1,37 @@
+{
+  "query": "SELECT * FROM `00_empresas` ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT * FROM `00_empresas` ORDER BY id;",
+  "rows": [
+    {
+      "id": "155996173",
+      "razaoSocial": "DOCTOR AUTO PRIME",
+      "nomeEmpresa": "POMBAL",
+      "cnpj": "15528100000000",
+      "telefone": "996377301",
+      "createdAt": "2026-02-02 10:05:20",
+      "updatedAt": "2026-02-02 10:05:20"
+    },
+    {
+      "id": "414382132",
+      "razaoSocial": "DOCTOR AUTO BOSCH",
+      "nomeEmpresa": "BOSCH",
+      "cnpj": "41418900000000",
+      "telefone": "38240025",
+      "createdAt": "2026-02-02 10:05:20",
+      "updatedAt": "2026-02-02 10:05:20"
+    },
+    {
+      "id": "530913113",
+      "razaoSocial": "GARAGEM 347",
+      "nomeEmpresa": "LEOPOLDINA",
+      "cnpj": "53091300000000",
+      "telefone": "913120660",
+      "createdAt": "2026-02-02 10:05:20",
+      "updatedAt": "2026-02-02 10:05:20"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\trazaoSocial\tnomeEmpresa\tcnpj\ttelefone\tcreatedAt\tupdatedAt\n155996173\tDOCTOR AUTO PRIME\tPOMBAL\t15528100000000\t996377301\t2026-02-02 10:05:20\t2026-02-02 10:05:20\n414382132\tDOCTOR AUTO BOSCH\tBOSCH\t41418900000000\t38240025\t2026-02-02 10:05:20\t2026-02-02 10:05:20\n530913113\tGARAGEM 347\tLEOPOLDINA\t53091300000000\t913120660\t2026-02-02 10:05:20\t2026-02-02 10:05:20\n",
+  "stderr": "",
+  "execution_time_ms": 76
+}

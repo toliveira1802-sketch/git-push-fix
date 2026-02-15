@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, nome, email, senha FROM colaboradores;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT id, nome, email, senha FROM colaboradores;",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "THALES OLIVEIRA",
+      "email": "doctorauto.bosch@hotmail.com",
+      "senha": "123456"
+    },
+    {
+      "id": "2",
+      "nome": "sophia ",
+      "email": "sophia.duarte1@hotmail.com",
+      "senha": "123456"
+    },
+    {
+      "id": "3",
+      "nome": "Thales oliveira",
+      "email": "toliveira1802@gmail.com",
+      "senha": "12345678"
+    },
+    {
+      "id": "4",
+      "nome": "Sofia",
+      "email": "NULL",
+      "senha": "123456"
+    },
+    {
+      "id": "5",
+      "nome": "Francisco",
+      "email": "NULL",
+      "senha": "123456"
+    },
+    {
+      "id": "6",
+      "nome": "Márcia",
+      "email": "NULL",
+      "senha": "123456"
+    },
+    {
+      "id": "7",
+      "nome": "Pedro",
+      "email": "NULL",
+      "senha": "123456"
+    },
+    {
+      "id": "8",
+      "nome": "João",
+      "email": "NULL",
+      "senha": "123456"
+    },
+    {
+      "id": "9",
+      "nome": "Rony",
+      "email": "NULL",
+      "senha": "123456"
+    },
+    {
+      "id": "10",
+      "nome": "Antônio",
+      "email": "NULL",
+      "senha": "123456"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\temail\tsenha\n1\tTHALES OLIVEIRA\tdoctorauto.bosch@hotmail.com\t123456\n2\tsophia \tsophia.duarte1@hotmail.com\t123456\n3\tThales oliveira\ttoliveira1802@gmail.com\t12345678\n4\tSofia\tNULL\t123456\n5\tFrancisco\tNULL\t123456\n6\tMárcia\tNULL\t123456\n7\tPedro\tNULL\t123456\n8\tJoão\tNULL\t123456\n9\tRony\tNULL\t123456\n10\tAntônio\tNULL\t123456\n",
+  "stderr": "",
+  "execution_time_ms": 174
+}

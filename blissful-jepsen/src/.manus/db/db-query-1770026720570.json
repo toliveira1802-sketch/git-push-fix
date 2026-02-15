@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM empresas;\nINSERT INTO empresas (id, razaoSocial, nomeEmpresa, cnpj, telefone, createdAt, updatedAt) VALUES (155996173, 'DOCTOR AUTO PRIME', 'POMBAL', '15528100000000', '996377301', NOW(), NOW());\nINSERT INTO empresas (id, razaoSocial, nomeEmpresa, cnpj, telefone, createdAt, updatedAt) VALUES (414382132, 'DOCTOR AUTO BOSCH', 'BOSCH', '41418900000000', '38240025', NOW(), NOW());\nINSERT INTO empresas (id, razaoSocial, nomeEmpresa, cnpj, telefone, createdAt, updatedAt) VALUES (530913113, 'GARAGEM 347', 'LEOPOLDINA', '53091300000000', '913120660', NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute DELETE FROM empresas;\nINSERT INTO empresas (id, razaoSocial, nomeEmpresa, cnpj, telefone, createdAt, updatedAt) VALUES (155996173, 'DOCTOR AUTO PRIME', 'POMBAL', '15528100000000', '996377301', NOW(), NOW());\nINSERT INTO empresas (id, razaoSocial, nomeEmpresa, cnpj, telefone, createdAt, updatedAt) VALUES (414382132, 'DOCTOR AUTO BOSCH', 'BOSCH', '41418900000000', '38240025', NOW(), NOW());\nINSERT INTO empresas (id, razaoSocial, nomeEmpresa, cnpj, telefone, createdAt, updatedAt) VALUES (530913113, 'GARAGEM 347', 'LEOPOLDINA', '53091300000000', '913120660', NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 118
+}

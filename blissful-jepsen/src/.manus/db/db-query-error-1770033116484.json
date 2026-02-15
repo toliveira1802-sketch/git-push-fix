@@ -1,0 +1,8 @@
+{
+  "query": "DELETE FROM `08_veiculos`;\nINSERT INTO `08_veiculos` (id, clienteId, placa, marca, modelo, versao, ano, combustivel, km) VALUES (1, 155300971, 'ERR1B44', 'VW', 'I/VW PASSAT CC 3.6 FSI', 'FSI', '2011', 'Gasolina', 0);\nINSERT INTO `08_veiculos` (id, clienteId, placa, marca, modelo, versao, ano, combustivel, km) VALUES (2, 155300971, 'ERR4E88', 'VW', 'PASSAT 2.0T FSI', 'I/VW PASSAT 2.0T FSI', '2011', 'Gasolina', 0);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute DELETE FROM `08_veiculos`;\nINSERT INTO `08_veiculos` (id, clienteId, placa, marca, modelo, versao, ano, combustivel, km) VALUES (1, 155300971, 'ERR1B44', 'VW', 'I/VW PASSAT CC 3.6 FSI', 'FSI', '2011', 'Gasolina', 0);\nINSERT INTO `08_veiculos` (id, clienteId, placa, marca, modelo, versao, ano, combustivel, km) VALUES (2, 155300971, 'ERR4E88', 'VW', 'PASSAT 2.0T FSI', 'I/VW PASSAT 2.0T FSI', '2011', 'Gasolina', 0);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'km' in 'field list'"
+  ]
+}

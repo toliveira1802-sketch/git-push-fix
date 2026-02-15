@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git rebase:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: conectar Profile.tsx ao Supabase e corrigir OSUltimate\n\n- Profile.tsx: remove dados mockados, busca de profiles + clients\n- Profile.tsx: adiciona estatísticas reais \\(total serviços, economia\\)\n- Profile.tsx: formata data de aniversário em português\n- OSUltimate.tsx: corrige sintaxe JSX \\(fechamento de tags\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: resolver conflito merge App.tsx\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: expandir galeria DevScreens com todas as telas\n\n- Adiciona todas as páginas do cliente \\(home, perfil, histórico, veículos, agenda\\)\n- Adiciona páginas de OS Cliente\n- Adiciona páginas Admin \\(dashboard, os-ultimate, clientes, etc\\)\n- Adiciona páginas Gestão \\(dashboard, RH, operações, financeiro\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(powershell -Command:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: corrigir mapeamento de colunas do Supabase\n\n- useClientData: usar nome/telefone ao invés de name/phone\n- useClientData: buscar veículos por user_id ao invés de client_id\n- Profile: usar colunas corretas \\(nome, telefone, cpf_cnpj, nivel_fidelidade, valor_total\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: atualizar .gitignore\n\n- Ignorar pasta .claude/ \\(Claude Code\\)\n- Ignorar arquivo nul\n- Ignorar src/mocks/ \\(dados de teste\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: corrigir colunas no registro de clientes\n\n- Usar nome/telefone ao invés de name/phone\n- Usar origem_cadastro ao invés de registration_source\n- Usar status ''ativo'' e nivel_fidelidade ''bronze''\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndebug: adicionar logs para verificar variáveis de ambiente do Supabase\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(where:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite build:*)",
+      "Bash(grep:*)",
+      "Bash(npx vite:*)",
+      "Bash(timeout:*)",
+      "Bash(git config:*)",
+      "Bash(git status:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)"
+    ]
+  }
+}

@@ -5,9 +5,28 @@
 import { describe, it, expect } from "vitest";
 import { reducer } from "./use-toast";
 
+<<<<<<< Updated upstream
 const emptyState = { toasts: [] as any[] };
 
 function makeToast(overrides: Record<string, any> = {}) {
+=======
+interface ToasterToast {
+  id: string;
+  title?: string;
+  description?: string;
+  open?: boolean;
+  variant?: string;
+  onOpenChange?: (open: boolean) => void;
+}
+
+interface State {
+  toasts: ToasterToast[];
+}
+
+const emptyState: State = { toasts: [] };
+
+function makeToast(overrides: Partial<ToasterToast> = {}): ToasterToast {
+>>>>>>> Stashed changes
   return {
     id: "1",
     title: "Test Toast",
@@ -21,7 +40,11 @@ describe("use-toast reducer", () => {
   describe("ADD_TOAST", () => {
     it("should add a toast to empty state", () => {
       const toast = makeToast({ id: "1" });
+<<<<<<< Updated upstream
       const result = reducer(emptyState as any, {
+=======
+      const result = reducer(emptyState, {
+>>>>>>> Stashed changes
         type: "ADD_TOAST",
         toast: toast as any,
       });
@@ -32,11 +55,19 @@ describe("use-toast reducer", () => {
     });
 
     it("should prepend new toast (newest first)", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1", title: "Old" }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1", title: "Old" }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "ADD_TOAST",
         toast: makeToast({ id: "2", title: "New" }) as any,
       });
@@ -45,11 +76,19 @@ describe("use-toast reducer", () => {
     });
 
     it("should enforce TOAST_LIMIT of 1", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1", title: "First" }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1", title: "First" }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "ADD_TOAST",
         toast: makeToast({ id: "2", title: "Second" }) as any,
       });
@@ -62,11 +101,19 @@ describe("use-toast reducer", () => {
 
   describe("UPDATE_TOAST", () => {
     it("should update an existing toast by id", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1", title: "Original" }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1", title: "Original" }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "UPDATE_TOAST",
         toast: { id: "1", title: "Updated" },
       });
@@ -76,11 +123,19 @@ describe("use-toast reducer", () => {
     });
 
     it("should not affect other toasts", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1", title: "Toast 1" }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1", title: "Toast 1" }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "UPDATE_TOAST",
         toast: { id: "999", title: "Wrong ID" },
       });
@@ -91,11 +146,19 @@ describe("use-toast reducer", () => {
 
   describe("DISMISS_TOAST", () => {
     it("should set open to false for a specific toast", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1", open: true }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1", open: true }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "DISMISS_TOAST",
         toastId: "1",
       });
@@ -104,11 +167,20 @@ describe("use-toast reducer", () => {
     });
 
     it("should dismiss all toasts when no toastId provided", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1", open: true }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      // First add a toast by building state directly
+      const state: State = {
+        toasts: [makeToast({ id: "1", open: true }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "DISMISS_TOAST",
         toastId: undefined,
       });
@@ -119,11 +191,20 @@ describe("use-toast reducer", () => {
     });
 
     it("should not affect other toasts when dismissing specific id", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1", open: true }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      // Build a state with 1 toast (limit is 1, but test the logic)
+      const state: State = {
+        toasts: [makeToast({ id: "1", open: true }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "DISMISS_TOAST",
         toastId: "999", // different id
       });
@@ -134,11 +215,19 @@ describe("use-toast reducer", () => {
 
   describe("REMOVE_TOAST", () => {
     it("should remove a specific toast by id", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1" }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1" }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "REMOVE_TOAST",
         toastId: "1",
       });
@@ -147,11 +236,19 @@ describe("use-toast reducer", () => {
     });
 
     it("should remove all toasts when no toastId provided", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1" }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1" }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "REMOVE_TOAST",
         toastId: undefined,
       });
@@ -160,11 +257,19 @@ describe("use-toast reducer", () => {
     });
 
     it("should not remove toasts with different ids", () => {
+<<<<<<< Updated upstream
       const state = {
         toasts: [makeToast({ id: "1" }) as any],
       };
 
       const result = reducer(state as any, {
+=======
+      const state: State = {
+        toasts: [makeToast({ id: "1" }) as any],
+      };
+
+      const result = reducer(state, {
+>>>>>>> Stashed changes
         type: "REMOVE_TOAST",
         toastId: "999",
       });

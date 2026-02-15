@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO veiculos (clienteId, placa, marca, modelo, versao, ano, combustivel) VALUES \n(7230, 'ERR1B44', 'VW', 'I/VW PASSAT CC 3.6 FSI', 'FSI', 2011, 'Gasolina'),\n(7230, 'ERR4E88', 'VW', 'PASSAT 2.0T FSI', 'I/VW PASSAT 2.0T FSI', 2011, 'Gasolina');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute INSERT INTO veiculos (clienteId, placa, marca, modelo, versao, ano, combustivel) VALUES \n(7230, 'ERR1B44', 'VW', 'I/VW PASSAT CC 3.6 FSI', 'FSI', 2011, 'Gasolina'),\n(7230, 'ERR4E88', 'VW', 'PASSAT 2.0T FSI', 'I/VW PASSAT 2.0T FSI', 2011, 'Gasolina');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 73
+}

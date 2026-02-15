@@ -1,0 +1,67 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.766e65396192 --database TtWEMAUQLqjd2id2vAzp4o --execute SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE();",
+  "rows": [
+    {
+      "TABLE_NAME": "__drizzle_migrations"
+    },
+    {
+      "TABLE_NAME": "users"
+    },
+    {
+      "TABLE_NAME": "agendamentos"
+    },
+    {
+      "TABLE_NAME": "faturamento"
+    },
+    {
+      "TABLE_NAME": "ordens_servico_historico"
+    },
+    {
+      "TABLE_NAME": "00_empresas"
+    },
+    {
+      "TABLE_NAME": "01_colaboradores"
+    },
+    {
+      "TABLE_NAME": "02_nivelDeAcesso"
+    },
+    {
+      "TABLE_NAME": "03_mecanicos"
+    },
+    {
+      "TABLE_NAME": "04_lista_status"
+    },
+    {
+      "TABLE_NAME": "05_pendencias"
+    },
+    {
+      "TABLE_NAME": "06_recursos"
+    },
+    {
+      "TABLE_NAME": "97_ANALISE_PROMOCOES"
+    },
+    {
+      "TABLE_NAME": "98_SERVICOS"
+    },
+    {
+      "TABLE_NAME": "99_CRM"
+    },
+    {
+      "TABLE_NAME": "07_clientes"
+    },
+    {
+      "TABLE_NAME": "08_veiculos"
+    },
+    {
+      "TABLE_NAME": "09_ordens_servico"
+    },
+    {
+      "TABLE_NAME": "11_ordens_servico_itens"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\n__drizzle_migrations\nusers\nagendamentos\nfaturamento\nordens_servico_historico\n00_empresas\n01_colaboradores\n02_nivelDeAcesso\n03_mecanicos\n04_lista_status\n05_pendencias\n06_recursos\n97_ANALISE_PROMOCOES\n98_SERVICOS\n99_CRM\n07_clientes\n08_veiculos\n09_ordens_servico\n11_ordens_servico_itens\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

@@ -1,0 +1,594 @@
+{
+  "name": "🧠 Simone - IA Central Doctor Auto",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "simone-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-entrada",
+      "name": "🔔 Webhook Kommo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "simone-doctor-auto"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://doctorautobosch.kommo.com/api/v4/leads/{{ $json.body.leads.add[0].id || $json.body.leads.update[0].id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "id": "buscar-lead",
+      "name": "📥 Buscar Lead Completo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KOMMO_CREDENTIAL_ID",
+          "name": "Kommo API - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "simone_config",
+        "limit": 1
+      },
+      "id": "buscar-config",
+      "name": "⚙️ Buscar Config Simone",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [440, 500],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "simone_servicos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ativo",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "buscar-servicos",
+      "name": "🛠️ Buscar Serviços",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [440, 700],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "simone_upsell",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ativo",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "buscar-upsell",
+      "name": "💰 Buscar Regras Upsell",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [440, 900],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combinar todos os dados para o contexto da Simone\nconst lead = $('📥 Buscar Lead Completo').first().json;\nconst config = $('⚙️ Buscar Config Simone').first().json;\nconst servicos = $('🛠️ Buscar Serviços').all().map(i => i.json);\nconst upsellRules = $('💰 Buscar Regras Upsell').all().map(i => i.json);\n\n// Extrair dados do lead\nconst leadId = lead.id;\nconst leadNome = lead.name || 'Cliente';\nconst etapaId = lead.status_id;\nconst pipelineId = lead.pipeline_id;\nconst customFields = lead.custom_fields_values || [];\n\n// Mapear etapas\nconst etapas = {\n  98157076: 'QUALIFICAÇÃO',\n  98157080: 'ATENDIMENTO',\n  98157088: 'ORÇAMENTO',\n  98157084: 'TENTANDO AGENDAR',\n  98157456: 'POTENCIAL CLIENTE',\n  98157516: 'FOLLOW UP',\n  98157520: 'AGENDADO',\n  98157580: 'ENTREGUE',\n  142: 'FECHADO GANHO',\n  143: 'FECHADO PERDIDO'\n};\n\nconst etapaAtual = etapas[etapaId] || 'DESCONHECIDA';\n\n// Calcular tempo parado (em minutos)\nconst updatedAt = new Date(lead.updated_at * 1000);\nconst agora = new Date();\nconst tempoParado = Math.floor((agora - updatedAt) / 60000);\n\n// Extrair serviço do campo personalizado\nlet servicoSolicitado = '';\nconst campoServico = customFields.find(f => f.field_id === 966171);\nif (campoServico && campoServico.values) {\n  servicoSolicitado = campoServico.values[0]?.value || '';\n}\n\n// Determinar ação baseada na etapa e tempo\nlet acaoNecessaria = 'analisar';\nlet urgencia = 'normal';\n\nif (etapaAtual === 'QUALIFICAÇÃO' && tempoParado > config.tempo_alerta_qualificacao) {\n  acaoNecessaria = 'classificar_e_alertar';\n  urgencia = 'alta';\n} else if (etapaAtual === 'ATENDIMENTO' && tempoParado > config.tempo_alerta_atendimento) {\n  acaoNecessaria = 'alertar_urgente';\n  urgencia = 'urgente';\n} else if (etapaAtual === 'FOLLOW UP' && tempoParado > config.tempo_alerta_followup) {\n  acaoNecessaria = 'reativar';\n  urgencia = 'media';\n} else if (etapaAtual === 'QUALIFICAÇÃO') {\n  acaoNecessaria = 'classificar';\n} else if (etapaAtual === 'ATENDIMENTO') {\n  acaoNecessaria = 'vender';\n} else if (etapaAtual === 'ORÇAMENTO') {\n  acaoNecessaria = 'acompanhar_orcamento';\n}\n\nreturn {\n  lead: {\n    id: leadId,\n    nome: leadNome,\n    etapa: etapaAtual,\n    etapa_id: etapaId,\n    tempo_parado: tempoParado,\n    servico_solicitado: servicoSolicitado,\n    dados_completos: lead\n  },\n  config: config,\n  servicos: servicos,\n  upsell_rules: upsellRules,\n  acao: acaoNecessaria,\n  urgencia: urgencia\n};"
+      },
+      "id": "preparar-contexto",
+      "name": "🔧 Preparar Contexto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 500]
+    },
+    {
+      "parameters": {
+        "model": "deepseek-chat",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "={{ $json.config.prompt_sistema }}\n\n## SERVIÇOS DISPONÍVEIS:\n{{ JSON.stringify($json.servicos, null, 2) }}\n\n## REGRAS DE UPSELL:\n{{ JSON.stringify($json.upsell_rules, null, 2) }}"
+            },
+            {
+              "role": "user",
+              "content": "=LEAD: {{ $json.lead.nome }}\nETAPA ATUAL: {{ $json.lead.etapa }}\nTEMPO PARADO: {{ $json.lead.tempo_parado }} minutos\nSERVIÇO SOLICITADO: {{ $json.lead.servico_solicitado || 'Não informado' }}\n\nAÇÃO NECESSÁRIA: {{ $json.acao }}\nURGÊNCIA: {{ $json.urgencia }}\n\nAnalise este lead e retorne um JSON com:\n{\n  \"classificacao\": \"quente|morno|frio\",\n  \"score\": 0-100,\n  \"analise\": \"sua análise do lead\",\n  \"acao_sugerida\": \"o que fazer agora\",\n  \"resposta_sugerida\": \"mensagem para enviar ao cliente (se aplicável)\",\n  \"upsell_sugerido\": \"serviço extra para oferecer (se aplicável)\",\n  \"mover_para_etapa\": \"nome da etapa (se deve mover)\",\n  \"gerar_alerta\": true|false,\n  \"mensagem_alerta\": \"mensagem para o consultor (se gerar_alerta)\"\n}"
+            }
+          ]
+        },
+        "options": {
+          "baseURL": "https://api.deepseek.com/v1",
+          "maxTokens": 1000,
+          "temperature": 0.7
+        }
+      },
+      "id": "deepseek-analise",
+      "name": "🤖 DeepSeek - Análise",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [940, 500],
+      "credentials": {
+        "openAiApi": {
+          "id": "DEEPSEEK_CREDENTIAL_ID",
+          "name": "DeepSeek API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parsear resposta da IA\nconst input = $input.first().json;\nlet resposta;\n\ntry {\n  // Tentar extrair JSON da resposta\n  const content = input.message?.content || input.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    resposta = JSON.parse(jsonMatch[0]);\n  } else {\n    resposta = {\n      classificacao: 'morno',\n      score: 50,\n      analise: content,\n      acao_sugerida: 'Verificar manualmente',\n      gerar_alerta: true,\n      mensagem_alerta: 'IA não conseguiu analisar completamente'\n    };\n  }\n} catch (e) {\n  resposta = {\n    classificacao: 'morno',\n    score: 50,\n    analise: 'Erro ao processar resposta da IA',\n    acao_sugerida: 'Verificar manualmente',\n    gerar_alerta: true,\n    mensagem_alerta: 'Erro no processamento: ' + e.message\n  };\n}\n\nreturn {\n  ...resposta,\n  lead_id: $('🔧 Preparar Contexto').first().json.lead.id,\n  lead_nome: $('🔧 Preparar Contexto').first().json.lead.nome,\n  etapa_atual: $('🔧 Preparar Contexto').first().json.lead.etapa\n};"
+      },
+      "id": "processar-resposta",
+      "name": "📊 Processar Resposta IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1180, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.gerar_alerta }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "verificar-alerta",
+      "name": "🚨 Gerar Alerta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1420, 500]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "simone_alertas",
+        "columns": "lead_id,lead_nome,tipo_alerta,mensagem,etapa",
+        "data": "={{ $json.lead_id }},{{ $json.lead_nome }},urgente,{{ $json.mensagem_alerta }},{{ $json.etapa_atual }}"
+      },
+      "id": "salvar-alerta",
+      "name": "💾 Salvar Alerta",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1700, 400],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "simone_historico",
+        "columns": "lead_id,lead_nome,acao,etapa_origem,score_calculado,classificacao,resposta_ia",
+        "data": "={{ $json.lead_id }},={{ $json.lead_nome }},analise,={{ $json.etapa_atual }},={{ $json.score }},={{ $json.classificacao }},={{ $json.analise }}"
+      },
+      "id": "salvar-historico",
+      "name": "📝 Salvar Histórico",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1420, 700],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://doctorautobosch.kommo.com/api/v4/leads/{{ $json.lead_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "custom_fields_values",
+              "value": "=[{\"field_id\": 966171, \"values\": [{\"value\": \"Score: {{ $json.score }} | {{ $json.classificacao }}\"}]}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "atualizar-kommo",
+      "name": "✏️ Atualizar Lead Kommo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1700, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KOMMO_CREDENTIAL_ID",
+          "name": "Kommo API - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"lead_id\": \"{{ $('📊 Processar Resposta IA').first().json.lead_id }}\", \"classificacao\": \"{{ $('📊 Processar Resposta IA').first().json.classificacao }}\", \"score\": {{ $('📊 Processar Resposta IA').first().json.score }}}"
+      },
+      "id": "resposta-webhook",
+      "name": "✅ Resposta Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1940, 500]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "cron-verificacao",
+      "name": "⏰ Verificação Periódica",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://doctorautobosch.kommo.com/api/v4/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filter[statuses][0][pipeline_id]",
+              "value": "12717900"
+            },
+            {
+              "name": "filter[statuses][0][status_id]",
+              "value": "98157076"
+            },
+            {
+              "name": "filter[statuses][1][status_id]",
+              "value": "98157080"
+            },
+            {
+              "name": "filter[statuses][2][status_id]",
+              "value": "98157516"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "buscar-leads-parados",
+      "name": "📥 Buscar Leads Ativos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KOMMO_CREDENTIAL_ID",
+          "name": "Kommo API - Doctor Auto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtrar leads parados por muito tempo\nconst leads = $input.first().json._embedded?.leads || [];\nconst agora = Date.now();\nconst alertas = [];\n\nconst limites = {\n  98157076: 30,  // QUALIFICAÇÃO: 30 min\n  98157080: 120, // ATENDIMENTO: 2h\n  98157516: 2880 // FOLLOW UP: 48h\n};\n\nconst etapas = {\n  98157076: 'QUALIFICAÇÃO',\n  98157080: 'ATENDIMENTO',\n  98157516: 'FOLLOW UP'\n};\n\nfor (const lead of leads) {\n  const updatedAt = lead.updated_at * 1000;\n  const tempoParado = Math.floor((agora - updatedAt) / 60000);\n  const limite = limites[lead.status_id];\n  \n  if (limite && tempoParado > limite) {\n    alertas.push({\n      lead_id: lead.id,\n      lead_nome: lead.name,\n      etapa: etapas[lead.status_id],\n      tempo_parado: tempoParado,\n      urgencia: tempoParado > limite * 2 ? 'urgente' : 'alta'\n    });\n  }\n}\n\nreturn alertas.length > 0 ? alertas : [{ sem_alertas: true }];"
+      },
+      "id": "filtrar-parados",
+      "name": "🔍 Filtrar Leads Parados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.sem_alertas }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "tem-alertas",
+      "name": "❓ Tem Alertas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [940, 100]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "simone_alertas",
+        "columns": "lead_id,lead_nome,tipo_alerta,mensagem,etapa,tempo_parado",
+        "data": "={{ $json.lead_id }},={{ $json.lead_nome }},urgente,Lead parado há {{ $json.tempo_parado }} minutos,={{ $json.etapa }},={{ $json.tempo_parado }}"
+      },
+      "id": "criar-alertas-batch",
+      "name": "🚨 Criar Alertas",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1180, 50],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase - Doctor Auto"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "🔔 Webhook Kommo": {
+      "main": [
+        [
+          {
+            "node": "📥 Buscar Lead Completo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "⚙️ Buscar Config Simone",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🛠️ Buscar Serviços",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "💰 Buscar Regras Upsell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Buscar Lead Completo": {
+      "main": [
+        [
+          {
+            "node": "🔧 Preparar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Buscar Config Simone": {
+      "main": [
+        [
+          {
+            "node": "🔧 Preparar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🛠️ Buscar Serviços": {
+      "main": [
+        [
+          {
+            "node": "🔧 Preparar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💰 Buscar Regras Upsell": {
+      "main": [
+        [
+          {
+            "node": "🔧 Preparar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔧 Preparar Contexto": {
+      "main": [
+        [
+          {
+            "node": "🤖 DeepSeek - Análise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 DeepSeek - Análise": {
+      "main": [
+        [
+          {
+            "node": "📊 Processar Resposta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Processar Resposta IA": {
+      "main": [
+        [
+          {
+            "node": "🚨 Gerar Alerta?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📝 Salvar Histórico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚨 Gerar Alerta?": {
+      "main": [
+        [
+          {
+            "node": "💾 Salvar Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "✏️ Atualizar Lead Kommo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Salvar Alerta": {
+      "main": [
+        [
+          {
+            "node": "✏️ Atualizar Lead Kommo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Salvar Histórico": {
+      "main": [
+        [
+          {
+            "node": "✏️ Atualizar Lead Kommo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✏️ Atualizar Lead Kommo": {
+      "main": [
+        [
+          {
+            "node": "✅ Resposta Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏰ Verificação Periódica": {
+      "main": [
+        [
+          {
+            "node": "📥 Buscar Leads Ativos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Buscar Leads Ativos": {
+      "main": [
+        [
+          {
+            "node": "🔍 Filtrar Leads Parados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtrar Leads Parados": {
+      "main": [
+        [
+          {
+            "node": "❓ Tem Alertas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Tem Alertas?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "🚨 Criar Alertas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Doctor Auto",
+      "createdAt": "2026-01-26T00:00:00.000Z",
+      "updatedAt": "2026-01-26T00:00:00.000Z"
+    },
+    {
+      "name": "IA Central",
+      "createdAt": "2026-01-26T00:00:00.000Z",
+      "updatedAt": "2026-01-26T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 2,
+  "updatedAt": "2026-01-26T00:00:00.000Z",
+  "versionId": "simone-v1"
+}
