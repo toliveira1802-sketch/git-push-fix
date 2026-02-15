@@ -1,5 +1,5 @@
 import { useRoute, useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft, Car, Phone, AlertTriangle,
   Clock, Loader2, CheckCircle, XCircle, User, Cake, ThumbsUp, ThumbsDown
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrdemServicoItem {
   id: string;
@@ -20,7 +21,6 @@ interface OrdemServicoItem {
   status: string;
   motivo_recusa: string | null;
   prioridade: 'verde' | 'amarelo' | 'vermelho' | null;
-  data_retorno_estimada: string | null;
 }
 
 interface OrdemServico {
@@ -30,16 +30,11 @@ interface OrdemServico {
   vehicle: string;
   client_name: string | null;
   client_phone: string | null;
+  client_birthday: string | null;
   status: string;
   data_entrada: string | null;
   descricao_problema: string | null;
   diagnostico: string | null;
-}
-
-interface ClientProfile {
-  full_name: string;
-  phone: string;
-  birthday: string | null;
 }
 
 const prioridadeConfig: Record<string, { label: string; description: string; borderColor: string; bgColor: string; icon: React.ElementType }> = {
@@ -66,132 +61,120 @@ const prioridadeConfig: Record<string, { label: string; description: string; bor
   },
 };
 
-// Mock data para desenvolvimento
-const mockOS: OrdemServico = {
-  id: "1",
-  numero_os: "OS-2026-0042",
-  plate: "ABC-1D34",
-  vehicle: "Honda Civic EXL 2.0",
-  client_name: "João Silva Santos",
-  client_phone: "(11) 98765-4321",
-  status: "em_orcamento",
-  data_entrada: "2026-01-28",
-  descricao_problema: "Cliente relata ruído no motor ao acelerar",
-  diagnostico: "Após análise, identificado problema no sistema de injeção e necessidade de limpeza dos bicos injetores. Sensor MAP apresentando leituras incorretas."
-};
-
-const mockItens: OrdemServicoItem[] = [
-  { 
-    id: "1", 
-    descricao: "Troca de pastilhas de freio dianteiras", 
-    tipo: "peca", 
-    quantidade: 1, 
-    valor_unitario: 450.00, 
-    valor_total: 450.00, 
-    status: "pendente", 
-    motivo_recusa: null, 
-    prioridade: "vermelho",
-    data_retorno_estimada: null
-  },
-  { 
-    id: "2", 
-    descricao: "Troca de discos de freio dianteiros", 
-    tipo: "peca", 
-    quantidade: 2, 
-    valor_unitario: 380.00, 
-    valor_total: 760.00, 
-    status: "pendente", 
-    motivo_recusa: null, 
-    prioridade: "vermelho",
-    data_retorno_estimada: null
-  },
-  { 
-    id: "3", 
-    descricao: "Troca do sensor MAP", 
-    tipo: "peca", 
-    quantidade: 1, 
-    valor_unitario: 480.00, 
-    valor_total: 480.00, 
-    status: "aprovado", 
-    motivo_recusa: null, 
-    prioridade: "amarelo",
-    data_retorno_estimada: null
-  },
-  { 
-    id: "4", 
-    descricao: "Limpeza de bicos injetores", 
-    tipo: "mao_de_obra", 
-    quantidade: 1, 
-    valor_unitario: 350.00, 
-    valor_total: 350.00, 
-    status: "aprovado", 
-    motivo_recusa: null, 
-    prioridade: "amarelo",
-    data_retorno_estimada: null
-  },
-  { 
-    id: "5", 
-    descricao: "Troca de velas NGK", 
-    tipo: "peca", 
-    quantidade: 4, 
-    valor_unitario: 70.00, 
-    valor_total: 280.00, 
-    status: "pendente", 
-    motivo_recusa: null, 
-    prioridade: "verde",
-    data_retorno_estimada: null
-  },
-  { 
-    id: "6", 
-    descricao: "Troca óleo motor sintético 5W30", 
-    tipo: "peca", 
-    quantidade: 1, 
-    valor_unitario: 340.00, 
-    valor_total: 340.00, 
-    status: "recusado", 
-    motivo_recusa: "Recusado pelo cliente", 
-    prioridade: "verde",
-    data_retorno_estimada: null
-  },
-];
-
-const mockClientProfile: ClientProfile = {
-  full_name: "João Silva Santos",
-  phone: "(11) 98765-4321",
-  birthday: "1985-03-15"
-};
-
 export default function OrcamentoCliente() {
   const [, routeParams] = useRoute("/cliente/orcamento/:osId");
   const osId = (routeParams as { osId?: string })?.osId ?? "";
   const [, setLocation] = useLocation();
-  const [itens, setItens] = useState<OrdemServicoItem[]>(mockItens);
+  const [itens, setItens] = useState<OrdemServicoItem[]>([]);
+  const [os, setOs] = useState<OrdemServico | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Usando dados mock por enquanto
-  const os = mockOS;
-  const clientProfile = mockClientProfile;
+  useEffect(() => {
+    if (!osId) return;
+    fetchData();
+  }, [osId]);
+
+  const fetchData = async () => {
+    setPageLoading(true);
+    try {
+      // Buscar OS com cliente e veículo
+      const { data: osData, error: osError } = await supabase
+        .from("ordens_servico")
+        .select(`
+          id, order_number, status, created_at, problem_description, diagnosis,
+          clientes (id, name, phone, data_aniversario),
+          veiculos (id, plate, brand, model, year)
+        `)
+        .eq("id", osId)
+        .single();
+
+      if (osError) throw osError;
+
+      setOs({
+        id: osData.id,
+        numero_os: osData.order_number,
+        plate: osData.veiculos?.plate || '-',
+        vehicle: osData.veiculos ? `${osData.veiculos.brand} ${osData.veiculos.model}${osData.veiculos.year ? ` ${osData.veiculos.year}` : ''}` : '-',
+        client_name: osData.clientes?.name || null,
+        client_phone: osData.clientes?.phone || null,
+        client_birthday: (osData.clientes as any)?.data_aniversario || null,
+        status: osData.status,
+        data_entrada: osData.created_at,
+        descricao_problema: osData.problem_description,
+        diagnostico: osData.diagnosis,
+      });
+
+      // Buscar itens da OS
+      const { data: itensData, error: itensError } = await supabase
+        .from("itens_ordem_servico")
+        .select("*")
+        .eq("service_order_id", osId)
+        .order("created_at");
+
+      if (itensError) throw itensError;
+
+      setItens((itensData || []).map((item: any) => ({
+        id: item.id,
+        descricao: item.description,
+        tipo: item.type || 'peca',
+        quantidade: item.quantity || 1,
+        valor_unitario: Number(item.unit_price) || 0,
+        valor_total: Number(item.total_price) || 0,
+        status: item.status || 'pendente',
+        motivo_recusa: item.refusal_reason || null,
+        prioridade: item.priority || 'verde',
+      })));
+    } catch (error) {
+      console.error("Erro ao carregar orçamento:", error);
+      toast.error("Erro ao carregar orçamento");
+    } finally {
+      setPageLoading(false);
+    }
+  };
 
   const aprovarItem = async (itemId: string) => {
     setIsLoading(true);
-    // Simular delay de API
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setItens(prev => prev.map(item => 
-      item.id === itemId ? { ...item, status: "aprovado", motivo_recusa: null } : item
-    ));
-    toast.success("Item aprovado! ✅");
-    setIsLoading(false);
+    try {
+      const { error } = await supabase
+        .from("itens_ordem_servico")
+        .update({ status: "aprovado", refusal_reason: null })
+        .eq("id", itemId);
+
+      if (error) throw error;
+
+      setItens(prev => prev.map(item =>
+        item.id === itemId ? { ...item, status: "aprovado", motivo_recusa: null } : item
+      ));
+      toast.success("Item aprovado!");
+    } catch (error) {
+      console.error("Erro ao aprovar item:", error);
+      toast.error("Erro ao aprovar item");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const recusarItem = async (itemId: string) => {
     setIsLoading(true);
-    // Simular delay de API
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setItens(prev => prev.map(item => 
-      item.id === itemId ? { ...item, status: "recusado", motivo_recusa: "Recusado pelo cliente" } : item
-    ));
-    toast.success("Item recusado");
-    setIsLoading(false);
+    try {
+      const { error } = await supabase
+        .from("itens_ordem_servico")
+        .update({ status: "recusado", refusal_reason: "Recusado pelo cliente" })
+        .eq("id", itemId);
+
+      if (error) throw error;
+
+      setItens(prev => prev.map(item =>
+        item.id === itemId ? { ...item, status: "recusado", motivo_recusa: "Recusado pelo cliente" } : item
+      ));
+      toast.success("Item recusado");
+    } catch (error) {
+      console.error("Erro ao recusar item:", error);
+      toast.error("Erro ao recusar item");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -220,6 +203,23 @@ export default function OrcamentoCliente() {
       return null;
     }
   };
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!os) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex flex-col items-center justify-center gap-4">
+        <p className="text-white">Orçamento não encontrado</p>
+        <Button variant="outline" onClick={() => setLocation("/")}>Voltar</Button>
+      </div>
+    );
+  }
 
   // Calculate totals
   const totalOrcado = itens.reduce((acc, item) => acc + (item.valor_total || 0), 0);
@@ -257,7 +257,6 @@ export default function OrcamentoCliente() {
         )}
       >
         <CardContent className="p-4 space-y-3">
-          {/* Header com criticidade */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -290,7 +289,6 @@ export default function OrcamentoCliente() {
             </div>
           </div>
 
-          {/* Status */}
           {isAprovado && (
             <div className="flex items-center gap-2 p-2 bg-green-500/20 rounded-lg">
               <CheckCircle className="w-4 h-4 text-green-600" />
@@ -357,9 +355,7 @@ export default function OrcamentoCliente() {
     );
   };
 
-  const clientName = clientProfile?.full_name || os.client_name;
-  const clientPhone = clientProfile?.phone || os.client_phone;
-  const clientBirthday = formatBirthday(clientProfile?.birthday);
+  const clientBirthday = formatBirthday(os.client_birthday);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
@@ -385,31 +381,29 @@ export default function OrcamentoCliente() {
         {/* Client Info */}
         <Card className="bg-slate-900/80 backdrop-blur border-slate-700">
           <CardContent className="p-4 space-y-4">
-            {/* Cliente */}
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-red-600/20 flex items-center justify-center">
                 <User className="w-6 h-6 text-red-500" />
               </div>
               <div className="flex-1">
                 <p className="text-xs text-slate-400">Cliente</p>
-                <h2 className="font-semibold text-lg text-white">{clientName || "Não informado"}</h2>
+                <h2 className="font-semibold text-lg text-white">{os.client_name || "Não informado"}</h2>
               </div>
             </div>
 
-            {/* Telefone e Aniversário */}
             <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-slate-400" />
                 <div>
                   <p className="text-xs text-slate-400">Telefone</p>
-                  {clientPhone ? (
+                  {os.client_phone ? (
                     <a
-                      href={`https://wa.me/55${clientPhone.replace(/\D/g, '')}`}
+                      href={`https://wa.me/55${os.client_phone.replace(/\D/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-medium text-green-500 hover:underline"
                     >
-                      {clientPhone}
+                      {os.client_phone}
                     </a>
                   ) : (
                     <p className="text-sm text-slate-400">Não informado</p>
@@ -480,6 +474,12 @@ export default function OrcamentoCliente() {
           </CardContent>
         </Card>
 
+        {itens.length === 0 && (
+          <div className="text-center py-8 text-slate-400">
+            <p>Nenhum item no orçamento ainda.</p>
+          </div>
+        )}
+
         {/* Itens Urgentes */}
         {itensUrgentes.length > 0 && (
           <div className="space-y-3">
@@ -520,7 +520,6 @@ export default function OrcamentoCliente() {
       {/* Fixed Bottom Summary */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur border-t border-slate-800 p-4">
         <div className="max-w-2xl mx-auto space-y-3">
-          {/* Detalhamento por tipo */}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex justify-between items-center p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
               <span className="text-slate-400">Peças:</span>
@@ -532,7 +531,6 @@ export default function OrcamentoCliente() {
             </div>
           </div>
 
-          {/* Total Geral */}
           <div className="flex justify-between items-center pt-2 border-t border-slate-700">
             <div>
               <p className="text-sm text-slate-400">Total do Orçamento</p>

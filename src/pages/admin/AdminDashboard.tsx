@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Calendar, DollarSign, Loader2, TrendingUp, Car, Wrench, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, DollarSign, Loader2, TrendingUp, Car, Wrench, ChevronRight, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "@/hooks/useNavigate";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +18,28 @@ const AdminDashboard = () => {
     returnVehicles,
     vehiclesInYard,
   } = useAdminDashboard();
+
+  // Pendências do dia
+  const [pendencias, setPendencias] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchPendencias = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("pendencias")
+          .select("id, titulo, descricao, prioridade, status, tipo, vehicle_plate")
+          .eq("status", "pendente")
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+        setPendencias(data || []);
+      } catch (error) {
+        console.error("Erro ao carregar pendências:", error);
+      }
+    };
+    fetchPendencias();
+  }, []);
 
   // Modal states
   const [showAppointments, setShowAppointments] = useState(false);
@@ -62,7 +86,28 @@ const AdminDashboard = () => {
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-sm text-muted-foreground">Nenhuma pendência para hoje. Bom trabalho!</p>
+            {pendencias.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma pendência para hoje. Bom trabalho!</p>
+            ) : (
+              <div className="space-y-2">
+                {pendencias.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">{p.titulo}</p>
+                        {p.vehicle_plate && (
+                          <p className="text-xs text-muted-foreground font-mono">{p.vehicle_plate}</p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {p.prioridade || p.tipo}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

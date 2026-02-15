@@ -223,6 +223,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           onClick={() => {
             if (hasSubItems && !collapsed) {
               toggleExpanded(item.path);
+              // Itens com subItems só expandem/colapsam, não navegam
+              onClick?.();
+              return;
             }
             navigate(item.path);
             onClick?.();
