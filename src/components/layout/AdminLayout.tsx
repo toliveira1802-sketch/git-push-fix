@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useCompany } from '@/contexts/CompanyContext';
+import { AdminSubNav } from '@/components/layout/AdminSubNav';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -508,6 +509,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <ThemeToggle collapsed />
           </div>
         </header>
+        {/* Sub-navigation for dashboard module pages */}
+        {(pathname === '/admin' || pathname === '/admin/dashboard' || ['/admin/operacional', '/admin/financeiro', '/admin/produtividade', '/admin/agenda-mecanicos'].some(p => pathname.startsWith(p))) && (
+          <AdminSubNav />
+        )}
         {children}
       </main>
     </div>

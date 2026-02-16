@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, DollarSign, Loader2, TrendingUp, Car, Wrench, ChevronRight, AlertCircle } from "lucide-react";
+import { Calendar, DollarSign, Loader2, TrendingUp, Car, ChevronRight, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -112,37 +112,8 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Navigation Tabs - Full Width */}
-        <div className="grid grid-cols-4 border-b border-border">
-          <button 
-            onClick={() => navigate('/admin/operacional')}
-            className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors py-3 border-r border-border"
-          >
-            <Wrench className="w-4 h-4" />
-            Operacional
-          </button>
-          <button 
-            onClick={() => navigate('/admin/financeiro')}
-            className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors py-3 border-r border-border"
-          >
-            <DollarSign className="w-4 h-4" />
-            Financeiro
-          </button>
-          <button 
-            onClick={() => navigate('/admin/produtividade')}
-            className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors py-3 border-r border-border"
-          >
-            <TrendingUp className="w-4 h-4" />
-            Produtividade
-          </button>
-          <button 
-            onClick={() => navigate('/admin/agenda-mecanicos')}
-            className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors py-3"
-          >
-            <Calendar className="w-4 h-4" />
-            Agenda Mec.
-          </button>
-        </div>
+
+
 
         {/* Stats Grid - 2x2 */}
         <div className="grid grid-cols-2 gap-4">
