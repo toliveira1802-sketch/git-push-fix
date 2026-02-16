@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, DollarSign, Loader2, TrendingUp, Car, Wrench, ChevronRight, AlertCircle, Bell } from "lucide-react";
+import { Calendar, DollarSign, Loader2, TrendingUp, Car, Wrench, ChevronRight, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -71,25 +70,6 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/admin/pendencias')}
-              className="relative p-2 rounded-lg hover:bg-accent transition-colors"
-              title="Notificações"
-            >
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              {pendencias.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {pendencias.length}
-                </span>
-              )}
-            </button>
-            <ThemeToggle collapsed />
-          </div>
-        </div>
 
         {/* Pendências do dia */}
         <Card className="border border-border bg-card">
