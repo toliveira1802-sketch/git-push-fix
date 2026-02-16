@@ -29,13 +29,7 @@ import {
   MessageSquare,
   BarChart3,
   Wrench,
-  Bell,
-  UserCog,
-  Cog,
-  DollarSign,
-  Laptop,
-  Megaphone,
-  LayoutDashboard
+  Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -99,14 +93,6 @@ const companyMenuItems: MenuItem[] = [
   },
 ];
 
-const gestaoMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Hub Gestão', path: '/gestao' },
-  { icon: UserCog, label: 'Recursos Humanos', path: '/gestao/rh' },
-  { icon: Cog, label: 'Operações', path: '/gestao/operacoes' },
-  { icon: DollarSign, label: 'Financeiro', path: '/gestao/financeiro' },
-  { icon: Laptop, label: 'Tecnologia', path: '/gestao/tecnologia' },
-  { icon: Megaphone, label: 'Comercial', path: '/gestao/comercial' },
-];
 
 const systemMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Documentação', path: '/admin/documentacao' },
@@ -128,7 +114,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(true);
-  const [gestaoOpen, setGestaoOpen] = useState(false);
   const [systemOpen, setSystemOpen] = useState(false);
   const [userName, setUserName] = useState<string>('');
   
@@ -201,13 +186,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     '/admin/configuracoes': isOnConfigSubRoute,
   });
 
-  // Auto-open gestão section when on gestão routes
-  const isOnGestaoRoute = pathname.startsWith('/gestao');
-  useEffect(() => {
-    if (isOnGestaoRoute && !gestaoOpen) {
-      setGestaoOpen(true);
-    }
-  }, [pathname, isOnGestaoRoute]);
 
   // Keep parent menus expanded when navigating to sub-routes
   useEffect(() => {
@@ -379,33 +357,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Gestão Section */}
-          <Collapsible open={gestaoOpen} onOpenChange={setGestaoOpen}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-between gap-2 text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent mt-4",
-                  collapsed && "justify-center"
-                )}
-              >
-                {!collapsed && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4" />
-                      <span className="text-xs font-medium uppercase tracking-wider">Gestão</span>
-                    </div>
-                    {gestaoOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </>
-                )}
-                {collapsed && <BarChart3 className="h-4 w-4" />}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-1 mt-1">
-              {gestaoMenuItems.map((item) => renderMenuItem(item))}
-            </CollapsibleContent>
-          </Collapsible>
-
           {/* System Section */}
           <Collapsible open={systemOpen} onOpenChange={setSystemOpen}>
             <CollapsibleTrigger asChild>
@@ -516,13 +467,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               {companyMenuItems.map((item) => renderMenuItem(item, () => setMobileOpen(false)))}
             </div>
 
-            {/* Gestão Menu Items */}
-            <div className="space-y-1 pt-4 border-t border-sidebar-border mt-4">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">
-                Gestão
-              </span>
-              {gestaoMenuItems.map((item) => renderMenuItem(item, () => setMobileOpen(false)))}
-            </div>
 
             {/* System Menu Items */}
             <div className="space-y-1 pt-4 border-t border-sidebar-border mt-4">
