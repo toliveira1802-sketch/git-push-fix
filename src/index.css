@@ -44,117 +44,142 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Doctor Auto Prime Design System - Dark Red Futuristic Theme */
+/* ============================================
+   LIGHT THEME — Warm Sand & Terracotta
+   Clean, editorial, professional
+   ============================================ */
 :root {
-  --radius: 1rem;
-  
-  /* Dark mode is primary - Black & Red palette */
-  --background: oklch(0.13 0 0);
-  --foreground: oklch(0.96 0 0);
+  --radius: 0.875rem;
 
-  --card: oklch(0.18 0 0);
-  --card-foreground: oklch(0.96 0 0);
+  --background: hsl(40 30% 97%);
+  --foreground: hsl(20 20% 14%);
 
-  --popover: oklch(0.18 0 0);
-  --popover-foreground: oklch(0.96 0 0);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(20 20% 14%);
 
-  --primary: oklch(0.55 0.22 25);
-  --primary-foreground: oklch(1 0 0);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(20 20% 14%);
 
-  --secondary: oklch(0.22 0 0);
-  --secondary-foreground: oklch(0.8 0 0);
+  --primary: hsl(8 72% 50%);
+  --primary-foreground: hsl(0 0% 100%);
 
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.64 0 0);
+  --secondary: hsl(35 25% 93%);
+  --secondary-foreground: hsl(20 15% 30%);
 
-  --accent: oklch(0.6 0.24 25);
-  --accent-foreground: oklch(1 0 0);
+  --muted: hsl(35 20% 94%);
+  --muted-foreground: hsl(20 10% 46%);
 
-  --destructive: oklch(0.6 0.24 25);
-  --destructive-foreground: oklch(1 0 0);
+  --accent: hsl(8 60% 55%);
+  --accent-foreground: hsl(0 0% 100%);
 
-  --success: oklch(0.6 0.18 145);
-  --success-foreground: oklch(1 0 0);
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
 
-  --warning: oklch(0.75 0.18 85);
-  --warning-foreground: oklch(0.2 0 0);
+  --success: hsl(145 60% 40%);
+  --success-foreground: hsl(0 0% 100%);
 
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.2 0 0);
-  --ring: oklch(0.55 0.22 25);
+  --warning: hsl(45 90% 50%);
+  --warning-foreground: hsl(20 20% 14%);
 
-  /* Brand colors - Red spectrum */
-  --brand-deep: oklch(0.45 0.2 25);
-  --brand-primary: oklch(0.55 0.22 25);
-  --brand-light: oklch(0.6 0.24 25);
-  --brand-lighter: oklch(0.7 0.2 25);
+  --border: hsl(30 15% 88%);
+  --input: hsl(30 15% 88%);
+  --ring: hsl(8 72% 50%);
 
-  /* Glass effect colors */
-  --glass-bg: oklch(0.55 0.22 25 / 0.08);
-  --glass-border: oklch(0.6 0.24 25 / 0.15);
-  --glass-shine: oklch(1 0 0 / 0.03);
+  /* Brand */
+  --brand-deep: hsl(8 72% 38%);
+  --brand-primary: hsl(8 72% 50%);
+  --brand-light: hsl(8 60% 55%);
+  --brand-lighter: hsl(8 50% 65%);
+
+  /* Glass */
+  --glass-bg: hsl(8 72% 50% / 0.06);
+  --glass-border: hsl(8 60% 55% / 0.12);
+  --glass-shine: hsl(0 0% 100% / 0.6);
 
   /* Sidebar */
-  --sidebar: oklch(0.15 0 0);
-  --sidebar-foreground: oklch(0.8 0 0);
-  --sidebar-primary: oklch(0.55 0.22 25);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.2 0 0);
-  --sidebar-accent-foreground: oklch(0.8 0 0);
-  --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.55 0.22 25);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(20 15% 30%);
+  --sidebar-primary: hsl(8 72% 50%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(35 25% 95%);
+  --sidebar-accent-foreground: hsl(20 15% 30%);
+  --sidebar-border: hsl(30 15% 90%);
+  --sidebar-ring: hsl(8 72% 50%);
 
   /* Charts */
-  --chart-1: oklch(0.55 0.22 25);
-  --chart-2: oklch(0.6 0.24 25);
-  --chart-3: oklch(0.65 0.2 25);
-  --chart-4: oklch(0.7 0.18 25);
-  --chart-5: oklch(0.75 0.15 25);
+  --chart-1: hsl(8 72% 50%);
+  --chart-2: hsl(20 65% 55%);
+  --chart-3: hsl(35 60% 50%);
+  --chart-4: hsl(145 50% 45%);
+  --chart-5: hsl(200 60% 50%);
 }
 
+/* ============================================
+   DARK THEME — Glassmorphism
+   Deep, translucent, atmospheric
+   ============================================ */
 .dark {
-  --background: oklch(0.13 0 0);
-  --foreground: oklch(0.96 0 0);
+  --background: hsl(220 20% 8%);
+  --foreground: hsl(0 0% 95%);
 
-  --card: oklch(0.18 0 0);
-  --card-foreground: oklch(0.96 0 0);
+  --card: hsl(220 18% 13% / 0.7);
+  --card-foreground: hsl(0 0% 95%);
 
-  --popover: oklch(0.18 0 0);
-  --popover-foreground: oklch(0.96 0 0);
+  --popover: hsl(220 18% 14%);
+  --popover-foreground: hsl(0 0% 95%);
 
-  --primary: oklch(0.55 0.22 25);
-  --primary-foreground: oklch(1 0 0);
+  --primary: hsl(8 80% 55%);
+  --primary-foreground: hsl(0 0% 100%);
 
-  --secondary: oklch(0.22 0 0);
-  --secondary-foreground: oklch(0.8 0 0);
+  --secondary: hsl(220 15% 18% / 0.6);
+  --secondary-foreground: hsl(0 0% 78%);
 
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.64 0 0);
+  --muted: hsl(220 15% 16% / 0.5);
+  --muted-foreground: hsl(0 0% 58%);
 
-  --accent: oklch(0.6 0.24 25);
-  --accent-foreground: oklch(1 0 0);
+  --accent: hsl(8 70% 60%);
+  --accent-foreground: hsl(0 0% 100%);
 
-  --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(1 0 0);
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
 
-  --success: oklch(0.6 0.18 145);
-  --success-foreground: oklch(1 0 0);
+  --success: hsl(145 55% 48%);
+  --success-foreground: hsl(0 0% 100%);
 
-  --warning: oklch(0.75 0.18 85);
-  --warning-foreground: oklch(0.2 0 0);
+  --warning: hsl(45 85% 55%);
+  --warning-foreground: hsl(20 20% 10%);
 
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.2 0 0);
-  --ring: oklch(0.55 0.22 25);
+  --border: hsl(220 15% 22% / 0.6);
+  --input: hsl(220 15% 18% / 0.5);
+  --ring: hsl(8 80% 55%);
 
-  --sidebar: oklch(0.14 0 0);
-  --sidebar-foreground: oklch(0.8 0 0);
-  --sidebar-primary: oklch(0.55 0.22 25);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.18 0 0);
-  --sidebar-accent-foreground: oklch(0.8 0 0);
-  --sidebar-border: oklch(0.22 0 0);
-  --sidebar-ring: oklch(0.55 0.22 25);
+  /* Brand */
+  --brand-deep: hsl(8 80% 40%);
+  --brand-primary: hsl(8 80% 55%);
+  --brand-light: hsl(8 70% 60%);
+  --brand-lighter: hsl(8 60% 70%);
+
+  /* Glass */
+  --glass-bg: hsl(220 20% 15% / 0.4);
+  --glass-border: hsl(0 0% 100% / 0.08);
+  --glass-shine: hsl(0 0% 100% / 0.04);
+
+  /* Sidebar */
+  --sidebar: hsl(220 20% 10% / 0.85);
+  --sidebar-foreground: hsl(0 0% 80%);
+  --sidebar-primary: hsl(8 80% 55%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(220 15% 16% / 0.5);
+  --sidebar-accent-foreground: hsl(0 0% 80%);
+  --sidebar-border: hsl(220 15% 20% / 0.5);
+  --sidebar-ring: hsl(8 80% 55%);
+
+  /* Charts */
+  --chart-1: hsl(8 80% 55%);
+  --chart-2: hsl(20 70% 60%);
+  --chart-3: hsl(35 65% 55%);
+  --chart-4: hsl(145 55% 50%);
+  --chart-5: hsl(200 65% 55%);
 }
 
 @layer base {
@@ -207,25 +232,35 @@
     }
   }
 
-  /* Glass Card Effect - Dark with red glow */
+  /* ========================================
+     GLASS CARD — Glassmorphism effect
+     Works in both themes
+     ======================================== */
   .glass-card {
     @apply relative overflow-hidden rounded-2xl;
-    background: linear-gradient(
-      145deg,
-      oklch(0.18 0 0 / 0.9),
-      oklch(0.14 0 0 / 0.95)
-    );
-    backdrop-filter: blur(20px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
     border: 1px solid var(--glass-border);
-    box-shadow: 
-      0 8px 32px oklch(0 0 0 / 0.5),
-      inset 0 1px 0 oklch(1 0 0 / 0.03),
-      0 0 60px var(--glass-bg);
+    box-shadow:
+      0 8px 32px hsl(0 0% 0% / 0.15),
+      inset 0 1px 0 var(--glass-shine);
+  }
+
+  .dark .glass-card {
+    box-shadow:
+      0 8px 40px hsl(0 0% 0% / 0.5),
+      inset 0 1px 0 var(--glass-shine),
+      0 0 80px hsl(8 80% 55% / 0.04);
   }
 
   /* Gradient backgrounds */
   .gradient-bg {
-    background: linear-gradient(135deg, oklch(0.13 0 0) 0%, oklch(0.18 0 0) 100%);
+    background: linear-gradient(135deg, var(--background) 0%, hsl(220 15% 12%) 100%);
+  }
+
+  .dark .gradient-bg {
+    background: linear-gradient(135deg, hsl(220 20% 8%) 0%, hsl(220 25% 12%) 50%, hsl(240 20% 10%) 100%);
   }
 
   .gradient-primary {
@@ -233,21 +268,27 @@
   }
 
   .gradient-glow {
-    background: linear-gradient(135deg, oklch(0.55 0.22 25 / 0.15) 0%, oklch(0.6 0.24 25 / 0.05) 100%);
+    background: linear-gradient(135deg, hsl(8 80% 55% / 0.12) 0%, hsl(8 70% 60% / 0.04) 100%);
   }
 
-  /* Neomorphic shadow - deep black */
+  /* Neomorphic shadow */
   .neo-shadow {
-    box-shadow: 
-      8px 8px 24px oklch(0 0 0 / 0.8),
-      -4px -4px 16px oklch(0.2 0 0 / 0.1);
+    box-shadow:
+      8px 8px 24px hsl(0 0% 0% / 0.2),
+      -4px -4px 16px hsl(0 0% 100% / 0.04);
+  }
+
+  .dark .neo-shadow {
+    box-shadow:
+      8px 8px 24px hsl(0 0% 0% / 0.7),
+      -4px -4px 16px hsl(0 0% 100% / 0.02);
   }
 
   /* Animated gradient border */
   .animated-border {
     position: relative;
   }
-  
+
   .animated-border::before {
     content: '';
     position: absolute;
@@ -272,23 +313,23 @@
     50% { background-position: 100% 50%; }
   }
 
-  /* Status indicator pulse - red glow */
+  /* Status pulse */
   .status-pulse {
     animation: pulse-ring 2s ease-out infinite;
   }
 
   @keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 oklch(0.55 0.22 25 / 0.7); }
-    70% { box-shadow: 0 0 0 10px oklch(0.55 0.22 25 / 0); }
-    100% { box-shadow: 0 0 0 0 oklch(0.55 0.22 25 / 0); }
+    0% { box-shadow: 0 0 0 0 hsl(8 80% 55% / 0.6); }
+    70% { box-shadow: 0 0 0 10px hsl(8 80% 55% / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(8 80% 55% / 0); }
   }
 
-  /* Shimmer loading effect */
+  /* Shimmer loading */
   .shimmer {
     background: linear-gradient(
       90deg,
       var(--muted) 0%,
-      oklch(0.64 0 0 / 0.1) 50%,
+      hsl(0 0% 50% / 0.1) 50%,
       var(--muted) 100%
     );
     background-size: 200% 100%;
@@ -300,17 +341,17 @@
     100% { background-position: 200% 0; }
   }
 
-  /* Touch target minimum */
+  /* Touch target */
   .touch-target {
     @apply min-h-[48px] min-w-[48px];
   }
 
-  /* Red glow effect */
+  /* Red glow */
   .red-glow {
-    box-shadow: 0 0 30px oklch(0.55 0.22 25 / 0.3);
+    box-shadow: 0 0 30px hsl(8 80% 55% / 0.25);
   }
 
-  /* Fade in animation */
+  /* Fade in */
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
   }
