@@ -361,3 +361,11 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* Smooth theme transition */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, fill 0.3s ease, stroke 0.3s ease !important;
+}
