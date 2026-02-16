@@ -20,31 +20,13 @@ describe("usePersistFn", () => {
 
   it("should maintain a stable function reference across re-renders", () => {
     const { result, rerender } = renderHook(
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
       ({ fn }: { fn: () => string }) => usePersistFn(fn),
       { initialProps: { fn: (() => "first") as () => string } }
-=======
-      ({ fn }) => usePersistFn(fn),
-      { initialProps: { fn: () => "first" } }
->>>>>>> Stashed changes
-=======
-      ({ fn }) => usePersistFn(fn),
-      { initialProps: { fn: () => "first" } }
->>>>>>> Stashed changes
     );
 
     const firstRef = result.current;
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     rerender({ fn: (() => "second") as () => string });
-=======
-    rerender({ fn: () => "second" });
->>>>>>> Stashed changes
-=======
-    rerender({ fn: () => "second" });
->>>>>>> Stashed changes
 
     const secondRef = result.current;
 
