@@ -1,82 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, Wrench, User, UserPlus } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff, Wrench, Shield, BarChart3, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDefaultRouteForRole } from '@/components/auth/RoleBasedRoute';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-type AppRole = 'user' | 'admin' | 'gestao' | 'dev';
+type LoginStep = 'credentials' | 'choose-module';
+type ModuleChoice = 'admin' | 'gestao';
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useAuth();
-  
-  // Login state
+  const [step, setStep] = useState<LoginStep>('credentials');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
-  
-  // Sign up state
-  const [signUpEmail, setSignUpEmail] = useState('');
-  const [signUpPassword, setSignUpPassword] = useState('');
-  const [signUpName, setSignUpName] = useState('');
-  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  // Redireciona se já logado
+  // If already logged in, go straight to module choice
   useEffect(() => {
-    const checkAndRedirect = async () => {
-      if (authLoading) return;
-      if (!user) return;
+    if (!authLoading && user) {
+      setStep('choose-module');
+    }
+  }, [user, authLoading]);
 
-      // Buscar role e redirecionar
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .single();
-
-      const role = (data?.role as AppRole) || 'user';
-      const targetRoute = getDefaultRouteForRole(role);
-      
-      // Buscar nome para toast de boas-vindas
-      const { data: profileData } = await supabase
-        .from('colaboradores')
-        .select('full_name')
-        .eq('user_id', user.id)
-        .single();
-      
-      const userName = profileData?.full_name || user.email?.split('@')[0] || 'Usuário';
-      toast.success(`Bem-vindo ao Doctor Auto Prime, ${userName}!`);
-      
-      setLocation(targetRoute);
-    };
-
-    checkAndRedirect();
-  }, [user, authLoading, setLocation]);
-
-  // Validations
-  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isValidPassword = (password: string) => password.length >= 6;
-  const isValidName = (name: string) => name.length >= 3;
-
-  const isLoginFormValid = isValidEmail(email) && isValidPassword(password);
-  const isSignUpFormValid = isValidEmail(signUpEmail) && isValidPassword(signUpPassword) && isValidName(signUpName);
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidPassword = password.length >= 4;
+  const isFormValid = isValidEmail && isValidPassword;
 
   const handleLogin = async () => {
-    if (!isLoginFormValid) {
-      const newErrors: typeof errors = {};
-      if (!isValidEmail(email)) newErrors.email = 'Email inválido';
-      if (!isValidPassword(password)) newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
+    if (!isFormValid) {
+      const newErrors: { email?: string; password?: string } = {};
+      if (!isValidEmail) newErrors.email = 'Email inválido';
+      if (!isValidPassword) newErrors.password = 'Senha deve ter pelo menos 4 caracteres';
       setErrors(newErrors);
       return;
     }
@@ -103,100 +63,73 @@ export default function Login() {
       }
 
       if (data.user) {
-        // Redirecionamento será feito pelo useEffect
+        toast.success('Login realizado com sucesso!');
+        setStep('choose-module');
       }
     } catch (error) {
       toast.error('Erro ao fazer login. Tente novamente.');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignUp = async () => {
-    if (!isSignUpFormValid) {
-      const newErrors: typeof errors = {};
-      if (!isValidName(signUpName)) newErrors.name = 'Nome deve ter pelo menos 3 caracteres';
-      if (!isValidEmail(signUpEmail)) newErrors.email = 'Email inválido';
-      if (!isValidPassword(signUpPassword)) newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
-      setErrors(newErrors);
+  const handleModuleChoice = async (module: ModuleChoice) => {
+    const currentUser = user;
+    if (!currentUser) {
+      toast.error('Sessão expirada. Faça login novamente.');
+      setStep('credentials');
       return;
     }
 
     setIsLoading(true);
-    setErrors({});
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: signUpEmail,
-        password: signUpPassword,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: signUpName,
-          },
-        },
-      });
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id)
+        .single();
 
-      if (error) {
-        if (error.message.includes('already registered')) {
-          toast.error('Este email já está cadastrado. Tente fazer login.');
-        } else {
-          toast.error(error.message || 'Erro ao criar conta');
-        }
+      if (roleError || !roleData) {
+        toast.error('Erro ao verificar permissões. Contate a gestão.');
         setIsLoading(false);
         return;
       }
 
-      if (data.user) {
-        toast.success('Conta criada! Verifique seu email para confirmar o cadastro.');
-        setActiveTab('login');
-        setEmail(signUpEmail);
-        setPassword('');
+      const role = roleData.role;
+
+      if (module === 'admin') {
+        if (role === 'admin' || role === 'dev') {
+          setLocation('/admin/dashboard');
+        } else {
+          toast.error('Seu perfil não tem permissão para acessar o módulo Admin.');
+          setIsLoading(false);
+        }
+      } else if (module === 'gestao') {
+        if (role === 'gestao' || role === 'dev') {
+          setLocation('/gestao');
+        } else {
+          toast.error('Seu perfil não tem permissão para acessar o módulo Gestão.');
+          setIsLoading(false);
+        }
       }
     } catch (error) {
-      toast.error('Erro ao criar conta. Tente novamente.');
-    } finally {
+      toast.error('Erro ao verificar permissões.');
       setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent, action: 'login' | 'signup') => {
-    if (e.key === 'Enter') {
-      if (action === 'login' && isLoginFormValid) {
-        handleLogin();
-      } else if (action === 'signup' && isSignUpFormValid) {
-        handleSignUp();
-      }
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && isFormValid) {
+      handleLogin();
     }
   };
 
-  // Criar admin de teste (DEV)
-  const handleCreateTestAdmin = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-admin-user', {
-        body: {
-          email: 'admin@doctorautoprime.com.br',
-          password: 'admin123',
-          name: 'Admin Doctor Auto',
-        },
-      });
-
-      if (error) {
-        console.error('Erro:', error);
-        toast.error('Erro ao criar admin: ' + error.message);
-      } else {
-        toast.success('Admin criado! Use: admin@doctorautoprime.com.br / admin123');
-        setEmail('admin@doctorautoprime.com.br');
-        setPassword('admin123');
-      }
-    } catch (err: any) {
-      console.error('Erro:', err);
-      toast.error('Erro ao criar admin de teste');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleBack = async () => {
+    await supabase.auth.signOut();
+    setStep('credentials');
+    setEmail('');
+    setPassword('');
   };
 
   return (
@@ -210,251 +143,172 @@ export default function Login() {
       {/* Content */}
       <div className="relative flex-1 flex flex-col justify-center px-6 py-12 max-w-md mx-auto w-full">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl gradient-primary flex items-center justify-center red-glow">
-            <Wrench className="w-10 h-10 text-white" />
+        <div className="text-center mb-12">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-2xl gradient-primary flex items-center justify-center red-glow">
+            <Wrench className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Doctor Auto Prime
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground">
             Sistema de Gestão - Oficina
           </p>
         </div>
 
-        {/* Auth Form with Tabs */}
-        <div className="glass-card p-6 rounded-2xl">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Entrar
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4" />
-                Cadastrar
-              </TabsTrigger>
-            </TabsList>
-
-            {/* LOGIN TAB */}
-            <TabsContent value="login" className="space-y-4">
-              {/* Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-foreground font-medium">
-                  Email
-                </Label>
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-lg bg-background/50 border transition-all duration-300 ${errors.email ? 'border-destructive' : 'border-border'}`}>
-                  <Mail className="w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="login-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
-                    }}
-                    onKeyDown={(e) => handleKeyPress(e, 'login')}
-                    placeholder="seu@email.com"
-                    className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 p-0"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-destructive text-sm">{errors.email}</p>
-                )}
-              </div>
-
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-foreground font-medium">
-                  Senha
-                </Label>
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-lg bg-background/50 border transition-all duration-300 ${errors.password ? 'border-destructive' : 'border-border'}`}>
-                  <Lock className="w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="login-password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
-                    }}
-                    onKeyDown={(e) => handleKeyPress(e, 'login')}
-                    placeholder="••••••"
-                    className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 p-0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-destructive text-sm">{errors.password}</p>
-                )}
-              </div>
-
-              <Button
-                onClick={handleLogin}
-                disabled={!isLoginFormValid || isLoading}
-                className="w-full gradient-primary text-primary-foreground font-semibold py-5 group"
-              >
-                {isLoading ? (
-                  'Entrando...'
-                ) : (
-                  <>
-                    Entrar
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </Button>
-            </TabsContent>
-
-            {/* SIGN UP TAB */}
-            <TabsContent value="signup" className="space-y-4">
-              {/* Name Field */}
-              <div className="space-y-2">
-                <Label htmlFor="signup-name" className="text-foreground font-medium">
-                  Nome Completo
-                </Label>
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-lg bg-background/50 border transition-all duration-300 ${errors.name ? 'border-destructive' : 'border-border'}`}>
-                  <User className="w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    value={signUpName}
-                    onChange={(e) => {
-                      setSignUpName(e.target.value);
-                      if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
-                    }}
-                    onKeyDown={(e) => handleKeyPress(e, 'signup')}
-                    placeholder="Seu nome"
-                    className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 p-0"
-                  />
-                </div>
-                {errors.name && (
-                  <p className="text-destructive text-sm">{errors.name}</p>
-                )}
-              </div>
-
-              {/* Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="signup-email" className="text-foreground font-medium">
-                  Email
-                </Label>
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-lg bg-background/50 border transition-all duration-300 ${errors.email ? 'border-destructive' : 'border-border'}`}>
-                  <Mail className="w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={signUpEmail}
-                    onChange={(e) => {
-                      setSignUpEmail(e.target.value);
-                      if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
-                    }}
-                    onKeyDown={(e) => handleKeyPress(e, 'signup')}
-                    placeholder="seu@email.com"
-                    className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 p-0"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-destructive text-sm">{errors.email}</p>
-                )}
-              </div>
-
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="signup-password" className="text-foreground font-medium">
-                  Senha
-                </Label>
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-lg bg-background/50 border transition-all duration-300 ${errors.password ? 'border-destructive' : 'border-border'}`}>
-                  <Lock className="w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="signup-password"
-                    type={showSignUpPassword ? 'text' : 'password'}
-                    value={signUpPassword}
-                    onChange={(e) => {
-                      setSignUpPassword(e.target.value);
-                      if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
-                    }}
-                    onKeyDown={(e) => handleKeyPress(e, 'signup')}
-                    placeholder="Mínimo 6 caracteres"
-                    className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 p-0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showSignUpPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-destructive text-sm">{errors.password}</p>
-                )}
-              </div>
-
-              <Button
-                onClick={handleSignUp}
-                disabled={!isSignUpFormValid || isLoading}
-                className="w-full gradient-primary text-primary-foreground font-semibold py-5 group"
-              >
-                {isLoading ? (
-                  'Criando conta...'
-                ) : (
-                  <>
-                    Criar Conta
-                    <UserPlus className="ml-2 w-5 h-5" />
-                  </>
-                )}
-              </Button>
-              
-              <p className="text-xs text-muted-foreground text-center">
-                Após o cadastro, verifique seu email para confirmar a conta.
+        {/* Step: Credentials */}
+        {step === 'credentials' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
+                Acesso Funcionário
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Digite seu email e senha para continuar
               </p>
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
 
-        {/* Modo Desenvolvedor */}
-        <div className="mt-6 p-4 rounded-lg border border-dashed border-muted-foreground/20 bg-muted/30">
-          <p className="text-xs text-muted-foreground text-center mb-3">
-            🔧 Modo Desenvolvedor
-          </p>
-          <div className="flex flex-col gap-2">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground font-medium">
+                Email
+              </Label>
+              <div className={`glass-card flex items-center gap-3 px-4 transition-all duration-300 ${errors.email ? 'ring-2 ring-destructive/50' : ''}`}>
+                <Mail className="w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                  }}
+                  onKeyDown={handleKeyPress}
+                  placeholder="seu@email.com"
+                  className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 text-lg py-6"
+                />
+              </div>
+              {errors.email && (
+                <p className="text-destructive text-sm animate-fade-in">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-foreground font-medium">
+                Senha
+              </Label>
+              <div className={`glass-card flex items-center gap-3 px-4 transition-all duration-300 ${errors.password ? 'ring-2 ring-destructive/50' : ''}`}>
+                <Lock className="w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                  }}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Sua senha"
+                  className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 text-lg py-6"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-destructive text-sm animate-fade-in">{errors.password}</p>
+              )}
+            </div>
+
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setEmail('admin@doctorautoprime.com.br');
-                setPassword('admin123');
-                setActiveTab('login');
-                toast.info('Credenciais preenchidas! Clique em Entrar.');
-              }}
-              className="w-full text-xs"
+              onClick={handleLogin}
+              disabled={!isFormValid || isLoading}
+              className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-lg group"
             >
-              <Wrench className="w-3 h-3 mr-2" />
-              Preencher Credenciais de Teste
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCreateTestAdmin}
-              disabled={isLoading}
-              className="w-full text-xs text-muted-foreground"
-            >
-              <UserPlus className="w-3 h-3 mr-2" />
-              Criar Admin de Teste (se não existir)
+              {isLoading ? (
+                'Entrando...'
+              ) : (
+                <>
+                  Entrar
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </Button>
           </div>
-          <p className="text-[10px] text-muted-foreground/60 text-center mt-2">
-            admin@doctorautoprime.com.br / admin123
-          </p>
-        </div>
+        )}
+
+        {/* Step: Choose Module */}
+        {step === 'choose-module' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
+                Escolha o Módulo
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Selecione para onde deseja ir
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {/* Admin Button */}
+              <button
+                onClick={() => handleModuleChoice('admin')}
+                disabled={isLoading}
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-primary/50 disabled:opacity-50"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0">
+                    <Shield className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-foreground">Admin</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Operação da oficina, OS, pátio e agenda
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
+                </div>
+              </button>
+
+              {/* Gestão Button */}
+              <button
+                onClick={() => handleModuleChoice('gestao')}
+                disabled={isLoading}
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-primary/50 disabled:opacity-50"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shrink-0">
+                    <BarChart3 className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-foreground">Gestão</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Dashboards, RH, financeiro e estratégia
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
+                </div>
+              </button>
+            </div>
+
+            {/* Back button */}
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="w-full text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar ao login
+            </Button>
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="mt-8 text-center">
+        <div className="mt-12 text-center">
           <p className="text-muted-foreground text-sm">
             Problemas com acesso? Fale com a gestão.
           </p>
