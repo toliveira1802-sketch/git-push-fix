@@ -509,8 +509,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <ThemeToggle collapsed />
           </div>
         </header>
-        {/* Sub-navigation for dashboard module pages */}
-        {(pathname === '/admin' || pathname === '/admin/dashboard' || ['/admin/operacional', '/admin/financeiro', '/admin/produtividade', '/admin/agenda-mecanicos'].some(p => pathname.startsWith(p))) && (
+        {/* Sub-navigation only on module pages */}
+        {['/admin/operacional', '/admin/financeiro', '/admin/produtividade', '/admin/agenda-mecanicos'].some(p => pathname.startsWith(p)) && (
           <AdminSubNav />
         )}
         {children}
