@@ -232,7 +232,7 @@ export default function NovaOS() {
       toast.success(`OS ${newOS.order_number} criada com sucesso!`);
       
       // Redirecionar para detalhes da OS
-      navigate(`/admin/os/${newOS.id}?new=true`);
+      navigate(`/admin/os-ultimate/${newOS.id}`);
 
     } catch (error) {
       console.error("Erro ao criar OS:", error);
@@ -274,7 +274,7 @@ export default function NovaOS() {
       toast.success(`OS ${newOS.order_number} criada com sucesso!`);
       
       // Redirecionar para detalhes da OS
-      navigate(`/admin/os/${newOS.id}?new=true`);
+      navigate(`/admin/os-ultimate/${newOS.id}`);
 
     } catch (error) {
       console.error("Erro ao criar OS:", error);
