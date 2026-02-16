@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Activity, FileText, Clock, Wrench, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Activity, FileText, Clock, Wrench, CheckCircle, Loader2, Monitor } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 interface OSRow {
   id: string;
@@ -59,12 +60,23 @@ export default function AdminDashboardOverview() {
     <AdminLayout>
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="h-12 bg-card border-b border-border flex items-center px-4">
-          <button onClick={() => setLocation('/admin')} className="text-muted-foreground hover:text-foreground mr-3">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <h1 className="font-semibold text-sm">Visão Geral</h1>
-          <span className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <header className="h-12 bg-card border-b border-border flex items-center justify-between px-4">
+          <div className="flex items-center">
+            <button onClick={() => setLocation('/admin')} className="text-muted-foreground hover:text-foreground mr-3">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <h1 className="font-semibold text-sm">Visão Geral</h1>
+            <span className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setLocation('/__orphan/admin-painel-tv')}
+            className="gap-2"
+          >
+            <Monitor className="h-4 w-4" />
+            Painel TV
+          </Button>
         </header>
 
         {/* Content */}
