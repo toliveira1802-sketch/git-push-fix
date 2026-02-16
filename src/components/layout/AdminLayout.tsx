@@ -64,7 +64,7 @@ interface AdminLayoutProps {
 }
 
 const companyMenuItems: MenuItem[] = [
-  { icon: Layers, label: 'Visão Geral', path: '/admin/dashboard' },
+  { icon: Layers, label: 'Visão Geral', path: '/admin/overview' },
   { icon: Home, label: 'Dashboard', path: '/__orphan/admin-dashboard-old' },
   { icon: Plus, label: '+Nova OS', path: '/admin/os-ultimate', highlight: true },
   { icon: MapPin, label: 'Pátio', path: '/admin/patio' },
