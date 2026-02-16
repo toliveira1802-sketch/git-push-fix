@@ -28,7 +28,8 @@ import {
   BookOpen,
   MessageSquare,
   BarChart3,
-  Wrench
+  Wrench,
+  Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -487,8 +488,26 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 lg:overflow-auto bg-background">
+      <main className="flex-1 lg:overflow-auto bg-background flex flex-col">
         <div className="lg:hidden h-16" /> {/* Spacer for mobile header */}
+        {/* Global Admin Header */}
+        <header className="h-12 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
+          <h2 className="text-sm font-semibold text-foreground truncate">
+            {pathname === '/admin' || pathname === '/admin/dashboard' ? 'Dashboard' : ''}
+          </h2>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin/pendencias')}
+              className="relative"
+              title="Notificações"
+            >
+              <Bell className="w-5 h-5" />
+            </Button>
+            <ThemeToggle collapsed />
+          </div>
+        </header>
         {children}
       </main>
     </div>
