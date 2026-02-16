@@ -163,7 +163,9 @@ function Router() {
       </Route>
 
       {/* Visão Geral e Operacional */}
-      <Route path="/admin/overview">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><VisaoGeral /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/admin/overview">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminDashboardOverview /></ErrorBoundary></Suspense>}</Route>
+      {/* Visão Geral do Cliente (perfil) */}
+      <Route path="/visao-geral">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><VisaoGeral /></ErrorBoundary></Suspense>}</Route>
       <Route path="/admin/operacional">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminOperacional /></ErrorBoundary></Suspense>}</Route>
 
       {/* Ordens de Serviço */}
