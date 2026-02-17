@@ -1,14 +1,23 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { supabase } from './supabase.js';
 import { queryKnowledge } from './knowledge.js';
 import { createAgent, adjustAgent, pauseAgent, deleteAgent } from './agents.js';
 import { log } from './logger.js';
+import { ollamaChat, ollamaStatus } from './ollama.js';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+// LLM padrao: Ollama local (custo zero)
+// Claude so e usado se FORCE_CLAUDE=true ou Ollama offline
+const DEFAULT_MODEL = process.env.ATHENA_MODEL || 'llama3.1:8b';
+const FORCE_CLAUDE = process.env.FORCE_CLAUDE === 'true';
 
-const MODEL = process.env.ATHENA_MODEL || 'claude-sonnet-4-5-20250929';
+// Claude API opcional (fallback pra decisoes complexas)
+let anthropic: any = null;
+async function getClaude() {
+  if (anthropic) return anthropic;
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return anthropic;
+}
 
 const SYSTEM_PROMPT = `Voce e ATHENA, a IA Mae da Doctor Auto, uma rede de oficinas mecanicas
 premium em Sao Paulo com 3 unidades (Doctor Auto Prime, Doctor Auto Bosch, Garagem 347).
@@ -103,20 +112,36 @@ export async function processMessage(
       ).join('\n')
     : '';
 
-  // 4. Call Claude API
+  // 4. Call LLM (Ollama local por padrao, Claude como fallback)
   const fullContext = SYSTEM_PROMPT + context + agentsContext + decisionsContext;
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 2048,
-    system: fullContext,
-    messages: [
-      { role: 'user', content: userMessage },
-    ],
-  });
+  let responseText: string;
 
-  const textBlock = response.content.find(b => b.type === 'text');
-  const responseText = textBlock ? textBlock.text : 'Sem resposta.';
+  if (FORCE_CLAUDE) {
+    // Modo forcado: usa Claude API (pago)
+    responseText = await callClaude(fullContext, userMessage);
+  } else {
+    // Modo padrao: tenta Ollama (gratis), fallback pra Claude se offline
+    try {
+      const status = await ollamaStatus();
+      if (status.online) {
+        responseText = await ollamaChat(userMessage, DEFAULT_MODEL, {
+          system: fullContext,
+          temperature: 0.4,
+          maxTokens: 2048,
+        });
+        await log(athenaId, 'info', `LLM: Ollama (${DEFAULT_MODEL}) - custo R$0`);
+      } else {
+        // Ollama offline, tenta Claude
+        responseText = await callClaude(fullContext, userMessage);
+        await log(athenaId, 'warn', 'Ollama offline, usando Claude API (pago)');
+      }
+    } catch (ollamaErr) {
+      // Erro no Ollama, fallback
+      responseText = await callClaude(fullContext, userMessage);
+      await log(athenaId, 'warn', `Ollama erro, fallback Claude: ${ollamaErr}`);
+    }
+  }
 
   // 5. Try to parse action from response
   let action: AthenaResponse['action'] = undefined;
@@ -146,6 +171,26 @@ export async function processMessage(
   });
 
   return { message: responseText, action };
+}
+
+/**
+ * Fallback: chama Claude API (pago - so quando Ollama falha)
+ */
+async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
+  const claude = await getClaude();
+  if (!claude) {
+    return 'Erro: Ollama offline e ANTHROPIC_API_KEY nao configurada. Configure pelo menos um LLM.';
+  }
+
+  const response = await claude.messages.create({
+    model: 'claude-sonnet-4-5-20250929',
+    max_tokens: 2048,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userMessage }],
+  });
+
+  const textBlock = response.content.find((b: any) => b.type === 'text');
+  return textBlock ? textBlock.text : 'Sem resposta.';
 }
 
 async function registerDecision(

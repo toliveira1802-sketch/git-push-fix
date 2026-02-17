@@ -1,0 +1,165 @@
+# =============================================
+# DOCTOR AUTO IA - Docker Compose
+# VPS Hostinger KVM 8 (8vCPU, 32GB RAM, 400GB SSD)
+# =============================================
+
+services:
+
+  # --- CEREBRO CENTRAL ---
+  ia-mae:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: athena-worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - CHROMA_URL=http://chromadb:8000
+      - REDIS_URL=redis://redis:6379
+      - OLLAMA_URL=http://ollama:11434
+    depends_on:
+      chromadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - athena-net
+
+  # --- BOT SQL (relatorios em linguagem natural) ---
+  bot-sql:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bot-sql
+    container_name: athena-bot-sql
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      ollama:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - athena-net
+
+  # --- COMMAND CENTER (painel de controle) ---
+  command-center:
+    build:
+      context: ../command-center
+      dockerfile: Dockerfile
+    container_name: athena-command-center
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    networks:
+      - athena-net
+
+  # --- OLLAMA (LLMs locais - custo zero) ---
+  ollama:
+    image: ollama/ollama:latest
+    container_name: athena-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+    networks:
+      - athena-net
+
+  # --- CHROMADB (base de conhecimento vetorial) ---
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: athena-chromadb
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - athena-net
+
+  # --- REDIS (filas de tarefas + cache) ---
+  redis:
+    image: redis:7-alpine
+    container_name: athena-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - athena-net
+
+  # --- NGINX (proxy reverso + SSL) ---
+  nginx:
+    image: nginx:alpine
+    container_name: athena-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - ia-mae
+      - bot-sql
+      - command-center
+    networks:
+      - athena-net
+
+  # --- CERTBOT (SSL Let's Encrypt) ---
+  certbot:
+    image: certbot/certbot
+    container_name: athena-certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - ./docker/nginx/certbot-webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - athena-net
+
+volumes:
+  ollama-data:
+    driver: local
+  chroma-data:
+    driver: local
+  redis-data:
+    driver: local
+  certbot-etc:
+    driver: local
+  certbot-var:
+    driver: local
+
+networks:
+  athena-net:
+    driver: bridge
