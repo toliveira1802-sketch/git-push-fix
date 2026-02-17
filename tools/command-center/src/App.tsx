@@ -9,8 +9,11 @@ import StatsDialog from './components/StatsDialog';
 import PresentationMode from './components/PresentationMode';
 import PagePreview from './components/PagePreview';
 import IAPanel from './components/IAPanel';
+import AthenaChat from './components/AthenaChat';
+import AthenaDashboard from './components/AthenaDashboard';
 import { useRouteMap } from './hooks/useRouteMap';
 import { usePanZoom } from './hooks/usePanZoom';
+import { useAthena } from './hooks/useAthena';
 
 export default function App() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -22,11 +25,12 @@ export default function App() {
   } = useRouteMap();
 
   const panZoom = usePanZoom(canvasRef);
+  const { athena } = useAthena();
 
   const [showMinimap, setShowMinimap] = useState(true);
   const [showStats, setShowStats] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
-  const [activeTab, setActiveTab] = useState<'rotas' | 'ias'>('rotas');
+  const [activeTab, setActiveTab] = useState<'rotas' | 'ias' | 'athena-chat' | 'athena-dashboard'>('rotas');
   const [previewPath, setPreviewPath] = useState<string | null>(null);
 
   return (
@@ -52,8 +56,11 @@ export default function App() {
         />
 
         {activeTab === 'ias' ? (
-          /* IA Panel - full area */
           <IAPanel />
+        ) : activeTab === 'athena-chat' ? (
+          <AthenaChat athena={athena} />
+        ) : activeTab === 'athena-dashboard' ? (
+          <AthenaDashboard athena={athena} />
         ) : (
           <>
             {/* Canvas */}

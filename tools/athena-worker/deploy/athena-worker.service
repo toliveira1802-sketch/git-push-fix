@@ -1,0 +1,25 @@
+[Unit]
+Description=Athena Worker - Doctor Auto IA Mae
+After=network.target
+Wants=chromadb.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/doctor-auto-ia
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=athena-worker
+
+# Resource limits
+MemoryMax=4G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target
