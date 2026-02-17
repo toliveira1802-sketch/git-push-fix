@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { AdminSubNav } from '@/components/layout/AdminSubNav';
 
 interface DashboardMetrics {
   totalOS: number;
@@ -95,6 +96,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
+      <AdminSubNav />
       <div className="p-4 md:p-6 space-y-6">
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-2">Dashboard</h2>
