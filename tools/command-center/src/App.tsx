@@ -8,6 +8,7 @@ import MiniMap from './components/MiniMap';
 import StatsDialog from './components/StatsDialog';
 import PresentationMode from './components/PresentationMode';
 import PagePreview from './components/PagePreview';
+import PageEditor from './components/PageEditor';
 import IAPanel from './components/IAPanel';
 import AthenaChat from './components/AthenaChat';
 import AthenaDashboard from './components/AthenaDashboard';
@@ -32,6 +33,7 @@ export default function App() {
   const [showPresentation, setShowPresentation] = useState(false);
   const [activeTab, setActiveTab] = useState<'rotas' | 'ias' | 'athena-chat' | 'athena-dashboard'>('rotas');
   const [previewPath, setPreviewPath] = useState<string | null>(null);
+  const [editingRoute, setEditingRoute] = useState<boolean>(false);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-950 overflow-hidden">
@@ -123,12 +125,24 @@ export default function App() {
               />
             </div>
 
-            {/* Detail Panel */}
-            {selectedRoute && (
+            {/* Detail Panel or Page Editor */}
+            {selectedRoute && !editingRoute && (
               <DetailPanel
                 route={selectedRoute}
                 onClose={clearSelection}
                 onOpenPreview={(path) => setPreviewPath(path)}
+                onOpenEditor={() => setEditingRoute(true)}
+              />
+            )}
+
+            {selectedRoute && editingRoute && (
+              <PageEditor
+                route={selectedRoute}
+                onClose={() => setEditingRoute(false)}
+                onSave={(routeId, data) => {
+                  console.log('Page saved:', routeId, data);
+                  // Data persisted in Supabase by PageEditor
+                }}
               />
             )}
 

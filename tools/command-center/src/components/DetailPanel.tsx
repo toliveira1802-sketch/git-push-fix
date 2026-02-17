@@ -19,9 +19,10 @@ interface DetailPanelProps {
   route: RouteConfig | null;
   onClose: () => void;
   onOpenPreview?: (path: string) => void;
+  onOpenEditor?: () => void;
 }
 
-export default function DetailPanel({ route, onClose, onOpenPreview }: DetailPanelProps) {
+export default function DetailPanel({ route, onClose, onOpenPreview, onOpenEditor }: DetailPanelProps) {
   if (!route) {
     return (
       <div className="w-80 bg-slate-900 border-l border-slate-700 flex flex-col h-full">
@@ -179,17 +180,13 @@ export default function DetailPanel({ route, onClose, onOpenPreview }: DetailPan
           Abrir Preview
         </button>
 
-        {/* Edit placeholder - Phase 2 */}
+        {/* Edit Route */}
         <button
-          disabled
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-800 border border-slate-700 text-slate-500 rounded-lg text-sm font-medium cursor-not-allowed"
-          title="Disponivel na Fase 2"
+          onClick={() => onOpenEditor?.()}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 hover:text-emerald-300 rounded-lg text-sm font-medium transition-colors"
         >
           <Pencil size={14} />
-          Editar Rota
-          <span className="text-[10px] bg-slate-700 px-1.5 py-0.5 rounded ml-1">
-            Fase 2
-          </span>
+          Editar Pagina
         </button>
       </div>
     </div>
