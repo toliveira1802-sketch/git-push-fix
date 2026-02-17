@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, Unlock } from 'lucide-react';
+import { Lock, Unlock, Link } from 'lucide-react';
 import {
   RouteConfig,
   CATEGORY_CONFIG,
@@ -11,6 +11,9 @@ interface RouteNodeProps {
   isSelected: boolean;
   onClick: () => void;
   scale: number;
+  connectMode?: boolean;
+  isConnectSource?: boolean;
+  onConnectClick?: (routeId: string) => void;
 }
 
 export default function RouteNode({
@@ -18,13 +21,25 @@ export default function RouteNode({
   isSelected,
   onClick,
   scale,
+  connectMode = false,
+  isConnectSource = false,
+  onConnectClick,
 }: RouteNodeProps) {
   const categoryConfig = CATEGORY_CONFIG[route.category];
   const statusConfig = STATUS_CONFIG[route.status];
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (connectMode && onConnectClick) {
+      e.stopPropagation();
+      onConnectClick(route.id);
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className="absolute cursor-pointer select-none transition-all duration-200 ease-out"
       style={{
         left: (route.x ?? 0) * scale,
@@ -39,11 +54,17 @@ export default function RouteNode({
         className={`w-full h-full rounded-lg border-2 transition-all duration-200 ease-out ${
           isSelected
             ? 'shadow-lg shadow-blue-500/20'
+            : connectMode
+            ? 'shadow-md shadow-purple-500/20 hover:shadow-purple-500/40'
             : 'hover:shadow-md hover:shadow-slate-900/60'
         }`}
         style={{
-          backgroundColor: 'rgb(30 41 59)', // bg-slate-800
-          borderColor: isSelected
+          backgroundColor: isConnectSource ? 'rgb(59 7 100)' : 'rgb(30 41 59)',
+          borderColor: isConnectSource
+            ? '#a855f7'
+            : connectMode
+            ? `${categoryConfig.color}aa`
+            : isSelected
             ? categoryConfig.color
             : `${categoryConfig.color}66`,
         }}
@@ -67,7 +88,12 @@ export default function RouteNode({
             >
               {route.component}
             </span>
-            {route.requiresAuth ? (
+            {connectMode ? (
+              <Link
+                size={10 * scale}
+                className="text-purple-400 flex-shrink-0 animate-pulse"
+              />
+            ) : route.requiresAuth ? (
               <Lock
                 size={10 * scale}
                 className="text-amber-400 flex-shrink-0"
@@ -107,7 +133,7 @@ export default function RouteNode({
                 color: statusConfig.color,
               }}
             >
-              {statusConfig.label}
+              {connectMode && isConnectSource ? 'Origem' : statusConfig.label}
             </span>
           </div>
         </div>

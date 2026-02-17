@@ -7,6 +7,8 @@ import {
   BarChart3,
   Presentation,
   Terminal,
+  Link,
+  Crown,
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -17,6 +19,10 @@ interface ToolbarProps {
   onToggleMinimap: () => void;
   onToggleStats: () => void;
   onTogglePresentation: () => void;
+  connectionsEditable?: boolean;
+  onToggleConnections?: () => void;
+  connectingFrom?: string | null;
+  onCancelConnect?: () => void;
 }
 
 export default function Toolbar({
@@ -27,6 +33,10 @@ export default function Toolbar({
   onToggleMinimap,
   onToggleStats,
   onTogglePresentation,
+  connectionsEditable = false,
+  onToggleConnections,
+  connectingFrom,
+  onCancelConnect,
 }: ToolbarProps) {
   const zoomPercent = Math.round(zoom * 100);
 
@@ -35,7 +45,7 @@ export default function Toolbar({
       {/* Left: App title */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Terminal size={20} className="text-blue-400" />
+          <Crown size={20} className="text-purple-400" />
           <h1 className="text-sm font-bold text-slate-100 tracking-wide">
             Command Center
           </h1>
@@ -49,36 +59,60 @@ export default function Toolbar({
       </div>
 
       {/* Center: Zoom controls */}
-      <div className="flex items-center gap-1 bg-slate-800 rounded-lg border border-slate-700 px-1 py-0.5">
-        <ToolbarButton
-          onClick={onZoomOut}
-          icon={<ZoomOut size={15} />}
-          tooltip="Diminuir zoom"
-          disabled={zoom <= 0.25}
-        />
-        <button
-          onClick={onResetZoom}
-          className="px-2 py-1 text-xs font-mono text-slate-300 hover:text-slate-100 hover:bg-slate-700 rounded transition-colors min-w-[52px] text-center"
-          title="Resetar zoom"
-        >
-          {zoomPercent}%
-        </button>
-        <ToolbarButton
-          onClick={onZoomIn}
-          icon={<ZoomIn size={15} />}
-          tooltip="Aumentar zoom"
-          disabled={zoom >= 3}
-        />
-        <div className="w-px h-5 bg-slate-700 mx-1" />
-        <ToolbarButton
-          onClick={onResetZoom}
-          icon={<Maximize2 size={15} />}
-          tooltip="Resetar visualizacao"
-        />
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 bg-slate-800 rounded-lg border border-slate-700 px-1 py-0.5">
+          <ToolbarButton
+            onClick={onZoomOut}
+            icon={<ZoomOut size={15} />}
+            tooltip="Diminuir zoom"
+            disabled={zoom <= 0.25}
+          />
+          <button
+            onClick={onResetZoom}
+            className="px-2 py-1 text-xs font-mono text-slate-300 hover:text-slate-100 hover:bg-slate-700 rounded transition-colors min-w-[52px] text-center"
+            title="Resetar zoom"
+          >
+            {zoomPercent}%
+          </button>
+          <ToolbarButton
+            onClick={onZoomIn}
+            icon={<ZoomIn size={15} />}
+            tooltip="Aumentar zoom"
+            disabled={zoom >= 3}
+          />
+          <div className="w-px h-5 bg-slate-700 mx-1" />
+          <ToolbarButton
+            onClick={onResetZoom}
+            icon={<Maximize2 size={15} />}
+            tooltip="Resetar visualizacao"
+          />
+        </div>
+
+        {/* Connection mode indicator */}
+        {connectingFrom && (
+          <div className="flex items-center gap-2 bg-purple-500/15 border border-purple-500/40 rounded-lg px-3 py-1.5 animate-pulse">
+            <Link size={12} className="text-purple-400" />
+            <span className="text-xs text-purple-300">Selecione o destino...</span>
+            <button
+              onClick={onCancelConnect}
+              className="text-[10px] text-red-400/60 hover:text-red-400 ml-1"
+            >
+              ESC
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Right: Toggle buttons */}
       <div className="flex items-center gap-1">
+        {onToggleConnections && (
+          <ToolbarButton
+            onClick={onToggleConnections}
+            icon={<Link size={15} />}
+            tooltip={connectionsEditable ? 'Desativar edicao de fluxos' : 'Editar fluxos entre paginas'}
+            active={connectionsEditable}
+          />
+        )}
         <ToolbarButton
           onClick={onToggleMinimap}
           icon={<Map size={15} />}
@@ -126,7 +160,7 @@ function ToolbarButton({
         disabled
           ? 'text-slate-600 cursor-not-allowed'
           : active
-          ? 'text-blue-400 bg-blue-500/20 hover:bg-blue-500/30'
+          ? 'text-purple-400 bg-purple-500/20 hover:bg-purple-500/30'
           : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
       }`}
     >
