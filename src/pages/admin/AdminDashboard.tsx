@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, DollarSign, Loader2, TrendingUp, Car, ChevronRight, AlertCircle } from "lucide-react";
+import { Calendar, DollarSign, Loader2, TrendingUp, Car, ChevronRight, AlertCircle, Wrench, BarChart2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -113,7 +113,27 @@ const AdminDashboard = () => {
         </Card>
 
 
-
+        {/* Acesso Rápido - Módulos de Gestão */}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: "Operacional", icon: Wrench, path: "/admin/operacional", color: "text-cyan-400", bg: "bg-cyan-500/15" },
+            { label: "Financeiro", icon: DollarSign, path: "/admin/financeiro", color: "text-emerald-400", bg: "bg-emerald-500/15" },
+            { label: "Produtividade", icon: BarChart2, path: "/admin/produtividade", color: "text-violet-400", bg: "bg-violet-500/15" },
+            { label: "Agenda Mec.", icon: Calendar, path: "/admin/agenda-mecanicos", color: "text-amber-400", bg: "bg-amber-500/15" },
+          ].map(({ label, icon: Icon, path, color, bg }) => (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all active:scale-95"
+            >
+              <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+                <Icon className={`w-4 h-4 ${color}`} />
+              </div>
+              <span className="text-sm font-medium text-foreground">{label}</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+            </button>
+          ))}
+        </div>
 
         {/* Stats Grid - 2x2 */}
         <div className="grid grid-cols-2 gap-4">
