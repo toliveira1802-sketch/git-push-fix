@@ -18,16 +18,21 @@ import { usePanZoom } from './hooks/usePanZoom';
 import { useSophia } from './hooks/useAthena';
 import { useSophiaObserver } from './hooks/useSophiaObserver';
 import { useConnections } from './hooks/useConnections';
+import { usePageConfigs } from './hooks/usePageConfigs';
 import type { RouteConfig } from './types/routes';
 
 export default function App() {
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Page configs do banco (override dos dados hardcoded)
+  const pageConfigs = usePageConfigs();
+
   const {
     filteredRoutes,
     selectedRoute,
     selectRoute,
     clearSelection,
-  } = useRouteMap();
+  } = useRouteMap(pageConfigs.configs);
 
   const panZoom = usePanZoom(canvasRef);
   const { sophia, princesses } = useSophia();
@@ -51,11 +56,12 @@ export default function App() {
     observer.trackPageView(route.id, route.path, route.component);
   }, [selectRoute, observer]);
 
-  // Track page editor saves for Sophia
-  const handlePageSave = useCallback((routeId: string, data: any) => {
+  // Track page editor saves — salva na cc_page_configs + Sophia observer
+  const handlePageSave = useCallback((routeId: string, route: RouteConfig, data: any) => {
     console.log('Page saved:', routeId, data);
+    pageConfigs.saveConfig(routeId, route, data);
     observer.trackEditorSave(routeId, data);
-  }, [observer]);
+  }, [observer, pageConfigs]);
 
   // Handle connection node click (start or finish connection)
   const handleConnectClick = useCallback((routeId: string) => {
@@ -235,6 +241,7 @@ export default function App() {
                 route={selectedRoute}
                 onClose={() => setEditingRoute(false)}
                 onSave={handlePageSave}
+                initialConfig={pageConfigs.getConfig(selectedRoute.id)}
               />
             )}
 

@@ -14,22 +14,30 @@ const PROJECT_ROOT = resolve(import.meta.dirname, '..', '..', '..');
 
 async function main() {
   console.log('\n========================================');
-  console.log('  ATHENA - Ingestao de Conhecimento');
+  console.log('  SOPHIA - Ingestao de Conhecimento');
   console.log('========================================\n');
 
-  // Get Athena ID
-  const { data: athena } = await supabase
+  // Get Sophia ID (fallback Athena pra retrocompat)
+  let agentResult = await supabase
     .from('ia_agents')
     .select('id')
-    .eq('nome', 'Athena')
+    .eq('nome', 'Sophia')
     .single();
 
-  if (!athena) {
-    console.error('Athena not found in ia_agents. Run migration first.');
+  if (agentResult.error || !agentResult.data) {
+    agentResult = await supabase
+      .from('ia_agents')
+      .select('id')
+      .eq('nome', 'Athena')
+      .single();
+  }
+
+  if (!agentResult.data) {
+    console.error('Sophia/Athena not found in ia_agents. Run migration first.');
     process.exit(1);
   }
 
-  const athenaId = athena.id;
+  const sophiaId = agentResult.data.id;
   let totalDocs = 0;
 
   // 1. Ingest METRICAS_NEGOCIO.md
@@ -68,17 +76,26 @@ async function main() {
     console.log('DOCUMENTATION.md nao encontrado, pulando...');
   }
 
-  // 4. Sync business tables from Supabase
+  // 4. Ingest RELEASE_PLAN.md
+  const releasePath = resolve(PROJECT_ROOT, 'RELEASE_PLAN.md');
+  if (existsSync(releasePath)) {
+    console.log('Ingerindo RELEASE_PLAN.md...');
+    const content = readFileSync(releasePath, 'utf-8');
+    const count = await ingestMarkdown(content, 'release', 'RELEASE_PLAN.md');
+    console.log(`  -> ${count} secoes indexadas`);
+    totalDocs += count;
+  } else {
+    console.log('RELEASE_PLAN.md nao encontrado, pulando...');
+  }
+
+  // 5. Sync business tables from Supabase
   console.log('Sincronizando dados das tabelas Supabase...');
-  const syncCount = await syncBusinessData(athenaId);
+  const syncCount = await syncBusinessData(sophiaId);
   console.log(`  -> ${syncCount} registros indexados`);
   totalDocs += syncCount;
 
-  // 5. Log completion
-  await log(athenaId, 'info', `Ingestao concluida: ${totalDocs} documentos total`, {
-    metricas: existsSync(metricasPath),
-    regras: existsSync(regrasPath),
-    sync: syncCount,
+  // 6. Log completion
+  await log(sophiaId, 'info', `Ingestao concluida: ${totalDocs} documentos total`, {
     total: totalDocs,
   });
 

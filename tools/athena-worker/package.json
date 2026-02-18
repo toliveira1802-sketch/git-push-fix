@@ -1,7 +1,7 @@
 {
-  "name": "athena-worker",
-  "version": "2.0.0",
-  "description": "IA Mae (Athena) - Worker Node.js para VPS Doctor Auto",
+  "name": "sophia-worker",
+  "version": "2.1.0",
+  "description": "Sophia (IA Rainha) - Worker Node.js para VPS Doctor Auto",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

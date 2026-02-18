@@ -1,41 +1,58 @@
 /**
- * ATHENA WORKER - IA Mae da Doctor Auto
+ * SOPHIA WORKER - IA Rainha da Doctor Auto
  * Processo Node.js que roda na VPS
- * Polls ia_tasks, processa com Claude API, executa decisoes
+ *
+ * Faz 3 coisas:
+ * 1. HTTP Server (porta 3000) - recebe comandos do Command Center
+ * 2. Polling Loop - processa tasks pendentes de Sophia e decisoes aprovadas
+ * 3. Princess Workers - processa tasks das princesas (Anna, Simone, Thamy)
  */
 
 import 'dotenv/config';
 import { supabase } from './supabase.js';
 import { processMessage, executeDecision } from './athena.js';
 import { log } from './logger.js';
+import { startServer } from './server.js';
+import { startPrincessWorkers } from './princess-worker.js';
+import { startCronjobs, stopCronjobs } from './cronjobs.js';
+import { ensureDefaultPrincesses } from './agents.js';
 
 const POLL_INTERVAL = Number(process.env.POLL_INTERVAL_MS) || 5000;
 
-let athenaId: string | null = null;
+let sophiaId: string | null = null;
 let running = true;
 
-async function getAthenaId(): Promise<string> {
-  if (athenaId) return athenaId;
+async function getSophiaId(): Promise<string> {
+  if (sophiaId) return sophiaId;
 
-  const { data, error } = await supabase
+  // Tenta Sophia primeiro, fallback pra Athena (retrocompat)
+  let result = await supabase
     .from('ia_agents')
     .select('id')
-    .eq('nome', 'Athena')
+    .eq('nome', 'Sophia')
     .single();
 
-  if (error || !data) {
-    throw new Error('Athena agent not found in ia_agents table. Run the migration first.');
+  if (result.error || !result.data) {
+    result = await supabase
+      .from('ia_agents')
+      .select('id')
+      .eq('nome', 'Athena')
+      .single();
   }
 
-  athenaId = data.id as string;
-  return athenaId;
+  if (result.error || !result.data) {
+    throw new Error('Sophia/Athena agent not found in ia_agents table. Run the migration first.');
+  }
+
+  sophiaId = result.data.id as string;
+  return sophiaId;
 }
 
 /**
- * Set Athena status to online and update ping
+ * Set Sophia status to online and update ping
  */
 async function setOnline() {
-  const id = await getAthenaId();
+  const id = await getSophiaId();
   await supabase
     .from('ia_agents')
     .update({
@@ -46,34 +63,33 @@ async function setOnline() {
 }
 
 /**
- * Set Athena status to offline
+ * Set Sophia status to offline
  */
 async function setOffline() {
-  if (!athenaId) return;
+  if (!sophiaId) return;
   await supabase
     .from('ia_agents')
     .update({ status: 'offline' })
-    .eq('id', athenaId);
+    .eq('id', sophiaId);
 }
 
 /**
  * Update ping timestamp
  */
 async function ping() {
-  if (!athenaId) return;
+  if (!sophiaId) return;
   await supabase
     .from('ia_agents')
     .update({ ultimo_ping: new Date().toISOString() })
-    .eq('id', athenaId);
+    .eq('id', sophiaId);
 }
 
 /**
- * Process pending tasks from ia_tasks
+ * Process pending tasks from ia_tasks (Sophia only)
  */
 async function processPendingTasks() {
-  const id = await getAthenaId();
+  const id = await getSophiaId();
 
-  // 1. Get pending tasks for Athena
   const { data: tasks, error } = await supabase
     .from('ia_tasks')
     .select('*')
@@ -92,7 +108,6 @@ async function processPendingTasks() {
 
   for (const task of tasks) {
     try {
-      // Mark as running
       await supabase
         .from('ia_tasks')
         .update({ status: 'rodando', started_at: new Date().toISOString() })
@@ -100,13 +115,9 @@ async function processPendingTasks() {
 
       await log(id, 'info', `Processando task: ${task.titulo}`, { task_id: task.id });
 
-      // Determine input - chat messages or command
       const input = (task.input_json as any)?.content || task.titulo;
-
-      // Process with Athena brain
       const response = await processMessage(id, input);
 
-      // Mark as completed
       await supabase
         .from('ia_tasks')
         .update({
@@ -129,10 +140,7 @@ async function processPendingTasks() {
 
       await supabase
         .from('ia_tasks')
-        .update({
-          status: 'erro',
-          resultado_json: { error: msg },
-        })
+        .update({ status: 'erro', resultado_json: { error: msg } })
         .eq('id', task.id);
     }
   }
@@ -142,7 +150,7 @@ async function processPendingTasks() {
  * Process approved decisions that haven't been executed yet
  */
 async function processApprovedDecisions() {
-  const id = await getAthenaId();
+  const id = await getSophiaId();
 
   const { data: decisions } = await supabase
     .from('ia_mae_decisoes')
@@ -155,7 +163,6 @@ async function processApprovedDecisions() {
 
   for (const dec of decisions) {
     try {
-      // Parse the action from the decisao text
       const jsonMatch = dec.decisao.match(/\{[\s\S]*"action"\s*:\s*"[^"]+?"[\s\S]*\}/);
       if (!jsonMatch) {
         await supabase.from('ia_mae_decisoes').update({
@@ -184,29 +191,41 @@ async function processApprovedDecisions() {
  * Main polling loop
  */
 async function mainLoop() {
-  const id = await getAthenaId();
+  const id = await getSophiaId();
+  const model = process.env.SOPHIA_MODEL || process.env.ATHENA_MODEL || 'llama3.1:8b';
+
   console.log('\n========================================');
-  console.log('  ATHENA WORKER - Doctor Auto IA Mae');
+  console.log('  SOPHIA - IA Rainha da Doctor Auto');
   console.log('========================================');
   console.log(`  Agent ID: ${id}`);
   console.log(`  Poll interval: ${POLL_INTERVAL}ms`);
-  console.log(`  Model: ${process.env.ATHENA_MODEL || 'claude-sonnet-4-5-20250929'}`);
+  console.log(`  Model: ${model}`);
+  console.log(`  Mode: Ollama local (custo R$0)`);
+
+  // Start HTTP server (porta 3000 - Nginx faz proxy pra /api/)
+  startServer();
+
+  // Garante que as 3 princesas padrao existem (Anna, Simone, Thamy)
+  await ensureDefaultPrincesses(id);
+
+  // Start princess workers (processa tasks de Anna, Simone, Thamy)
+  await startPrincessWorkers(id);
+
+  // Start cronjobs (bots intermediarios: coleta dados do site pra Sophia)
+  startCronjobs(id);
+
   console.log('========================================\n');
 
   await setOnline();
-  await log(id, 'info', 'Athena worker iniciado');
+  await log(id, 'info', 'Sophia worker iniciado (HTTP + Polling + Princesas)');
 
   let pingCounter = 0;
 
   while (running) {
     try {
-      // Process tasks
       await processPendingTasks();
-
-      // Process approved decisions
       await processApprovedDecisions();
 
-      // Ping every 6 cycles (~30s with 5s interval)
       pingCounter++;
       if (pingCounter >= 6) {
         await ping();
@@ -215,7 +234,6 @@ async function mainLoop() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro no loop principal';
       console.error(`[FATAL] ${msg}`);
-      // Don't crash - just wait and retry
     }
 
     await sleep(POLL_INTERVAL);
@@ -228,25 +246,22 @@ function sleep(ms: number): Promise<void> {
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('\nShutting down...');
+  console.log('\nDesligando Sophia...');
   running = false;
+  stopCronjobs();
   await setOffline();
-  if (athenaId) {
-    await log(athenaId, 'info', 'Athena worker encerrado (SIGINT)');
-  }
+  if (sophiaId) await log(sophiaId, 'info', 'Sophia worker encerrado (SIGINT)');
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   running = false;
+  stopCronjobs();
   await setOffline();
-  if (athenaId) {
-    await log(athenaId, 'info', 'Athena worker encerrado (SIGTERM)');
-  }
+  if (sophiaId) await log(sophiaId, 'info', 'Sophia worker encerrado (SIGTERM)');
   process.exit(0);
 });
 
-// Start
 mainLoop().catch(err => {
   console.error('Fatal error:', err);
   process.exit(1);

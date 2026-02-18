@@ -10,9 +10,11 @@ import {
   Maximize2,
   Loader2,
   GripVertical,
+  AlertTriangle,
 } from 'lucide-react';
 
-const BASE_URL = 'https://git-push-fix.vercel.app';
+// URL do site Doctor Auto (env var ou fallback pro localhost do Lovable)
+const BASE_URL = import.meta.env.VITE_APP_URL || 'http://localhost:8080';
 
 type Viewport = 'desktop' | 'tablet' | 'mobile';
 
@@ -30,6 +32,7 @@ interface PagePreviewProps {
 export default function PagePreview({ path, onClose }: PagePreviewProps) {
   const [viewport, setViewport] = useState<Viewport>('desktop');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [panelWidth, setPanelWidth] = useState(640);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -44,9 +47,17 @@ export default function PagePreview({ path, onClose }: PagePreviewProps) {
 
   const handleRefresh = useCallback(() => {
     setIsLoading(true);
+    setLoadError(false);
     if (iframeRef.current) {
       iframeRef.current.src = fullUrl;
     }
+    // Timeout: se nao carregou em 15s, mostra erro
+    setTimeout(() => {
+      setIsLoading(prev => {
+        if (prev) setLoadError(true);
+        return false;
+      });
+    }, 15000);
   }, [fullUrl]);
 
   const handleOpenNewTab = useCallback(() => {
@@ -195,12 +206,38 @@ export default function PagePreview({ path, onClose }: PagePreviewProps) {
 
       {/* Iframe area */}
       <div className="flex-1 bg-slate-950 flex items-start justify-center overflow-auto p-2 relative">
-        {/* Loading overlay */}
+        {/* Loading overlay with timeout */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 z-10">
             <div className="flex flex-col items-center gap-3">
               <Loader2 size={28} className="text-blue-400 animate-spin" />
               <span className="text-xs text-slate-400">Carregando {cleanPath}...</span>
+              <span className="text-[10px] text-slate-600">{fullUrl}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Load error */}
+        {loadError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/90 z-10">
+            <div className="flex flex-col items-center gap-3 text-center px-6">
+              <AlertTriangle size={28} className="text-amber-400" />
+              <span className="text-sm text-slate-300">Nao foi possivel carregar o preview</span>
+              <code className="text-[10px] text-slate-500 bg-slate-800 px-3 py-1 rounded">{fullUrl}</code>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={handleRefresh}
+                  className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded transition-colors"
+                >
+                  Tentar novamente
+                </button>
+                <button
+                  onClick={handleOpenNewTab}
+                  className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded transition-colors"
+                >
+                  Abrir em nova aba
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -222,7 +259,8 @@ export default function PagePreview({ path, onClose }: PagePreviewProps) {
             src={fullUrl}
             title={`Preview: ${cleanPath}`}
             className="w-full h-full border-0"
-            onLoad={() => setIsLoading(false)}
+            onLoad={() => { setIsLoading(false); setLoadError(false); }}
+            onError={() => { setIsLoading(false); setLoadError(true); }}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           />
         </div>

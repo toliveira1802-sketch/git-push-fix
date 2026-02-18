@@ -18,10 +18,14 @@ export function useIAManager() {
         .order('tipo', { ascending: true })
         .order('nome', { ascending: true });
 
-      if (err) throw err;
+      if (err) {
+        console.error('[useIAManager] Erro Supabase:', err.message, err.details);
+        throw err;
+      }
 
       // Build hierarchy: attach children to their parents
       const allAgents = (data ?? []) as IAAgent[];
+      console.log(`[useIAManager] ${allAgents.length} agentes carregados`);
       const leaders = allAgents.filter(a => !a.pai_id);
       const withChildren = leaders.map(leader => ({
         ...leader,

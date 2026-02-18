@@ -9,33 +9,39 @@ export function useSophia() {
   const [loading, setLoading] = useState(true);
 
   const fetchSophia = useCallback(async () => {
-    // Busca Sophia (tenta 'Sophia' primeiro, fallback 'Athena' pra retrocompatibilidade)
-    let { data } = await supabase
-      .from('ia_agents')
-      .select('*')
-      .eq('nome', 'Sophia')
-      .single();
-
-    if (!data) {
-      const fallback = await supabase
+    try {
+      // Busca Sophia (tenta 'Sophia' primeiro, fallback 'Athena' pra retrocompatibilidade)
+      let { data, error } = await supabase
         .from('ia_agents')
         .select('*')
-        .eq('nome', 'Athena')
+        .eq('nome', 'Sophia')
         .single();
-      data = fallback.data;
-    }
 
-    if (data) {
-      setSophia(data as IAAgent);
+      if (error || !data) {
+        const fallback = await supabase
+          .from('ia_agents')
+          .select('*')
+          .eq('nome', 'Athena')
+          .single();
+        data = fallback.data;
+      }
 
-      // Busca as princesas (filhas diretas da Sophia)
-      const { data: children } = await supabase
-        .from('ia_agents')
-        .select('*')
-        .eq('pai_id', data.id)
-        .order('nome');
+      if (data) {
+        setSophia(data as IAAgent);
 
-      if (children) setPrincesses(children as IAAgent[]);
+        // Busca as princesas (filhas diretas da Sophia)
+        const { data: children } = await supabase
+          .from('ia_agents')
+          .select('*')
+          .eq('pai_id', data.id)
+          .order('nome');
+
+        if (children) setPrincesses(children as IAAgent[]);
+      } else {
+        console.warn('[useSophia] Sophia/Athena nao encontrada no banco. Migrations foram aplicadas?');
+      }
+    } catch (err) {
+      console.error('[useSophia] Erro ao buscar Sophia:', err);
     }
     setLoading(false);
   }, []);

@@ -1,22 +1,27 @@
 # =============================================
 # DOCTOR AUTO IA - Docker Compose
 # VPS Hostinger KVM 8 (8vCPU, 32GB RAM, 400GB SSD)
+# Sophia (IA Rainha) + Princesas + Infra
 # =============================================
 
 services:
 
-  # --- CEREBRO CENTRAL ---
-  ia-mae:
+  # --- SOPHIA (IA Rainha - Cerebro Central) ---
+  # HTTP Server (3000) + Polling Loop + Princess Workers + Cronjobs
+  sophia:
     build:
       context: .
       dockerfile: docker/Dockerfile.worker
-    container_name: athena-worker
+    container_name: sophia-worker
     restart: unless-stopped
     env_file: .env
     environment:
       - CHROMA_URL=http://chromadb:8000
       - REDIS_URL=redis://redis:6379
       - OLLAMA_URL=http://ollama:11434
+      - SOPHIA_PORT=3000
+    ports:
+      - "127.0.0.1:3000:3000"
     depends_on:
       chromadb:
         condition: service_healthy
@@ -26,65 +31,82 @@ services:
         condition: service_started
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
-      - athena-net
+      - sophia-net
 
   # --- BOT SQL (relatorios em linguagem natural) ---
   bot-sql:
     build:
       context: .
       dockerfile: docker/Dockerfile.bot-sql
-    container_name: athena-bot-sql
+    container_name: sophia-bot-sql
     restart: unless-stopped
     env_file: .env
     environment:
       - OLLAMA_URL=http://ollama:11434
       - REDIS_URL=redis://redis:6379
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     depends_on:
       ollama:
         condition: service_started
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
-      - athena-net
+      - sophia-net
 
-  # --- COMMAND CENTER (painel de controle) ---
+  # --- COMMAND CENTER (painel de controle - so o Thales) ---
   command-center:
     build:
       context: ../command-center
       dockerfile: Dockerfile
-    container_name: athena-command-center
+    container_name: sophia-command-center
     restart: unless-stopped
     ports:
-      - "5174:80"
+      - "127.0.0.1:5174:80"
     networks:
-      - athena-net
+      - sophia-net
 
   # --- OLLAMA (LLMs locais - custo zero) ---
   ollama:
     image: ollama/ollama:latest
-    container_name: athena-ollama
+    container_name: sophia-ollama
     restart: unless-stopped
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     volumes:
       - ollama-data:/root/.ollama
     deploy:
       resources:
         limits:
           memory: 16G
+        reservations:
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
-      - athena-net
+      - sophia-net
 
-  # --- CHROMADB (base de conhecimento vetorial) ---
+  # --- CHROMADB (base de conhecimento vetorial / RAG) ---
   chromadb:
     image: chromadb/chroma:latest
-    container_name: athena-chromadb
+    container_name: sophia-chromadb
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - chroma-data:/chroma/chroma
     environment:
@@ -96,30 +118,30 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - athena-net
+      - sophia-net
 
-  # --- REDIS (filas de tarefas + cache) ---
+  # --- REDIS (filas de tarefas + cache + pub/sub) ---
   redis:
     image: redis:7-alpine
-    container_name: athena-redis
+    container_name: sophia-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru --save 60 1000
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - athena-net
+      - sophia-net
 
-  # --- NGINX (proxy reverso + SSL) ---
+  # --- NGINX (proxy reverso + SSL + rate limiting) ---
   nginx:
     image: nginx:alpine
-    container_name: athena-nginx
+    container_name: sophia-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -129,24 +151,25 @@ services:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
+      - ./docker/nginx/certbot-webroot:/var/www/certbot
     depends_on:
-      - ia-mae
+      - sophia
       - bot-sql
       - command-center
     networks:
-      - athena-net
+      - sophia-net
 
-  # --- CERTBOT (SSL Let's Encrypt) ---
+  # --- CERTBOT (SSL Let's Encrypt - auto-renewal) ---
   certbot:
     image: certbot/certbot
-    container_name: athena-certbot
+    container_name: sophia-certbot
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - ./docker/nginx/certbot-webroot:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
-      - athena-net
+      - sophia-net
 
 volumes:
   ollama-data:
@@ -161,5 +184,5 @@ volumes:
     driver: local
 
 networks:
-  athena-net:
+  sophia-net:
     driver: bridge

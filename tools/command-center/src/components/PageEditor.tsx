@@ -15,12 +15,12 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { RouteConfig, RouteCategory, RouteStatus, CATEGORY_CONFIG, STATUS_CONFIG } from '../types/routes';
-import { useSupabase } from '../hooks/useSupabase';
 
 interface PageEditorProps {
   route: RouteConfig;
   onClose: () => void;
-  onSave: (routeId: string, data: PageEditData) => void;
+  onSave: (routeId: string, route: RouteConfig, data: PageEditData) => void;
+  initialConfig?: import('../hooks/usePageConfigs').PageConfig;
 }
 
 export interface PageEditData {
@@ -52,51 +52,21 @@ const PRIORITY_CONFIG = {
   nenhuma: { color: 'text-slate-400', bg: 'bg-slate-700 border-slate-600' },
 };
 
-export default function PageEditor({ route, onClose, onSave }: PageEditorProps) {
-  const supabase = useSupabase();
-
+export default function PageEditor({ route, onClose, onSave, initialConfig }: PageEditorProps) {
   const [activeSection, setActiveSection] = useState<'info' | 'kpis' | 'notas'>('info');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Form state
-  const [description, setDescription] = useState(route.description || '');
-  const [status, setStatus] = useState<RouteStatus>(route.status);
-  const [category, setCategory] = useState<RouteCategory>(route.category);
-  const [roles, setRoles] = useState<string[]>(route.roles);
-  const [notes, setNotes] = useState('');
-  const [priority, setPriority] = useState<PageEditData['priority']>('nenhuma');
-  const [tags, setTags] = useState<string[]>([]);
+  // Form state — inicializa do banco (initialConfig) ou do hardcoded (route)
+  const [description, setDescription] = useState(initialConfig?.description || route.description || '');
+  const [status, setStatus] = useState<RouteStatus>(initialConfig?.status || route.status);
+  const [category, setCategory] = useState<RouteCategory>(initialConfig?.category || route.category);
+  const [roles, setRoles] = useState<string[]>(initialConfig?.roles?.length ? initialConfig.roles : route.roles);
+  const [notes, setNotes] = useState(initialConfig?.notes || '');
+  const [priority, setPriority] = useState<PageEditData['priority']>(initialConfig?.priority || 'nenhuma');
+  const [tags, setTags] = useState<string[]>(initialConfig?.tags || []);
   const [newTag, setNewTag] = useState('');
-  const [kpis, setKpis] = useState<KPI[]>([]);
-
-  // Load saved data from Supabase
-  useEffect(() => {
-    loadPageData();
-  }, [route.id]);
-
-  async function loadPageData() {
-    if (!supabase) return;
-    try {
-      const { data } = await supabase
-        .from('ia_knowledge_base')
-        .select('*')
-        .eq('categoria', 'page_config')
-        .eq('subcategoria', route.id)
-        .single();
-
-      if (data?.conteudo) {
-        const parsed = JSON.parse(data.conteudo);
-        if (parsed.notes) setNotes(parsed.notes);
-        if (parsed.priority) setPriority(parsed.priority);
-        if (parsed.tags) setTags(parsed.tags);
-        if (parsed.kpis) setKpis(parsed.kpis);
-        if (parsed.description) setDescription(parsed.description);
-      }
-    } catch {
-      // No saved data yet, that's fine
-    }
-  }
+  const [kpis, setKpis] = useState<KPI[]>(initialConfig?.kpis || []);
 
   async function handleSave() {
     setSaving(true);
@@ -112,35 +82,9 @@ export default function PageEditor({ route, onClose, onSave }: PageEditorProps) 
       tags,
     };
 
-    // Save to Supabase (ia_knowledge_base as page config)
-    if (supabase) {
-      try {
-        await supabase
-          .from('ia_knowledge_base')
-          .upsert({
-            categoria: 'page_config',
-            subcategoria: route.id,
-            titulo: `Config: ${route.component} (${route.path})`,
-            conteudo: JSON.stringify(data),
-            fonte: 'command-center',
-          }, {
-            onConflict: 'categoria,subcategoria',
-          });
-      } catch {
-        // Fallback: insert if upsert fails (no unique constraint)
-        await supabase
-          ?.from('ia_knowledge_base')
-          .insert({
-            categoria: 'page_config',
-            subcategoria: route.id,
-            titulo: `Config: ${route.component} (${route.path})`,
-            conteudo: JSON.stringify(data),
-            fonte: 'command-center',
-          });
-      }
-    }
-
-    onSave(route.id, data);
+    // Salva direto via onSave → App.tsx → usePageConfigs.saveConfig()
+    // Tabela: cc_page_configs (dedicada, com colunas tipadas)
+    onSave(route.id, route, data);
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

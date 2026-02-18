@@ -93,7 +93,7 @@ export async function pauseAgent(agentId: string) {
 
   if (error) throw error;
 
-  await log(agentId, 'action', 'Agente pausado pela Athena');
+  await log(agentId, 'action', 'Agente pausado pela Sophia');
 }
 
 export async function deleteAgent(agentId: string) {
@@ -111,7 +111,7 @@ export async function deleteAgent(agentId: string) {
 
   if (error) throw error;
 
-  await log(agentId, 'action', `Agente ${agent?.nome || agentId} desativado pela Athena`);
+  await log(agentId, 'action', `Agente ${agent?.nome || agentId} desativado pela Sophia`);
 }
 
 export async function listActiveAgents() {
@@ -132,4 +132,80 @@ export async function getAgentById(id: string) {
     .single();
 
   return data;
+}
+
+/**
+ * Busca princesa por nome (case-insensitive)
+ */
+export async function getAgentByName(name: string) {
+  const { data } = await supabase
+    .from('ia_agents')
+    .select('*')
+    .ilike('nome', name)
+    .single();
+
+  return data;
+}
+
+/**
+ * Ativa uma princesa existente (set online)
+ */
+export async function activateAgent(agentId: string) {
+  const { error } = await supabase
+    .from('ia_agents')
+    .update({ status: 'online', ultimo_ping: new Date().toISOString() })
+    .eq('id', agentId);
+
+  if (error) throw error;
+  await log(agentId, 'action', 'Agente ativado');
+}
+
+/**
+ * Garante que as 3 princesas padrao existem no banco como agentes IA
+ * Se ja existem na seed (19 agents), apenas verifica
+ */
+export async function ensureDefaultPrincesses(sophiaId: string): Promise<void> {
+  const defaults = [
+    {
+      nome: 'Anna',
+      tipo: 'princesa',
+      llm_provider: 'ollama',
+      modelo: 'llama3.1:8b',
+      descricao: 'Princesa de Atendimento - responde clientes, agenda, follow-up',
+      canais: ['whatsapp', 'chat', 'email'],
+      config_json: { cor: '#ec4899', especialidade: 'atendimento' },
+    },
+    {
+      nome: 'Simone',
+      tipo: 'princesa',
+      llm_provider: 'ollama',
+      modelo: 'llama3.1:8b',
+      descricao: 'Princesa Financeira - faturamento, inadimplencia, relatorios',
+      canais: ['interno'],
+      config_json: { cor: '#06b6d4', especialidade: 'financeiro' },
+    },
+    {
+      nome: 'Thamy',
+      tipo: 'princesa',
+      llm_provider: 'ollama',
+      modelo: 'llama3.1:8b',
+      descricao: 'Princesa de Marketing - campanhas, engajamento, posts',
+      canais: ['instagram', 'facebook', 'tiktok'],
+      config_json: { cor: '#f59e0b', especialidade: 'marketing' },
+    },
+  ];
+
+  for (const spec of defaults) {
+    const existing = await getAgentByName(spec.nome);
+    if (!existing) {
+      await createAgent(sophiaId, spec);
+      await log(sophiaId, 'info', `Princesa ${spec.nome} criada automaticamente`);
+    } else if (existing.tipo !== 'princesa') {
+      // Atualiza tipo pra princesa se tava como escravo
+      await supabase
+        .from('ia_agents')
+        .update({ tipo: 'princesa', pai_id: sophiaId })
+        .eq('id', existing.id);
+    }
+  }
 }
