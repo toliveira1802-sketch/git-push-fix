@@ -27,12 +27,22 @@ const SOPHIA_API_URL = import.meta.env.VITE_SOPHIA_API_URL || '';
 
 // Fallback: Claude API direto (quando nao tem VPS)
 const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
-const CLAUDE_DEFAULT_MODEL = 'claude-3-5-sonnet-20241022';
+const CLAUDE_DEFAULT_MODEL = 'claude-sonnet-4-20250514';
+
+// Modelos Claude ativos (descontinuados sao rejeitados)
+const VALID_CLAUDE_MODELS = [
+  'claude-sonnet-4-20250514',
+  'claude-opus-4-20250514',
+  'claude-haiku-3-20250414',
+  'claude-3-7-sonnet-20250219',
+  'claude-3-5-haiku-20241022',
+];
 
 // Valida se o modelo e compativel com Anthropic API
 function getClaudeModel(agentModel?: string): string {
   if (!agentModel) return CLAUDE_DEFAULT_MODEL;
-  if (agentModel.startsWith('claude-')) return agentModel;
+  if (VALID_CLAUDE_MODELS.includes(agentModel)) return agentModel;
+  // Modelo desconhecido ou descontinuado — usa o default
   return CLAUDE_DEFAULT_MODEL;
 }
 

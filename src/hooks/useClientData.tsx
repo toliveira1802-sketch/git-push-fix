@@ -177,7 +177,6 @@ export function useClientData() {
   const refresh = useCallback(async () => {
     // DEV BYPASS: não fazer chamadas ao Supabase
     if (DEV_BYPASS) {
-      console.log('DEV BYPASS: usando dados fake de cliente');
       setLoading(false);
       return;
     }
@@ -231,7 +230,6 @@ export function useClientData() {
             table: "ordens_servico",
           },
           (payload) => {
-            console.log("Realtime: ordens_servico changed", payload);
             // Refresh data when any service order changes
             refresh();
           },
@@ -244,14 +242,11 @@ export function useClientData() {
             table: "itens_ordem_servico",
           },
           (payload) => {
-            console.log("Realtime: itens_ordem_servico changed", payload);
             // Refresh data when items change
             refresh();
           },
         )
-        .subscribe((status) => {
-          console.log("Realtime subscription status:", status);
-        });
+        .subscribe();
     };
 
     setupRealtime();
@@ -259,7 +254,6 @@ export function useClientData() {
     // Cleanup subscription on unmount
     return () => {
       if (channel) {
-        console.log("Unsubscribing from realtime channel");
         supabase.removeChannel(channel);
       }
     };
