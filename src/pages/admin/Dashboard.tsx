@@ -116,7 +116,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Acesso Rápido - tab bar */}
-        <div className="grid grid-cols-4 border border-border rounded-lg overflow-hidden bg-card">
+        <div className="flex border border-border rounded-lg overflow-hidden bg-card">
           {[
             { label: 'Operacional', path: '/admin/operacional', icon: Wrench },
             { label: 'Financeiro', path: '/admin/financeiro', icon: DollarSign },
@@ -126,14 +126,12 @@ export default function AdminDashboard() {
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
-                i === 0
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 border-l border-border'
-              }`}
+              className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                i > 0 ? 'border-l border-border' : ''
+              } text-muted-foreground hover:text-foreground hover:bg-accent/50`}
             >
               <Icon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{label}</span>
+              <span>{label}</span>
             </button>
           ))}
         </div>
