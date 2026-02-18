@@ -25,6 +25,42 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Gradual Launch Guard
+ * Rotas ativas: /login, /, /escolher-visao, /gestao e sub-rotas de gestão listadas abaixo.
+ * Qualquer outra rota → /gestao (autenticado) ou /login (não autenticado).
+ */
+const ACTIVE_PATHS = [
+  "/login",
+  "/",
+  "/escolher-visao",
+  "/gestao",
+  "/gestao/rh",
+  "/gestao/operacoes",
+  "/gestao/financeiro",
+  "/gestao/tecnologia",
+  "/gestao/comercial",
+  "/gestao/melhorias",
+];
+
+function GradualLaunch({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  // Obter pathname atual via window.location (wouter não expõe hook aqui)
+  const pathname = window.location.pathname;
+
+  if (loading) return <>{children}</>;
+
+  const isActive = ACTIVE_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+
+  if (!isActive) {
+    return <Redirect to={user ? "/gestao" : "/login"} />;
+  }
+
+  return <>{children}</>;
+}
+
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -318,7 +354,9 @@ function App() {
             <CompanyProvider>
               <TooltipProvider>
                 <Toaster />
-                <Router />
+                <GradualLaunch>
+                  <Router />
+                </GradualLaunch>
               </TooltipProvider>
             </CompanyProvider>
           </AuthProvider>
