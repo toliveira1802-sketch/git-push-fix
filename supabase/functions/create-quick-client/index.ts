@@ -230,24 +230,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     console.log("create-quick-client: Vehicle created:", vehicleData.id);
 
-    // 3. Generate order number and create service order
+    // 3. Generate non-sequential order number to prevent enumeration attacks
     const year = new Date().getFullYear();
-    const { data: lastOrder } = await supabaseAdmin
-      .from("ordens_servico")
-      .select("order_number")
-      .like("order_number", `${year}-%`)
-      .order("order_number", { ascending: false })
-      .limit(1)
-      .single();
-
-    let nextNumber = 1;
-    if (lastOrder?.order_number) {
-      const parts = lastOrder.order_number.split("-");
-      if (parts.length === 2) {
-        nextNumber = parseInt(parts[1], 10) + 1;
+    let orderNumber = "";
+    let attempts = 0;
+    
+    while (attempts < 10) {
+      // Random 6-char alphanumeric suffix (non-sequential for security)
+      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const candidate = `${year}-${randomSuffix}`;
+      
+      const { data: existing } = await supabaseAdmin
+        .from("ordens_servico")
+        .select("id")
+        .eq("order_number", candidate)
+        .maybeSingle();
+      
+      if (!existing) {
+        orderNumber = candidate;
+        break;
       }
+      attempts++;
     }
-    const orderNumber = `${year}-${nextNumber.toString().padStart(5, "0")}`;
+    
+    if (!orderNumber) {
+      orderNumber = `${year}-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    }
 
     const { data: osData, error: osError } = await supabaseAdmin
       .from("ordens_servico")
