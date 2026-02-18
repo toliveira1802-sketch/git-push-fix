@@ -72,26 +72,7 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <AdminSubNav />
-      <div className="p-4 md:p-6 space-y-6">
-
-        {/* Acesso Rápido */}
-        <div className="flex items-center gap-1 border-b border-border pb-2">
-          {[
-            { label: 'Operacional', path: '/admin/operacional', icon: Wrench, color: 'text-orange-400' },
-            { label: 'Financeiro', path: '/admin/financeiro', icon: DollarSign, color: 'text-emerald-400' },
-            { label: 'Produtividade', path: '/admin/produtividade', icon: TrendingUp, color: 'text-blue-400' },
-            { label: 'Agenda', path: '/admin/agenda-mecanicos', icon: Calendar, color: 'text-purple-400' },
-          ].map(({ label, path, icon: Icon, color }) => (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors text-sm"
-            >
-              <Icon className={`w-3.5 h-3.5 ${color}`} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
+      <div className="p-4 md:p-6 space-y-4">
 
         {/* Pendências do dia */}
         <Card className="border border-border bg-card">
@@ -133,6 +114,29 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Acesso Rápido - tab bar */}
+        <div className="grid grid-cols-4 border border-border rounded-lg overflow-hidden bg-card">
+          {[
+            { label: 'Operacional', path: '/admin/operacional', icon: Wrench },
+            { label: 'Financeiro', path: '/admin/financeiro', icon: DollarSign },
+            { label: 'Produtividade', path: '/admin/produtividade', icon: TrendingUp },
+            { label: 'Agenda Mec.', path: '/admin/agenda-mecanicos', icon: Calendar },
+          ].map(({ label, path, icon: Icon }, i) => (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className={`flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                i === 0
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 border-l border-border'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+        </div>
 
         {/* Stats Grid - 2x2 */}
         <div className="grid grid-cols-2 gap-4">
