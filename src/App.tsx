@@ -208,6 +208,8 @@ function Router() {
       {/* Pátio */}
       <Route path="/admin/patio">{() => <RequireAuth><AdminPatio /></RequireAuth>}</Route>
       <Route path="/admin/patio/:id">{() => <RequireAuth><AdminPatioDetalhes /></RequireAuth>}</Route>
+      <Route path="/admin/monitoramento-patio">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanMonitoramentoPatio /></ErrorBoundary></Suspense></RequireAuth>}</Route>
+      <Route path="/__orphan/monitoramento-patio">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanMonitoramentoPatio /></ErrorBoundary></Suspense></RequireAuth>}</Route>
 
       {/* Agenda */}
       <Route path="/admin/agendamentos">{() => <RequireAuth><AdminAgendamentos /></RequireAuth>}</Route>
