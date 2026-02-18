@@ -103,37 +103,37 @@ export function useAdminDashboard() {
 
       // 1. Agendamentos de hoje
       const { data: appointmentsData } = await supabase
-        .from('agendamentos')
+        .from('appointments')
         .select(`
           id,
-          scheduled_time,
+          appointment_time,
           status,
-          clientes!inner(name),
-          veiculos(plate, model)
+          clients!inner(nome),
+          vehicles(plate, model)
         `)
-        .eq('scheduled_date', todayStr)
-        .order('scheduled_time');
+        .eq('appointment_date', todayStr)
+        .order('appointment_time');
 
       const formattedAppointments: TodayAppointment[] = (appointmentsData || []).map((apt: any) => ({
         id: apt.id,
-        time: apt.scheduled_time?.slice(0, 5) || '',
-        client_name: apt.clientes?.name || 'N/A',
-        vehicle: apt.veiculos ? `${apt.veiculos.model} - ${apt.veiculos.plate}` : 'Sem veículo',
+        time: apt.appointment_time?.slice(0, 5) || '',
+        client_name: apt.clients?.nome || 'N/A',
+        vehicle: apt.vehicles ? `${apt.vehicles.model} - ${apt.vehicles.plate}` : 'Sem veículo',
         status: apt.status,
       }));
       setTodayAppointments(formattedAppointments);
 
       // 2. Novos clientes do mês
       const { data: clientsData } = await supabase
-        .from('clientes')
-        .select('id, name, phone, created_at')
+        .from('clients')
+        .select('id, nome, telefone, created_at')
         .gte('created_at', inicioMes.toISOString())
         .order('created_at', { ascending: false });
 
       const formattedClients: NewClient[] = (clientsData || []).map((c: any) => ({
         id: c.id,
-        full_name: c.name,
-        phone: c.phone,
+        full_name: c.nome,
+        phone: c.telefone,
         created_at: new Date(c.created_at).toLocaleDateString('pt-BR'),
       }));
       setNewClients(formattedClients);
@@ -148,8 +148,8 @@ export function useAdminDashboard() {
           total,
           created_at,
           estimated_completion,
-          veiculos!inner(plate, model),
-          clientes!inner(name),
+          vehicles!inner(plate, model),
+          clients!inner(nome),
           itens_ordem_servico(total_price, status)
         `)
         .neq('status', 'entregue')
@@ -178,9 +178,9 @@ export function useAdminDashboard() {
 
       const formattedVehiclesInYard: VehicleInYard[] = (ossAtivas || []).map((os: any) => ({
         id: os.id,
-        plate: os.veiculos?.plate || '',
-        vehicle: os.veiculos?.model || '',
-        client_name: os.clientes?.name || '',
+        plate: os.vehicles?.plate || '',
+        vehicle: os.vehicles?.model || '',
+        client_name: os.clients?.nome || '',
         status: statusLabels[os.status] || os.status,
         etapa: statusLabels[os.status] || os.status,
       }));
@@ -193,8 +193,8 @@ export function useAdminDashboard() {
         return {
           id: os.id,
           numero_os: os.order_number,
-          vehicle: os.veiculos?.model || '',
-          client_name: os.clientes?.name || '',
+          vehicle: os.vehicles?.model || '',
+          client_name: os.clients?.nome || '',
           valor: calcValorAprovado(os),
           dias_aguardando: diasAguardando,
         };
@@ -206,8 +206,8 @@ export function useAdminDashboard() {
       const formattedProntos: ReadyToDeliver[] = prontos.map((os: any) => ({
         id: os.id,
         numero_os: os.order_number,
-        vehicle: os.veiculos?.model || '',
-        client_name: os.clientes?.name || '',
+        vehicle: os.vehicles?.model || '',
+        client_name: os.clients?.nome || '',
         valor_final: calcValorAprovado(os),
       }));
       setReadyToDeliver(formattedProntos);
@@ -239,8 +239,8 @@ export function useAdminDashboard() {
           id,
           created_at,
           ordens_servico!inner(
-            veiculos!inner(plate, model),
-            clientes!inner(name)
+            vehicles!inner(plate, model),
+            clients!inner(nome)
           )
         `)
         .eq('tipo', 'retorno_45_dias')
@@ -248,21 +248,21 @@ export function useAdminDashboard() {
 
       const formattedRetornos: ReturnVehicle[] = (alertasRetorno || []).map((alert: any) => ({
         id: alert.id,
-        plate: alert.ordens_servico?.veiculos?.plate || '',
-        vehicle: alert.ordens_servico?.veiculos?.model || '',
-        client_name: alert.ordens_servico?.clientes?.name || '',
+        plate: alert.ordens_servico?.vehicles?.plate || '',
+        vehicle: alert.ordens_servico?.vehicles?.model || '',
+        client_name: alert.ordens_servico?.clients?.nome || '',
         data_entrega: new Date(alert.created_at).toLocaleDateString('pt-BR'),
       }));
       setReturnVehicles(formattedRetornos);
 
       // 6. Agendamentos cancelados do mês
       const { data: cancelados } = await supabase
-        .from('agendamentos')
+        .from('appointments')
         .select(`
           id,
           cancelled_at,
-          clientes!inner(name, phone),
-          veiculos(model)
+          clients!inner(nome, telefone),
+          vehicles(model)
         `)
         .eq('status', 'cancelado')
         .gte('cancelled_at', inicioMes.toISOString())
@@ -270,9 +270,9 @@ export function useAdminDashboard() {
 
       const formattedCancelados: CancelledAppointment[] = (cancelados || []).map((apt: any) => ({
         id: apt.id,
-        client_name: apt.clientes?.name || '',
-        phone: apt.clientes?.phone || '',
-        vehicle: apt.veiculos?.model || 'Sem veículo',
+        client_name: apt.clients?.nome || '',
+        phone: apt.clients?.telefone || '',
+        vehicle: apt.vehicles?.model || 'Sem veículo',
         cancelled_at: apt.cancelled_at ? new Date(apt.cancelled_at).toLocaleDateString('pt-BR') : '',
       }));
       setCancelledAppointments(formattedCancelados);

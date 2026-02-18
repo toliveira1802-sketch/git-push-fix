@@ -70,22 +70,22 @@ export default function NovaOS() {
 
       // Buscar por telefone
       const { data: clientsByPhone, error: phoneError } = await supabase
-        .from("clientes")
+        .from("clients")
         .select(`
-          id, name, phone, email,
-          veiculos (id, brand, model, plate, year, km)
+          id, nome, telefone, email,
+          vehicles (id, brand, model, plate, year, km_atual)
         `)
-        .ilike("phone", `%${searchClean}%`)
+        .ilike("telefone", `%${searchClean}%`)
         .limit(10);
 
       if (phoneError) throw phoneError;
 
       // Buscar por placa
       const { data: vehiclesByPlate, error: plateError } = await supabase
-        .from("veiculos")
+        .from("vehicles")
         .select(`
-          id, brand, model, plate, year, km,
-          clientes:client_id (id, name, phone, email)
+          id, brand, model, plate, year, km_atual,
+          clients:user_id (id, nome, telefone, email)
         `)
         .ilike("plate", `%${searchUpper}%`)
         .limit(10);
@@ -99,16 +99,16 @@ export default function NovaOS() {
         clientsByPhone?.forEach((client: any) => {
         clientsMap.set(client.id, {
           id: client.id,
-          name: client.name,
-          phone: client.phone,
+          name: client.nome,
+          phone: client.telefone,
           email: client.email,
-          vehicles: client.veiculos || [],
+          vehicles: (client.vehicles || []).map((v: any) => ({ ...v, km: v.km_atual })),
         });
       });
 
       // Adicionar clientes encontrados por placa
       vehiclesByPlate?.forEach((vehicle: any) => {
-        const client = vehicle.clientes;
+        const client = vehicle.clients;
         if (client) {
           if (clientsMap.has(client.id)) {
             // Cliente já existe, verificar se veículo já está na lista
@@ -120,14 +120,14 @@ export default function NovaOS() {
                 model: vehicle.model,
                 plate: vehicle.plate,
                 year: vehicle.year,
-                km: vehicle.km,
+                km: vehicle.km_atual,
               });
             }
           } else {
             clientsMap.set(client.id, {
               id: client.id,
-              name: client.name,
-              phone: client.phone,
+              name: client.nome,
+              phone: client.telefone,
               email: client.email,
               vehicles: [{
                 id: vehicle.id,
@@ -135,7 +135,7 @@ export default function NovaOS() {
                 model: vehicle.model,
                 plate: vehicle.plate,
                 year: vehicle.year,
-                km: vehicle.km,
+                km: vehicle.km_atual,
               }],
             });
           }
@@ -188,10 +188,10 @@ export default function NovaOS() {
     try {
       // 1. Criar cliente
       const { data: newClient, error: clientError } = await supabase
-        .from("clientes")
+        .from("clients")
         .insert({
-          name: quickForm.name.trim(),
-          phone: quickForm.phone.trim() || "Não informado",
+          nome: quickForm.name.trim(),
+          telefone: quickForm.phone.trim() || "Não informado",
           status: "active",
         })
         .select("id")
@@ -201,9 +201,9 @@ export default function NovaOS() {
 
       // 2. Criar veículo
       const { data: newVehicle, error: vehicleError } = await supabase
-        .from("veiculos")
+        .from("vehicles")
         .insert({
-          client_id: newClient.id,
+          user_id: newClient.id,
           brand: quickForm.brand.trim() || "Não informado",
           model: quickForm.model.trim(),
           plate: quickForm.plate.toUpperCase().replace(/[^A-Z0-9]/g, ""),

@@ -22,14 +22,14 @@ type Step = 'client' | 'vehicle' | 'services' | 'review'
 
 interface Cliente {
   id: string;
-  name: string;
+  nome: string;
   email: string | null;
-  phone: string;
+  telefone: string;
 }
 
 interface Veiculo {
   id: string;
-  client_id: string;
+  user_id: string;
   brand: string;
   model: string;
   plate: string;
@@ -61,8 +61,8 @@ export default function NovaOS() {
         async function fetchData() {
             setLoading(true)
             const [cRes, vRes, sRes] = await Promise.all([
-                supabase.from("clientes").select("id, name, email, phone"),
-                supabase.from("veiculos").select("id, client_id, brand, model, plate, year"),
+                supabase.from("clients").select("id, nome, email, telefone"),
+                supabase.from("vehicles").select("id, user_id, brand, model, plate, year"),
                 supabase.from("catalogo_servicos").select("id, nome, descricao, valor_base").eq("is_active", true),
             ])
             setClientes(cRes.data ?? [])
@@ -74,13 +74,13 @@ export default function NovaOS() {
     }, [])
 
     const filteredClients = clientes.filter((c) =>
-        c.name?.toLowerCase().includes(searchClient.toLowerCase()) ||
+        c.nome?.toLowerCase().includes(searchClient.toLowerCase()) ||
         c.email?.toLowerCase().includes(searchClient.toLowerCase()) ||
-        c.phone?.includes(searchClient)
+        c.telefone?.includes(searchClient)
     )
 
     const clientVehicles = selectedClient
-        ? veiculos.filter((v) => v.client_id === selectedClient.id)
+        ? veiculos.filter((v) => v.user_id === selectedClient.id)
         : []
 
     const total = selectedServices.reduce((acc, s) => acc + (s.valor_base || 0), 0)
@@ -176,8 +176,8 @@ export default function NovaOS() {
                                     }}
                                     className={`p-4 rounded-lg border cursor-pointer transition-colors hover:bg-accent ${selectedClient?.id === client.id ? 'border-primary bg-primary/5' : ''}`}
                                 >
-                                    <p className="font-medium">{client.name}</p>
-                                    <p className="text-sm text-muted-foreground">{client.email || client.phone}</p>
+                                    <p className="font-medium">{client.nome}</p>
+                                    <p className="text-sm text-muted-foreground">{client.email || client.telefone}</p>
                                 </div>
                             ))}
                             {filteredClients.length === 0 && (
@@ -198,7 +198,7 @@ export default function NovaOS() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            Cliente: <strong>{selectedClient?.name}</strong>
+                            Cliente: <strong>{selectedClient?.nome}</strong>
                         </p>
 
                         <div className="space-y-2">
@@ -305,7 +305,7 @@ export default function NovaOS() {
                         <div className="space-y-3">
                             <div className="p-3 bg-muted rounded-lg">
                                 <p className="text-sm text-muted-foreground">Cliente</p>
-                                <p className="font-medium">{selectedClient?.name}</p>
+                                <p className="font-medium">{selectedClient?.nome}</p>
                             </div>
                             <div className="p-3 bg-muted rounded-lg">
                                 <p className="text-sm text-muted-foreground">Veículo</p>

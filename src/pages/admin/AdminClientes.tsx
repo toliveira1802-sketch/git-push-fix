@@ -9,22 +9,22 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Cliente {
   id: string;
-  name: string;
-  cpf: string | null;
+  nome: string;
+  cpf_cnpj: string | null;
   email: string | null;
-  phone: string;
-  address: string | null;
-  city: string | null;
+  telefone: string;
+  endereco: string | null;
+  cidade: string | null;
 }
 
 interface Veiculo {
   id: string;
-  client_id: string;
+  user_id: string;
   plate: string;
   brand: string;
   model: string;
-  year: number | null;
-  km: number | null;
+  year: string | null;
+  km_atual: number | null;
 }
 
 export default function AdminClientes() {
@@ -38,8 +38,8 @@ export default function AdminClientes() {
     async function fetchData() {
       setLoading(true);
       const [clientesRes, veiculosRes] = await Promise.all([
-        supabase.from("clientes").select("id, name, cpf, email, phone, address, city"),
-        supabase.from("veiculos").select("id, client_id, plate, brand, model, year, km"),
+        supabase.from("clients").select("id, nome, cpf_cnpj, email, telefone, endereco, cidade"),
+        supabase.from("vehicles").select("id, user_id, plate, brand, model, year, km_atual"),
       ]);
       setClientes(clientesRes.data ?? []);
       setVeiculos(veiculosRes.data ?? []);
@@ -50,12 +50,12 @@ export default function AdminClientes() {
 
   const clientesFiltrados = clientes.filter((cliente) => {
     const searchLower = search.toLowerCase();
-    const veiculosDoCliente = veiculos.filter(v => v.client_id === cliente.id);
+    const veiculosDoCliente = veiculos.filter(v => v.user_id === cliente.id);
     const placaMatch = veiculosDoCliente.some(v => v.plate.toLowerCase().includes(searchLower));
     return (
-      cliente.name.toLowerCase().includes(searchLower) ||
-      (cliente.cpf || "").includes(search) ||
-      (cliente.phone || "").includes(search) ||
+      (cliente.nome || "").toLowerCase().includes(searchLower) ||
+      (cliente.cpf_cnpj || "").includes(search) ||
+      (cliente.telefone || "").includes(search) ||
       (cliente.email || "").toLowerCase().includes(searchLower) ||
       placaMatch
     );
@@ -118,12 +118,12 @@ export default function AdminClientes() {
         <Card className="bg-white/5 border-white/10">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-lg bg-purple-500/20">
-              <Car className="h-6 w-6 text-purple-400" />
+              <Phone className="h-6 w-6 text-purple-400" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Média Veículos/Cliente</p>
+              <p className="text-gray-400 text-sm">Com Telefone</p>
               <p className="text-2xl font-bold text-white">
-                {clientes.length > 0 ? (veiculos.length / clientes.length).toFixed(1) : "0"}
+                {clientes.filter(c => c.telefone).length}
               </p>
             </div>
           </CardContent>
@@ -135,7 +135,7 @@ export default function AdminClientes() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Buscar por nome, CPF, telefone, email ou placa..."
+              placeholder="Buscar por nome, telefone, email, cidade..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 bg-white/5 border-white/10 text-white"
@@ -153,13 +153,13 @@ export default function AdminClientes() {
           </Card>
         )}
         {clientesFiltrados.map((cliente) => {
-          const veiculosDoCliente = veiculos.filter(v => v.client_id === cliente.id);
+          const veiculosDoCliente = veiculos.filter(v => v.user_id === cliente.id);
           const isExpandido = clienteExpandido === cliente.id;
-          
+
           return (
             <Card key={cliente.id} className="bg-white/5 border-white/10">
               <CardContent className="p-0">
-                <div 
+                <div
                   className="p-4 cursor-pointer hover:bg-white/5 transition-colors"
                   onClick={() => setClienteExpandido(isExpandido ? null : cliente.id)}
                 >
@@ -169,11 +169,11 @@ export default function AdminClientes() {
                         <User className="h-6 w-6 text-red-400" />
                       </div>
                       <div>
-                        <p className="text-white font-bold text-lg">{cliente.name}</p>
+                        <p className="text-white font-bold text-lg">{cliente.nome}</p>
                         <div className="flex items-center gap-4 text-gray-400 text-sm">
                           <span className="flex items-center gap-1">
                             <Phone className="h-3 w-3" />
-                            {cliente.phone}
+                            {cliente.telefone}
                           </span>
                           {cliente.email && (
                             <span className="flex items-center gap-1">
@@ -188,11 +188,11 @@ export default function AdminClientes() {
                       <Badge className="bg-blue-500/20 text-blue-400 border-0">
                         {veiculosDoCliente.length} veículo(s)
                       </Badge>
-                      {cliente.cpf && <span className="text-gray-400">{cliente.cpf}</span>}
+                      {cliente.cpf_cnpj && <span className="text-gray-400">{cliente.cpf_cnpj}</span>}
                     </div>
                   </div>
                 </div>
-                
+
                 {isExpandido && (
                   <div className="border-t border-white/10 p-4 bg-white/5">
                     <div className="grid grid-cols-2 gap-6">
@@ -201,8 +201,8 @@ export default function AdminClientes() {
                           <MapPin className="h-4 w-4 text-gray-400" />
                           Endereço
                         </h4>
-                        <p className="text-gray-400">{cliente.address || "Não informado"}</p>
-                        <p className="text-gray-400">{cliente.city || ""}</p>
+                        <p className="text-gray-400">{cliente.endereco || "Não informado"}</p>
+                        <p className="text-gray-400">{cliente.cidade || ""}</p>
                       </div>
                       <div>
                         <h4 className="text-white font-medium mb-3 flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function AdminClientes() {
                                   </div>
                                   <div className="text-right">
                                     <p className="text-gray-400 text-sm">{veiculo.year || "-"}</p>
-                                    <p className="text-gray-500 text-xs">{veiculo.km ? veiculo.km.toLocaleString("pt-BR") + " km" : "-"}</p>
+                                    <p className="text-gray-500 text-xs">{veiculo.km_atual ? veiculo.km_atual.toLocaleString("pt-BR") + " km" : "-"}</p>
                                   </div>
                                 </div>
                               </div>

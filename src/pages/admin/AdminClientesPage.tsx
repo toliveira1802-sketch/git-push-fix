@@ -8,11 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Cliente {
   id: string;
-  name: string;
-  phone: string;
+  nome: string;
+  telefone: string;
   email: string | null;
-  city: string | null;
-  cpf: string | null;
+  cidade: string | null;
+  cpf_cnpj: string | null;
   registration_source: string;
   created_at: string;
   veiculos_count?: number;
@@ -27,14 +27,14 @@ export default function AdminClientesPage() {
     queryKey: ['admin-clientes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('clientes')
+        .from('clients')
         .select(`
           id,
-          name,
-          phone,
+          nome,
+          telefone,
           email,
-          city,
-          cpf,
+          cidade,
+          cpf_cnpj,
           registration_source,
           created_at
         `)
@@ -50,14 +50,14 @@ export default function AdminClientesPage() {
     queryKey: ['admin-veiculos-counts'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('veiculos')
-        .select('client_id');
+        .from('vehicles')
+        .select('user_id');
 
       if (error) throw error;
-      
+
       const counts: Record<string, number> = {};
       data?.forEach(v => {
-        counts[v.client_id] = (counts[v.client_id] || 0) + 1;
+        counts[v.user_id] = (counts[v.user_id] || 0) + 1;
       });
       return counts;
     }
@@ -68,12 +68,12 @@ export default function AdminClientesPage() {
     if (!search.trim()) return clientes;
     
     const searchLower = search.toLowerCase();
-    return clientes.filter(c => 
-      c.name?.toLowerCase().includes(searchLower) ||
-      c.phone?.includes(search) ||
+    return clientes.filter(c =>
+      c.nome?.toLowerCase().includes(searchLower) ||
+      c.telefone?.includes(search) ||
       c.email?.toLowerCase().includes(searchLower) ||
-      c.city?.toLowerCase().includes(searchLower) ||
-      c.cpf?.includes(search)
+      c.cidade?.toLowerCase().includes(searchLower) ||
+      c.cpf_cnpj?.includes(search)
     );
   }, [clientes, search]);
 
@@ -129,7 +129,7 @@ export default function AdminClientesPage() {
             <div>
               <p className="text-slate-400 text-xs">Com Telefone</p>
               <p className="text-lg font-bold text-white">
-                {clientes.filter(c => c.phone && c.phone !== 'N/D').length}
+                {clientes.filter(c => c.telefone && c.telefone !== 'N/D').length}
               </p>
             </div>
           </div>
@@ -171,16 +171,16 @@ export default function AdminClientesPage() {
                         className="border-b border-slate-800 hover:bg-slate-800/50 cursor-pointer"
                       >
                         <td className="px-3 py-2">
-                          <p className="text-white font-medium">{c.name}</p>
+                          <p className="text-white font-medium">{c.nome}</p>
                           {c.email && <p className="text-slate-500 text-xs">{c.email}</p>}
                         </td>
                         <td className="px-3 py-2 text-slate-300">
-                          {c.phone === 'N/D' ? (
+                          {c.telefone === 'N/D' ? (
                             <span className="text-slate-500">-</span>
-                          ) : c.phone}
+                          ) : c.telefone}
                         </td>
                         <td className="px-3 py-2 text-slate-300">
-                          {c.city || <span className="text-slate-500">-</span>}
+                          {c.cidade || <span className="text-slate-500">-</span>}
                         </td>
                         <td className="px-3 py-2">
                           <span className="bg-blue-500/10 text-blue-400 text-xs px-2 py-0.5 rounded-full">

@@ -49,9 +49,9 @@ export default function Cadastros() {
     queryKey: ["cadastros-counts"],
     queryFn: async () => {
       const [clientes, os, veiculos, servicos] = await Promise.all([
-        supabase.from("clientes").select("id", { count: "exact", head: true }),
+        supabase.from("clients").select("id", { count: "exact", head: true }),
         supabase.from("ordens_servico").select("id", { count: "exact", head: true }),
-        supabase.from("veiculos").select("id", { count: "exact", head: true }),
+        supabase.from("vehicles").select("id", { count: "exact", head: true }),
         supabase.from("catalogo_servicos").select("id", { count: "exact", head: true }),
       ]);
       return {

@@ -65,8 +65,8 @@ interface Agendamento {
 
 interface Cliente {
   id: string;
-  name: string;
-  phone: string;
+  nome: string;
+  telefone: string;
   email?: string;
 }
 
@@ -75,8 +75,8 @@ interface Veiculo {
   plate: string;
   brand: string;
   model: string;
-  year?: number;
-  client_id: string;
+  year?: string;
+  user_id: string;
 }
 
 const origemConfig: Record<string, { label: string; color: string; icon: string }> = {
@@ -149,51 +149,54 @@ export default function AdminAgendamentos() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch agendamentos
+      // Fetch appointments + vehicles
       const { data: agData } = await supabase
-        .from('agendamentos')
-        .select(`
-          *,
-          clientes:client_id(id, name, phone),
-          veiculos:vehicle_id(id, plate, brand, model, year)
-        `)
-        .order('scheduled_date', { ascending: true });
+        .from('appointments')
+        .select('*')
+        .order('appointment_date', { ascending: true });
 
-      if (agData) {
-        const formatted = agData.map(ag => ({
-          id: ag.id,
-          cliente_nome: ag.clientes?.name || 'Cliente não encontrado',
-          cliente_telefone: ag.clientes?.phone || '',
-          cliente_id: ag.client_id,
-          veiculo: ag.veiculos ? `${ag.veiculos.brand} ${ag.veiculos.model} ${ag.veiculos.year || ''}` : '',
-          veiculo_id: ag.vehicle_id,
-          placa: ag.veiculos?.plate || '',
-          servicos: ag.service_type ? [ag.service_type] : [],
-          data: ag.scheduled_date,
-          horario: ag.scheduled_time,
-          origem: (ag.origin || 'manual') as 'cliente' | 'kommo' | 'manual',
-          status: ag.status as 'confirmado' | 'aguardando' | 'reagendado' | 'cancelado' | 'concluido',
-          observacoes: ag.notes || ag.description,
-        }));
-        setAgendamentos(formatted);
-      }
-
-      // Fetch clientes
+      // Fetch clients
       const { data: clientesData } = await supabase
-        .from('clientes')
-        .select('id, name, phone, email')
-        .eq('status', 'active')
-        .order('name');
-      
+        .from('clients')
+        .select('id, nome, telefone, email')
+        .eq('status', 'ativo')
+        .order('nome');
+
       if (clientesData) setClientes(clientesData);
 
-      // Fetch veiculos
+      // Fetch vehicles
       const { data: veiculosData } = await supabase
-        .from('veiculos')
-        .select('id, plate, brand, model, year, client_id')
+        .from('vehicles')
+        .select('id, plate, brand, model, year, user_id')
         .eq('is_active', true);
-      
+
       if (veiculosData) setVeiculos(veiculosData);
+
+      if (agData) {
+        const formatted = agData.map(ag => {
+          // Encontrar veículo pelo vehicle_id
+          const veiculo = veiculosData?.find(v => v.id === ag.vehicle_id);
+          // Encontrar cliente pelo user_id do appointment
+          const cliente = clientesData?.find(c => c.id === ag.user_id);
+
+          return {
+            id: ag.id,
+            cliente_nome: cliente?.nome || 'Cliente não encontrado',
+            cliente_telefone: cliente?.telefone || '',
+            cliente_id: ag.user_id,
+            veiculo: veiculo ? `${veiculo.brand} ${veiculo.model} ${veiculo.year || ''}` : '',
+            veiculo_id: ag.vehicle_id,
+            placa: veiculo?.plate || '',
+            servicos: ag.notes ? [ag.notes] : [],
+            data: ag.appointment_date,
+            horario: ag.appointment_time,
+            origem: 'manual' as 'cliente' | 'kommo' | 'manual',
+            status: ag.status as 'confirmado' | 'aguardando' | 'reagendado' | 'cancelado' | 'concluido',
+            observacoes: ag.notes,
+          };
+        });
+        setAgendamentos(formatted);
+      }
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -203,7 +206,7 @@ export default function AdminAgendamentos() {
   };
 
   // Filtrar veículos pelo cliente selecionado
-  const veiculosDoCliente = veiculos.filter(v => v.client_id === selectedClienteId);
+  const veiculosDoCliente = veiculos.filter(v => v.user_id === selectedClienteId);
 
   // Filtros
   const agendamentosFiltrados = agendamentos.filter(ag => {
@@ -266,11 +269,11 @@ export default function AdminAgendamentos() {
       // Se for novo cliente, criar primeiro
       if (clienteMode === 'novo') {
         const { data: novoCliente, error: clienteError } = await supabase
-          .from('clientes')
+          .from('clients')
           .insert({
-            name: novoAgendamento.cliente_nome,
-            phone: novoAgendamento.cliente_telefone,
-            registration_source: 'admin',
+            nome: novoAgendamento.cliente_nome,
+            telefone: novoAgendamento.cliente_telefone,
+            origem_cadastro: 'admin',
           })
           .select()
           .single();
@@ -281,9 +284,9 @@ export default function AdminAgendamentos() {
         // Se informou veículo, criar também
         if (novoAgendamento.placa) {
           const { data: novoVeiculo, error: veiculoError } = await supabase
-            .from('veiculos')
+            .from('vehicles')
             .insert({
-              client_id: clientId,
+              user_id: clientId,
               plate: novoAgendamento.placa.toUpperCase(),
               brand: novoAgendamento.veiculo.split(' ')[0] || 'N/I',
               model: novoAgendamento.veiculo.split(' ').slice(1).join(' ') || 'N/I',
@@ -299,16 +302,14 @@ export default function AdminAgendamentos() {
 
       // Criar agendamento
       const { error } = await supabase
-        .from('agendamentos')
+        .from('appointments')
         .insert({
-          client_id: clientId,
+          user_id: clientId,
           vehicle_id: vehicleId,
-          scheduled_date: format(novoAgendamento.data, 'yyyy-MM-dd'),
-          scheduled_time: novoAgendamento.horario,
-          service_type: novoAgendamento.servicos || 'Serviço Geral',
-          status: 'aguardando',
-          origin: 'manual',
-          notes: novoAgendamento.observacoes,
+          appointment_date: format(novoAgendamento.data, 'yyyy-MM-dd'),
+          appointment_time: novoAgendamento.horario,
+          status: 'pendente',
+          notes: novoAgendamento.servicos || novoAgendamento.observacoes || 'Serviço Geral',
         });
 
       if (error) throw error;
@@ -328,10 +329,9 @@ export default function AdminAgendamentos() {
     try {
       // Atualizar status do agendamento
       const { error: agError } = await supabase
-        .from('agendamentos')
-        .update({ 
+        .from('appointments')
+        .update({
           status: 'confirmado',
-          confirmed_at: new Date().toISOString()
         })
         .eq('id', agendamento.id);
 
@@ -370,10 +370,10 @@ export default function AdminAgendamentos() {
     
     try {
       const { error } = await supabase
-        .from('agendamentos')
+        .from('appointments')
         .update({
-          scheduled_date: format(novaData, 'yyyy-MM-dd'),
-          scheduled_time: novoHorario,
+          appointment_date: format(novaData, 'yyyy-MM-dd'),
+          appointment_time: novoHorario,
           status: 'reagendado',
         })
         .eq('id', selectedAgendamento.id);
@@ -397,11 +397,10 @@ export default function AdminAgendamentos() {
     
     try {
       const { error } = await supabase
-        .from('agendamentos')
+        .from('appointments')
         .update({
           status: 'cancelado',
-          cancel_reason: motivoCancelamento,
-          cancelled_at: new Date().toISOString(),
+          notes: motivoCancelamento ? `CANCELADO: ${motivoCancelamento}` : undefined,
         })
         .eq('id', selectedAgendamento.id);
 
@@ -419,9 +418,9 @@ export default function AdminAgendamentos() {
   };
 
   // Clientes filtrados pela busca
-  const clientesFiltrados = clientes.filter(c => 
-    c.name.toLowerCase().includes(clienteSearch.toLowerCase()) ||
-    c.phone.includes(clienteSearch)
+  const clientesFiltrados = clientes.filter(c =>
+    (c.nome || '').toLowerCase().includes(clienteSearch.toLowerCase()) ||
+    (c.telefone || '').includes(clienteSearch)
   ).slice(0, 10);
 
   return (
@@ -745,7 +744,7 @@ export default function AdminAgendamentos() {
                         onClick={() => setShowClienteDropdown(true)}
                       >
                         {selectedClienteId ? (
-                          clientes.find(c => c.id === selectedClienteId)?.name
+                          clientes.find(c => c.id === selectedClienteId)?.nome
                         ) : (
                           <span className="text-muted-foreground">Buscar por nome ou telefone...</span>
                         )}
@@ -773,8 +772,8 @@ export default function AdminAgendamentos() {
                               >
                                 <User className="w-4 h-4 mr-2" />
                                 <div className="flex-1">
-                                  <p className="font-medium">{cliente.name}</p>
-                                  <p className="text-xs text-muted-foreground">{cliente.phone}</p>
+                                  <p className="font-medium">{cliente.nome}</p>
+                                  <p className="text-xs text-muted-foreground">{cliente.telefone}</p>
                                 </div>
                               </CommandItem>
                             ))}
