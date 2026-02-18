@@ -103,16 +103,10 @@ export function useAdminDashboard() {
 
       // 1. Agendamentos de hoje
       const { data: appointmentsData } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          appointment_time,
-          status,
-          clients!inner(nome),
-          vehicles(plate, model)
-        `)
-        .eq('appointment_date', todayStr)
-        .order('appointment_time');
+        .from('agendamentos')
+        .select('id, scheduled_time, status, client_id, vehicle_id')
+        .eq('scheduled_date', todayStr)
+        .order('scheduled_time');
 
       const formattedAppointments: TodayAppointment[] = (appointmentsData || []).map((apt: any) => ({
         id: apt.id,
@@ -125,8 +119,8 @@ export function useAdminDashboard() {
 
       // 2. Novos clientes do mês
       const { data: clientsData } = await supabase
-        .from('clients')
-        .select('id, nome, telefone, created_at')
+        .from('clientes')
+        .select('id, name, phone, created_at')
         .gte('created_at', inicioMes.toISOString())
         .order('created_at', { ascending: false });
 
@@ -257,22 +251,17 @@ export function useAdminDashboard() {
 
       // 6. Agendamentos cancelados do mês
       const { data: cancelados } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          cancelled_at,
-          clients!inner(nome, telefone),
-          vehicles(model)
-        `)
+        .from('agendamentos')
+        .select('id, cancelled_at, client_id, vehicle_id')
         .eq('status', 'cancelado')
         .gte('cancelled_at', inicioMes.toISOString())
         .order('cancelled_at', { ascending: false });
 
       const formattedCancelados: CancelledAppointment[] = (cancelados || []).map((apt: any) => ({
         id: apt.id,
-        client_name: apt.clients?.nome || '',
-        phone: apt.clients?.telefone || '',
-        vehicle: apt.vehicles?.model || 'Sem veículo',
+        client_name: 'Cliente',
+        phone: '',
+        vehicle: 'Sem veículo',
         cancelled_at: apt.cancelled_at ? new Date(apt.cancelled_at).toLocaleDateString('pt-BR') : '',
       }));
       setCancelledAppointments(formattedCancelados);

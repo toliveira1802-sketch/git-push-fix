@@ -70,23 +70,17 @@ export default function NovaOS() {
 
       // Buscar por telefone
       const { data: clientsByPhone, error: phoneError } = await supabase
-        .from("clients")
-        .select(`
-          id, nome, telefone, email,
-          vehicles (id, brand, model, plate, year, km_atual)
-        `)
-        .ilike("telefone", `%${searchClean}%`)
+        .from("clientes")
+        .select(`id, name, phone, email, veiculos (id, brand, model, plate, year, km)`)
+        .ilike("phone", `%${searchClean}%`)
         .limit(10);
 
       if (phoneError) throw phoneError;
 
       // Buscar por placa
       const { data: vehiclesByPlate, error: plateError } = await supabase
-        .from("vehicles")
-        .select(`
-          id, brand, model, plate, year, km_atual,
-          clients:user_id (id, nome, telefone, email)
-        `)
+        .from("veiculos")
+        .select(`id, brand, model, plate, year, km, clientes:client_id (id, name, phone, email)`)
         .ilike("plate", `%${searchUpper}%`)
         .limit(10);
 
@@ -96,22 +90,21 @@ export default function NovaOS() {
       const clientsMap = new Map<string, ClienteEncontrado>();
 
       // Adicionar clientes encontrados por telefone
-        clientsByPhone?.forEach((client: any) => {
+        (clientsByPhone as any[])?.forEach((client: any) => {
         clientsMap.set(client.id, {
           id: client.id,
-          name: client.nome,
-          phone: client.telefone,
+          name: client.name,
+          phone: client.phone,
           email: client.email,
-          vehicles: (client.vehicles || []).map((v: any) => ({ ...v, km: v.km_atual })),
+          vehicles: (client.veiculos || []).map((v: any) => ({ ...v, km: v.km })),
         });
       });
 
       // Adicionar clientes encontrados por placa
-      vehiclesByPlate?.forEach((vehicle: any) => {
-        const client = vehicle.clients;
+      (vehiclesByPlate as any[])?.forEach((vehicle: any) => {
+        const client = vehicle.clientes;
         if (client) {
           if (clientsMap.has(client.id)) {
-            // Cliente já existe, verificar se veículo já está na lista
             const existing = clientsMap.get(client.id)!;
             if (!existing.vehicles.find((v) => v.id === vehicle.id)) {
               existing.vehicles.push({
@@ -120,14 +113,14 @@ export default function NovaOS() {
                 model: vehicle.model,
                 plate: vehicle.plate,
                 year: vehicle.year,
-                km: vehicle.km_atual,
+                km: vehicle.km,
               });
             }
           } else {
             clientsMap.set(client.id, {
               id: client.id,
-              name: client.nome,
-              phone: client.telefone,
+              name: client.name,
+              phone: client.phone,
               email: client.email,
               vehicles: [{
                 id: vehicle.id,
@@ -135,7 +128,7 @@ export default function NovaOS() {
                 model: vehicle.model,
                 plate: vehicle.plate,
                 year: vehicle.year,
-                km: vehicle.km_atual,
+                km: vehicle.km,
               }],
             });
           }
@@ -188,11 +181,12 @@ export default function NovaOS() {
     try {
       // 1. Criar cliente
       const { data: newClient, error: clientError } = await supabase
-        .from("clients")
+        .from("clientes")
         .insert({
-          nome: quickForm.name.trim(),
-          telefone: quickForm.phone.trim() || "Não informado",
-          status: "active",
+          name: quickForm.name.trim(),
+          phone: quickForm.phone.trim() || "Não informado",
+          status: "ativo",
+          registration_source: 'admin',
         })
         .select("id")
         .single();
@@ -201,9 +195,9 @@ export default function NovaOS() {
 
       // 2. Criar veículo
       const { data: newVehicle, error: vehicleError } = await supabase
-        .from("vehicles")
+        .from("veiculos")
         .insert({
-          user_id: newClient.id,
+          client_id: newClient.id,
           brand: quickForm.brand.trim() || "Não informado",
           model: quickForm.model.trim(),
           plate: quickForm.plate.toUpperCase().replace(/[^A-Z0-9]/g, ""),

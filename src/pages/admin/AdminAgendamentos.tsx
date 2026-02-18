@@ -149,47 +149,45 @@ export default function AdminAgendamentos() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch appointments + vehicles
+      // Fetch appointments
       const { data: agData } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .select('*')
-        .order('appointment_date', { ascending: true });
+        .order('scheduled_date', { ascending: true });
 
       // Fetch clients
       const { data: clientesData } = await supabase
-        .from('clients')
-        .select('id, nome, telefone, email')
+        .from('clientes')
+        .select('id, name, phone, email')
         .eq('status', 'ativo')
-        .order('nome');
+        .order('name');
 
-      if (clientesData) setClientes(clientesData);
+      if (clientesData) setClientes((clientesData as any[]).map(c => ({ id: c.id, nome: c.name, telefone: c.phone })));
 
       // Fetch vehicles
       const { data: veiculosData } = await supabase
-        .from('vehicles')
-        .select('id, plate, brand, model, year, user_id')
+        .from('veiculos')
+        .select('id, plate, brand, model, year, client_id')
         .eq('is_active', true);
 
-      if (veiculosData) setVeiculos(veiculosData);
+      if (veiculosData) setVeiculos((veiculosData as any[]).map(v => ({ id: v.id, plate: v.plate, brand: v.brand, model: v.model, year: v.year, user_id: v.client_id })));
 
       if (agData) {
-        const formatted = agData.map(ag => {
-          // Encontrar veículo pelo vehicle_id
-          const veiculo = veiculosData?.find(v => v.id === ag.vehicle_id);
-          // Encontrar cliente pelo user_id do appointment
-          const cliente = clientesData?.find(c => c.id === ag.user_id);
+        const formatted = (agData as any[]).map(ag => {
+          const veiculo = (veiculosData as any[])?.find(v => v.id === ag.vehicle_id);
+          const cliente = (clientesData as any[])?.find(c => c.id === ag.client_id);
 
           return {
             id: ag.id,
-            cliente_nome: cliente?.nome || 'Cliente não encontrado',
-            cliente_telefone: cliente?.telefone || '',
-            cliente_id: ag.user_id,
+            cliente_nome: cliente?.name || 'Cliente não encontrado',
+            cliente_telefone: cliente?.phone || '',
+            cliente_id: ag.client_id,
             veiculo: veiculo ? `${veiculo.brand} ${veiculo.model} ${veiculo.year || ''}` : '',
             veiculo_id: ag.vehicle_id,
             placa: veiculo?.plate || '',
-            servicos: ag.notes ? [ag.notes] : [],
-            data: ag.appointment_date,
-            horario: ag.appointment_time,
+            servicos: ag.description ? [ag.description] : [],
+            data: ag.scheduled_date,
+            horario: ag.scheduled_time,
             origem: 'manual' as 'cliente' | 'kommo' | 'manual',
             status: ag.status as 'confirmado' | 'aguardando' | 'reagendado' | 'cancelado' | 'concluido',
             observacoes: ag.notes,
@@ -269,11 +267,11 @@ export default function AdminAgendamentos() {
       // Se for novo cliente, criar primeiro
       if (clienteMode === 'novo') {
         const { data: novoCliente, error: clienteError } = await supabase
-          .from('clients')
+          .from('clientes')
           .insert({
-            nome: novoAgendamento.cliente_nome,
-            telefone: novoAgendamento.cliente_telefone,
-            origem_cadastro: 'admin',
+            name: novoAgendamento.cliente_nome,
+            phone: novoAgendamento.cliente_telefone,
+            registration_source: 'admin',
           })
           .select()
           .single();
@@ -284,9 +282,9 @@ export default function AdminAgendamentos() {
         // Se informou veículo, criar também
         if (novoAgendamento.placa) {
           const { data: novoVeiculo, error: veiculoError } = await supabase
-            .from('vehicles')
+            .from('veiculos')
             .insert({
-              user_id: clientId,
+              client_id: clientId,
               plate: novoAgendamento.placa.toUpperCase(),
               brand: novoAgendamento.veiculo.split(' ')[0] || 'N/I',
               model: novoAgendamento.veiculo.split(' ').slice(1).join(' ') || 'N/I',
@@ -302,14 +300,15 @@ export default function AdminAgendamentos() {
 
       // Criar agendamento
       const { error } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .insert({
-          user_id: clientId,
+          client_id: clientId,
           vehicle_id: vehicleId,
-          appointment_date: format(novoAgendamento.data, 'yyyy-MM-dd'),
-          appointment_time: novoAgendamento.horario,
+          scheduled_date: format(novoAgendamento.data, 'yyyy-MM-dd'),
+          scheduled_time: novoAgendamento.horario,
           status: 'pendente',
-          notes: novoAgendamento.servicos || novoAgendamento.observacoes || 'Serviço Geral',
+          service_type: 'Geral',
+          description: novoAgendamento.servicos || novoAgendamento.observacoes || 'Serviço Geral',
         });
 
       if (error) throw error;
@@ -329,10 +328,8 @@ export default function AdminAgendamentos() {
     try {
       // Atualizar status do agendamento
       const { error: agError } = await supabase
-        .from('appointments')
-        .update({
-          status: 'confirmado',
-        })
+        .from('agendamentos')
+        .update({ status: 'confirmado' })
         .eq('id', agendamento.id);
 
       if (agError) throw agError;
@@ -370,10 +367,10 @@ export default function AdminAgendamentos() {
     
     try {
       const { error } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .update({
-          appointment_date: format(novaData, 'yyyy-MM-dd'),
-          appointment_time: novoHorario,
+          scheduled_date: format(novaData, 'yyyy-MM-dd'),
+          scheduled_time: novoHorario,
           status: 'reagendado',
         })
         .eq('id', selectedAgendamento.id);
@@ -397,7 +394,7 @@ export default function AdminAgendamentos() {
     
     try {
       const { error } = await supabase
-        .from('appointments')
+        .from('agendamentos')
         .update({
           status: 'cancelado',
           notes: motivoCancelamento ? `CANCELADO: ${motivoCancelamento}` : undefined,

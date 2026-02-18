@@ -27,21 +27,30 @@ export default function AdminClientesPage() {
     queryKey: ['admin-clientes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('clients')
+        .from('clientes')
         .select(`
           id,
-          nome,
-          telefone,
+          name,
+          phone,
           email,
-          cidade,
-          cpf_cnpj,
+          city,
+          cpf,
           registration_source,
           created_at
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Cliente[];
+      return (data as any[]).map(c => ({
+        id: c.id,
+        nome: c.name,
+        telefone: c.phone,
+        email: c.email,
+        cidade: c.city,
+        cpf_cnpj: c.cpf,
+        registration_source: c.registration_source,
+        created_at: c.created_at,
+      })) as Cliente[];
     }
   });
 
@@ -50,14 +59,14 @@ export default function AdminClientesPage() {
     queryKey: ['admin-veiculos-counts'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vehicles')
-        .select('user_id');
+        .from('veiculos')
+        .select('client_id');
 
       if (error) throw error;
 
       const counts: Record<string, number> = {};
-      data?.forEach(v => {
-        counts[v.user_id] = (counts[v.user_id] || 0) + 1;
+      (data as any[])?.forEach(v => {
+        counts[v.client_id] = (counts[v.client_id] || 0) + 1;
       });
       return counts;
     }

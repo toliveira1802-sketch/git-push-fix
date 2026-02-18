@@ -55,40 +55,40 @@ export default function AdminVeiculos() {
   useEffect(() => {
     const fetchClientsWithVehicles = async () => {
       const { data: clientsData, error } = await supabase
-        .from('clients')
+        .from('clientes')
         .select(`
           id,
-          nome,
-          telefone,
+          name,
+          phone,
           email,
-          vehicles (
+          veiculos (
             id,
             brand,
             model,
             year,
             plate,
             color,
-            km_atual
+            km
           )
         `)
-        .order('nome');
+        .order('name');
 
       if (!error && clientsData) {
         const mapped: ClientWithVehicles[] = (clientsData as any[])
-          .filter((c: any) => c.vehicles && c.vehicles.length > 0)
+          .filter((c: any) => c.veiculos && c.veiculos.length > 0)
           .map((client: any) => ({
             id: client.id,
-            name: client.nome,
-            phone: client.telefone,
+            name: client.name,
+            phone: client.phone,
             email: client.email,
-            vehicles: client.vehicles.map((v: any) => ({
+            vehicles: client.veiculos.map((v: any) => ({
               id: v.id,
               brand: v.brand,
               model: v.model,
               year: v.year,
               plate: v.plate,
               color: v.color,
-              km: v.km_atual,
+              km: v.km,
               lastService: null,
               interested: false,
               selectedForPromo: false,

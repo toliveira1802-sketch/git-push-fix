@@ -38,11 +38,11 @@ export default function AdminClientes() {
     async function fetchData() {
       setLoading(true);
       const [clientesRes, veiculosRes] = await Promise.all([
-        supabase.from("clients").select("id, nome, cpf_cnpj, email, telefone, endereco, cidade"),
-        supabase.from("vehicles").select("id, user_id, plate, brand, model, year, km_atual"),
+        supabase.from("clientes").select("id, name, cpf, email, phone, address, city").then(r => ({ data: (r.data || []).map((c: any) => ({ id: c.id, nome: c.name, cpf_cnpj: c.cpf, email: c.email, telefone: c.phone, endereco: c.address, cidade: c.city })), error: r.error })),
+        supabase.from("veiculos").select("id, client_id, plate, brand, model, year, km").then(r => ({ data: (r.data || []).map((v: any) => ({ id: v.id, user_id: v.client_id, plate: v.plate, brand: v.brand, model: v.model, year: v.year, km_atual: v.km })), error: r.error })),
       ]);
-      setClientes(clientesRes.data ?? []);
-      setVeiculos(veiculosRes.data ?? []);
+      setClientes((clientesRes.data as any) ?? []);
+      setVeiculos((veiculosRes.data as any) ?? []);
       setLoading(false);
     }
     fetchData();

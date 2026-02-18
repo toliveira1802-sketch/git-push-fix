@@ -61,19 +61,19 @@ export default function NovaOS() {
         async function fetchData() {
             setLoading(true)
             const [cRes, vRes, sRes] = await Promise.all([
-                supabase.from("clients").select("id, nome, email, telefone"),
-                supabase.from("vehicles").select("id, user_id, brand, model, plate, year"),
+                supabase.from("clientes").select("id, name, email, phone").then(r => ({ data: (r.data || []).map((c: any) => ({ id: c.id, nome: c.name, email: c.email, telefone: c.phone })), error: r.error })),
+                supabase.from("veiculos").select("id, client_id, brand, model, plate, year").then(r => ({ data: (r.data || []).map((v: any) => ({ id: v.id, user_id: v.client_id, brand: v.brand, model: v.model, plate: v.plate, year: v.year })), error: r.error })),
                 supabase.from("catalogo_servicos").select("id, nome, descricao, valor_base").eq("is_active", true),
             ])
-            setClientes(cRes.data ?? [])
-            setVeiculos(vRes.data ?? [])
+            setClientes((cRes.data as any) ?? [])
+            setVeiculos((vRes.data as any) ?? [])
             setServicos(sRes.data ?? [])
             setLoading(false)
         }
         fetchData()
     }, [])
 
-    const filteredClients = clientes.filter((c) =>
+    const filteredClients = clientes.filter((c: any) =>
         c.nome?.toLowerCase().includes(searchClient.toLowerCase()) ||
         c.email?.toLowerCase().includes(searchClient.toLowerCase()) ||
         c.telefone?.includes(searchClient)
