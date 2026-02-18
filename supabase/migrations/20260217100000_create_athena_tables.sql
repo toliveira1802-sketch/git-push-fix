@@ -1,10 +1,11 @@
 -- =============================================
--- IA MAE (ATHENA) - Tabelas adicionais
--- FASE A - Blueprint IA Mae v1.0
+-- IA RAINHA (SOPHIA) - Tabelas adicionais
+-- FASE A - Blueprint IA Mae v2.0
+-- Nota: Athena foi substituida por Sophia (rainha)
 -- =============================================
 
 -- Base de conhecimento da IA Mae
-CREATE TABLE ia_knowledge_base (
+CREATE TABLE IF NOT EXISTS ia_knowledge_base (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   categoria VARCHAR(50) NOT NULL,
   subcategoria VARCHAR(100),
@@ -17,10 +18,10 @@ CREATE TABLE ia_knowledge_base (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Historico de decisoes da Athena
-CREATE TABLE ia_mae_decisoes (
+-- Historico de decisoes da Sophia
+CREATE TABLE IF NOT EXISTS ia_mae_decisoes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tipo_decisao VARCHAR(50) CHECK (tipo_decisao IN ('criar_agente', 'ajustar_agente', 'pausar_agente', 'eliminar_agente', 'executar_task', 'analise')),
+  tipo_decisao VARCHAR(50),
   contexto TEXT,
   decisao TEXT NOT NULL,
   resultado TEXT,
@@ -30,36 +31,45 @@ CREATE TABLE ia_mae_decisoes (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indices
-CREATE INDEX idx_kb_categoria ON ia_knowledge_base(categoria);
-CREATE INDEX idx_kb_subcategoria ON ia_knowledge_base(subcategoria);
-CREATE INDEX idx_kb_fonte ON ia_knowledge_base(fonte);
-CREATE INDEX idx_decisoes_tipo ON ia_mae_decisoes(tipo_decisao);
-CREATE INDEX idx_decisoes_status ON ia_mae_decisoes(status);
-CREATE INDEX idx_decisoes_agente ON ia_mae_decisoes(agente_afetado);
+-- Indices (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_kb_categoria') THEN
+    CREATE INDEX idx_kb_categoria ON ia_knowledge_base(categoria);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_kb_subcategoria') THEN
+    CREATE INDEX idx_kb_subcategoria ON ia_knowledge_base(subcategoria);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_kb_fonte') THEN
+    CREATE INDEX idx_kb_fonte ON ia_knowledge_base(fonte);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_decisoes_tipo') THEN
+    CREATE INDEX idx_decisoes_tipo ON ia_mae_decisoes(tipo_decisao);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_decisoes_status') THEN
+    CREATE INDEX idx_decisoes_status ON ia_mae_decisoes(status);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_decisoes_agente') THEN
+    CREATE INDEX idx_decisoes_agente ON ia_mae_decisoes(agente_afetado);
+  END IF;
+END $$;
 
 -- RLS
 ALTER TABLE ia_knowledge_base ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ia_mae_decisoes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "kb_all" ON ia_knowledge_base;
 CREATE POLICY "kb_all" ON ia_knowledge_base FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "decisoes_all" ON ia_mae_decisoes;
 CREATE POLICY "decisoes_all" ON ia_mae_decisoes FOR ALL USING (true);
 
 -- Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE ia_mae_decisoes;
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE ia_mae_decisoes;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Seed: A IA Mae (Athena)
-INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, canais, config_json) VALUES
-('Athena', 'lider', 'offline', 'claude', 'sonnet',
- 'IA Mae - Cerebro central da Doctor Auto. Conhece tudo da empresa. Cria e gerencia agentes autonomamente.',
- ARRAY['sistema', 'command-center'],
- '{
-   "is_mother": true,
-   "can_create_agents": true,
-   "can_delete_agents": true,
-   "can_adjust_prompts": true,
-   "knowledge_base": "chromadb",
-   "decision_mode": "semi-auto",
-   "max_children": 20,
-   "budget_mensal_llm": 200
- }'
-);
+-- NOTA: Sophia (rainha) e criada pela migration 20260217300000_ensure_sophia_queen.sql
+-- Athena nao e mais usada. Se existir, sera renomeada pra Sophia automaticamente.

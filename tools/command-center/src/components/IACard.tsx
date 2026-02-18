@@ -150,7 +150,7 @@ export default function IACard({ agent, isLeader, onToggle, onShowLogs, children
             className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] text-slate-500 hover:text-slate-300 hover:bg-slate-700/20 transition-colors"
           >
             {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            {children.length} escravos
+            {children.length} {agent.tipo === 'rainha' ? 'princesas' : agent.tipo === 'lider' ? 'subordinados' : 'filhos'}
           </button>
           {expanded && (
             <div className="px-3 pb-3 space-y-2">

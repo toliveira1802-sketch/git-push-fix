@@ -3,6 +3,12 @@
 -- Roda SAFE - pode rodar varias vezes sem problema
 -- =============================================
 
+-- 0. Atualiza check constraint pra aceitar 'rainha' e 'princesa'
+-- (tabela pode ter sido criada antes com constraint antigo)
+ALTER TABLE ia_agents DROP CONSTRAINT IF EXISTS ia_agents_tipo_check;
+ALTER TABLE ia_agents ADD CONSTRAINT ia_agents_tipo_check
+  CHECK (tipo IN ('lider', 'rainha', 'princesa', 'escravo', 'bot_local'));
+
 -- 1. Garante que a tabela ia_agents existe
 CREATE TABLE IF NOT EXISTS ia_agents (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

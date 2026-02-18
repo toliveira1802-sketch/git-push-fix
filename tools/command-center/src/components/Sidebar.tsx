@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight, Route, Bot, Crown, Server, Wifi, WifiOff, Power, Brain, MessageSquare, LayoutDashboard, Sparkles, Image } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Route, Bot, Crown, Server, Wifi, WifiOff, Power, Brain, MessageSquare, LayoutDashboard, Sparkles, Image, AlertTriangle } from 'lucide-react';
 import {
   RouteConfig,
   RouteCategory,
@@ -306,8 +306,10 @@ function IAAgentsSidebar() {
     );
   }
 
-  const leaders = agents.filter(a => a.tipo === 'lider');
+  const rainha = agents.find(a => a.tipo === 'rainha');
+  const princesas = rainha?.children ?? [];
   const bots = agents.filter(a => a.tipo === 'bot_local');
+  const legacyLiders = agents.filter(a => a.tipo === 'lider');
 
   return (
     <>
@@ -326,24 +328,42 @@ function IAAgentsSidebar() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-3">
-        {/* Leaders */}
+        {/* Rainha */}
+        {rainha && (
+          <div>
+            <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold text-purple-400 uppercase tracking-wider">
+              <Crown size={12} />
+              Rainha
+            </div>
+            <div className="space-y-0.5">
+              <SidebarAgentItem agent={rainha} onToggle={toggleAgent} />
+            </div>
+          </div>
+        )}
+
+        {/* Princesas */}
         <div>
-          <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold text-purple-400 uppercase tracking-wider">
-            <Crown size={12} />
-            Rainha & Princesas
+          <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold text-pink-400 uppercase tracking-wider">
+            <Sparkles size={12} />
+            Princesas
+            <span className="text-[9px] bg-pink-500/15 text-pink-400 px-1.5 py-0.5 rounded-full ml-auto">
+              {princesas.length}
+            </span>
           </div>
           <div className="space-y-0.5">
-            {leaders.map(leader => (
-              <SidebarAgentItem key={leader.id} agent={leader} onToggle={toggleAgent}>
-                {leader.children?.map(child => (
-                  <SidebarAgentItem key={child.id} agent={child} onToggle={toggleAgent} indented />
-                ))}
-              </SidebarAgentItem>
-            ))}
+            {princesas.length > 0 ? (
+              princesas.map(p => (
+                <SidebarAgentItem key={p.id} agent={p} onToggle={toggleAgent} />
+              ))
+            ) : (
+              <p className="text-[10px] text-slate-600 px-2 py-1">
+                Serao criadas pelo worker
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Bots */}
+        {/* Turma RAG */}
         {bots.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold text-cyan-400 uppercase tracking-wider">
@@ -353,6 +373,25 @@ function IAAgentsSidebar() {
             <div className="space-y-0.5">
               {bots.map(bot => (
                 <SidebarAgentItem key={bot.id} agent={bot} onToggle={toggleAgent} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Legacy (se existir) */}
+        {legacyLiders.length > 0 && (
+          <div>
+            <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
+              <AlertTriangle size={12} />
+              Legado
+            </div>
+            <div className="space-y-0.5">
+              {legacyLiders.map(l => (
+                <SidebarAgentItem key={l.id} agent={l} onToggle={toggleAgent}>
+                  {l.children?.map(child => (
+                    <SidebarAgentItem key={child.id} agent={child} onToggle={toggleAgent} indented />
+                  ))}
+                </SidebarAgentItem>
               ))}
             </div>
           </div>

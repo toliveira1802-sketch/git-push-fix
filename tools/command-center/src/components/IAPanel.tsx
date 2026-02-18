@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Crown,
   Server,
+  Sparkles,
 } from 'lucide-react';
 import { useIAManager } from '../hooks/useIAManager';
 import IACard from './IACard';
@@ -17,8 +18,19 @@ export default function IAPanel() {
   const { agents, loading, error, listAgents, toggleAgent } = useIAManager();
   const [logTarget, setLogTarget] = useState<{ id: string; name: string } | null>(null);
 
-  // Compute stats from all agents (leaders + their children + standalone bots)
-  const allAgents = agents.flatMap(a => [a, ...(a.children ?? [])]);
+  // Separate: rainha, princesas (children of rainha), bot_local, legacy liders
+  const rainha = agents.find(a => a.tipo === 'rainha');
+  const princesas = rainha?.children ?? [];
+  const botLocals = agents.filter(a => a.tipo === 'bot_local');
+  const legacyLiders = agents.filter(a => a.tipo === 'lider');
+
+  // Stats from ALL agents
+  const allAgents = [
+    ...(rainha ? [rainha] : []),
+    ...princesas,
+    ...botLocals,
+    ...legacyLiders.flatMap(a => [a, ...(a.children ?? [])]),
+  ];
   const stats = {
     total: allAgents.length,
     online: allAgents.filter(a => a.status === 'online').length,
@@ -27,9 +39,6 @@ export default function IAPanel() {
     pausado: allAgents.filter(a => a.status === 'pausado').length,
     tasks: allAgents.reduce((sum, a) => sum + (a.tarefas_ativas ?? 0), 0),
   };
-
-  const leaders = agents.filter(a => a.tipo === 'lider');
-  const botLocals = agents.filter(a => a.tipo === 'bot_local');
 
   if (loading) {
     return (
@@ -90,32 +99,57 @@ export default function IAPanel() {
           <StatCard icon={<Activity size={14} />} label="Tasks Ativas" value={stats.tasks} color="text-cyan-400" bg="bg-cyan-500/10" />
         </div>
 
-        {/* Leaders section */}
+        {/* ========== RAINHA - Sophia ========== */}
+        {rainha && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Crown size={16} className="text-purple-400" />
+              <h2 className="text-sm font-semibold text-slate-200">Rainha</h2>
+            </div>
+            <IACard
+              agent={rainha}
+              isLeader
+              onToggle={toggleAgent}
+              onShowLogs={(id, name) => setLogTarget({ id, name })}
+            />
+          </div>
+        )}
+
+        {/* ========== PRINCESAS ========== */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <Crown size={16} className="text-purple-400" />
-            <h2 className="text-sm font-semibold text-slate-200">Lideres</h2>
-            <span className="text-[10px] bg-purple-500/15 text-purple-400 px-2 py-0.5 rounded-full">
-              {leaders.length}
+            <Sparkles size={16} className="text-pink-400" />
+            <h2 className="text-sm font-semibold text-slate-200">Princesas</h2>
+            <span className="text-[10px] bg-pink-500/15 text-pink-400 px-2 py-0.5 rounded-full">
+              {princesas.length}
             </span>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {leaders.map(leader => (
-              <IACard
-                key={leader.id}
-                agent={leader}
-                isLeader
-                onToggle={toggleAgent}
-                onShowLogs={(id, name) => setLogTarget({ id, name })}
-                children={leader.children}
-              />
-            ))}
-          </div>
+          {princesas.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {princesas.map(princess => (
+                <IACard
+                  key={princess.id}
+                  agent={princess}
+                  isLeader={false}
+                  onToggle={toggleAgent}
+                  onShowLogs={(id, name) => setLogTarget({ id, name })}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-700/40 bg-slate-800/20 p-8 text-center">
+              <Sparkles size={28} className="mx-auto text-slate-700 mb-2" />
+              <p className="text-sm text-slate-500">Nenhuma princesa criada ainda</p>
+              <p className="text-xs text-slate-600 mt-1">
+                Sophia criara Anna, Simone e Thamy quando o worker estiver rodando
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* RAG section */}
+        {/* ========== TURMA RAG ========== */}
         {botLocals.length > 0 && (
-          <div>
+          <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <Server size={16} className="text-cyan-400" />
               <h2 className="text-sm font-semibold text-slate-200">Turma RAG</h2>
@@ -131,6 +165,34 @@ export default function IAPanel() {
                   isLeader={false}
                   onToggle={toggleAgent}
                   onShowLogs={(id, name) => setLogTarget({ id, name })}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ========== LEGACY LIDERS (se restarem do antigo) ========== */}
+        {legacyLiders.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={16} className="text-amber-400" />
+              <h2 className="text-sm font-semibold text-slate-200">Agentes Legado</h2>
+              <span className="text-[10px] bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded-full">
+                {legacyLiders.length}
+              </span>
+              <span className="text-[10px] text-slate-600 ml-2">
+                (agentes antigos — serao migrados por Sophia)
+              </span>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {legacyLiders.map(lider => (
+                <IACard
+                  key={lider.id}
+                  agent={lider}
+                  isLeader
+                  onToggle={toggleAgent}
+                  onShowLogs={(id, name) => setLogTarget({ id, name })}
+                  children={lider.children}
                 />
               ))}
             </div>

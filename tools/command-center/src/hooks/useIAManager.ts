@@ -23,22 +23,33 @@ export function useIAManager() {
         throw err;
       }
 
-      // Build hierarchy: attach children to their parents
+      // Build hierarchy: Sophia (rainha) > princesas > bot_local
       const allAgents = (data ?? []) as IAAgent[];
       console.log(`[useIAManager] ${allAgents.length} agentes carregados`);
-      const leaders = allAgents.filter(a => !a.pai_id);
-      const withChildren = leaders.map(leader => ({
-        ...leader,
-        children: allAgents.filter(a => a.pai_id === leader.id),
+
+      // Rainha = Sophia (top level, princesas are her children)
+      const rainha = allAgents.find(a => a.tipo === 'rainha');
+      const princesas = allAgents.filter(a => a.tipo === 'princesa');
+      const botLocals = allAgents.filter(a => a.tipo === 'bot_local');
+
+      // Attach princesas as children of rainha
+      const rainhaWithChildren = rainha
+        ? { ...rainha, children: princesas }
+        : null;
+
+      // Also support legacy 'lider' type agents (if any remain in DB)
+      const legacyLiders = allAgents.filter(a => a.tipo === 'lider' && a.nome !== 'Sophia');
+      const lidersWithChildren = legacyLiders.map(lider => ({
+        ...lider,
+        children: allAgents.filter(a => a.pai_id === lider.id),
       }));
 
-      // Agents without pai_id that aren't leaders (bot_local without parent)
-      const standalone = allAgents.filter(
-        a => !a.pai_id && a.tipo === 'bot_local'
-      );
-      const leadersOnly = withChildren.filter(a => a.tipo === 'lider');
+      const result: IAAgent[] = [];
+      if (rainhaWithChildren) result.push(rainhaWithChildren);
+      result.push(...lidersWithChildren);
+      result.push(...botLocals);
 
-      setAgents([...leadersOnly, ...standalone]);
+      setAgents(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar agentes');
     } finally {

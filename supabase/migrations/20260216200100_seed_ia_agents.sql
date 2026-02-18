@@ -1,41 +1,73 @@
 -- =============================================
--- COMMAND CENTER - Seed Data: 19 Agentes IA
--- FASE 3 - Blueprint v1.0
+-- COMMAND CENTER - Seed Data v2.0
+-- Time real: Sophia (rainha) + 3 princesas + Turma RAG
+-- O RESTO, Sophia cria quando precisar
 -- =============================================
 
--- LIDERES (4)
-INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, canais) VALUES
-('Thales', 'lider', 'online', 'ollama', 'llama3.1:8b', 'Controlador Central - Recebe comandos e delega', ARRAY['sistema']),
-('Sophia', 'lider', 'online', 'kimi', 'kimi-2.5', 'Coordenadora Geral - Pesquisa e Estrategia', ARRAY['whatsapp', 'sistema']),
-('Simone', 'lider', 'online', 'ollama', 'mistral:7b', 'Coordenadora ERP/CRM - Processos e RAG', ARRAY['telegram', 'kommo']),
-('Anna Laura', 'lider', 'online', 'kimi', 'kimi-2.5', 'Especialista Vendas++ - Kommo CRM', ARRAY['whatsapp', 'kommo']);
+-- RAINHA (1) - Sophia
+-- (Sophia ja e criada pela migration 20260217300000_ensure_sophia_queen.sql)
+-- Aqui so garantimos que ela existe como fallback
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, canais, config_json)
+SELECT
+  'Sophia', 'rainha', 'offline', 'ollama', 'llama3.1:8b',
+  'IA Rainha - Cerebro central da Doctor Auto. Cria e gerencia princesas.',
+  ARRAY['sistema', 'command-center'],
+  '{
+    "is_mother": true,
+    "can_create_agents": true,
+    "can_delete_agents": true,
+    "can_adjust_prompts": true,
+    "knowledge_base": "chromadb",
+    "decision_mode": "semi-auto",
+    "max_children": 20,
+    "budget_mensal_llm": 200
+  }'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'Sophia');
 
--- ESCRAVOS do Thales (2)
-INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, pai_id) VALUES
-('Bot Monitor', 'escravo', 'online', 'ollama', 'llama3.1:8b', 'Monitora sistema e alerta erros', (SELECT id FROM ia_agents WHERE nome='Thales')),
-('Bot Auditor', 'escravo', 'online', 'ollama', 'mistral:7b', 'Audita acoes das IAs', (SELECT id FROM ia_agents WHERE nome='Thales'));
+-- PRINCESAS (3) - filhas da Sophia
+-- Anna - Atendimento
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, canais, pai_id, config_json)
+SELECT
+  'Anna', 'princesa', 'offline', 'ollama', 'llama3.1:8b',
+  'Princesa de Atendimento - responde clientes, agenda, follow-up',
+  ARRAY['whatsapp', 'chat', 'email'],
+  (SELECT id FROM ia_agents WHERE nome = 'Sophia'),
+  '{"cor": "#ec4899", "especialidade": "atendimento"}'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'Anna');
 
--- ESCRAVOS da Sophia (2)
-INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, pai_id) VALUES
-('Bot Relatorios', 'escravo', 'online', 'ollama', 'llama3.1:8b', 'Gera relatorios automaticos', (SELECT id FROM ia_agents WHERE nome='Sophia')),
-('Bot Pesquisa', 'escravo', 'online', 'ollama', 'mistral:7b', 'Pesquisa e analise de dados', (SELECT id FROM ia_agents WHERE nome='Sophia'));
+-- Simone - Financeiro
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, canais, pai_id, config_json)
+SELECT
+  'Simone', 'princesa', 'offline', 'ollama', 'llama3.1:8b',
+  'Princesa Financeira - faturamento, inadimplencia, relatorios',
+  ARRAY['interno'],
+  (SELECT id FROM ia_agents WHERE nome = 'Sophia'),
+  '{"cor": "#06b6d4", "especialidade": "financeiro"}'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'Simone');
 
--- ESCRAVOS da Simone (3)
-INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, pai_id) VALUES
-('Avaliador Leads', 'escravo', 'online', 'ollama', 'llama3.1:8b', 'Classifica leads quentes/mornos/frios', (SELECT id FROM ia_agents WHERE nome='Simone')),
-('Follow-up Bot', 'escravo', 'online', 'local', 'cron-job', 'Gerencia follow-ups automaticos', (SELECT id FROM ia_agents WHERE nome='Simone')),
-('Upsell Bot', 'escravo', 'online', 'ollama', 'mistral:7b', 'Identifica oportunidades de upsell', (SELECT id FROM ia_agents WHERE nome='Simone'));
+-- Thamy - Marketing
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, canais, pai_id, config_json)
+SELECT
+  'Thamy', 'princesa', 'offline', 'ollama', 'llama3.1:8b',
+  'Princesa de Marketing - campanhas, engajamento, posts',
+  ARRAY['instagram', 'facebook', 'tiktok'],
+  (SELECT id FROM ia_agents WHERE nome = 'Sophia'),
+  '{"cor": "#f59e0b", "especialidade": "marketing"}'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'Thamy');
 
--- ESCRAVOS da Anna Laura (4)
-INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao, pai_id) VALUES
-('Avaliador Pesquisa', 'escravo', 'online', 'ollama', 'llama3.1:8b', 'Pesquisa precos e fornecedores', (SELECT id FROM ia_agents WHERE nome='Anna Laura')),
-('Bot Lotacao', 'escravo', 'online', 'local', 'cron-job', 'Monitora estoque e lotacao', (SELECT id FROM ia_agents WHERE nome='Anna Laura')),
-('Chica da Silva', 'escravo', 'online', 'ollama', 'llama3.1:8b', 'Mapeadora de leads no Kommo', (SELECT id FROM ia_agents WHERE nome='Anna Laura')),
-('Reativador', 'escravo', 'offline', 'kimi', 'kimi-2.5', 'Reativacao de clientes inativos', (SELECT id FROM ia_agents WHERE nome='Anna Laura'));
+-- TURMA RAG (4) - bots locais de infraestrutura
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao)
+SELECT 'Ollama Engine', 'bot_local', 'offline', 'ollama', 'llama3.1:8b', 'Motor LLM local na VPS'
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'Ollama Engine');
 
--- TURMA RAG (4)
-INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao) VALUES
-('Ollama Engine', 'bot_local', 'online', 'ollama', 'llama3.1:8b', 'Motor LLM local na VPS'),
-('OpenClaw Interface', 'bot_local', 'online', 'local', 'openclaw', 'Interface multi-agent'),
-('RAG Retriever', 'bot_local', 'online', 'local', 'chromadb', 'Retrieval - Conhecimento permanente'),
-('Claude Analyst', 'bot_local', 'online', 'claude', 'haiku', 'IA Analista para tarefas complexas');
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao)
+SELECT 'OpenClaw Interface', 'bot_local', 'offline', 'local', 'openclaw', 'Interface multi-agent'
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'OpenClaw Interface');
+
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao)
+SELECT 'RAG Retriever', 'bot_local', 'offline', 'local', 'chromadb', 'Retrieval - Conhecimento permanente'
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'RAG Retriever');
+
+INSERT INTO ia_agents (nome, tipo, status, llm_provider, modelo, descricao)
+SELECT 'Claude Analyst', 'bot_local', 'offline', 'claude', 'haiku', 'IA Analista para tarefas complexas'
+WHERE NOT EXISTS (SELECT 1 FROM ia_agents WHERE nome = 'Claude Analyst');

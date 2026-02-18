@@ -343,7 +343,7 @@ function PrincessesList({ agents }: { agents: IAAgent[] }) {
         <Sparkles size={32} className="mx-auto text-slate-700 mb-2" />
         <p className="text-sm text-slate-500">Nenhuma princesa criada ainda</p>
         <p className="text-xs text-slate-600 mt-1">
-          Anna, Simone e Thamy serao criadas conforme o sistema evolui
+          Sophia criara suas princesas quando o worker estiver rodando na VPS
         </p>
       </div>
     );
