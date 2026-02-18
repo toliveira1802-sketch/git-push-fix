@@ -75,22 +75,20 @@ export default function AdminDashboard() {
       <div className="p-4 md:p-6 space-y-6">
 
         {/* Acesso Rápido */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-1 border-b border-border pb-2">
           {[
-            { label: 'Operacional', path: '/admin/operacional', icon: Wrench, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-            { label: 'Financeiro', path: '/admin/financeiro', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-            { label: 'Produtividade', path: '/admin/produtividade', icon: TrendingUp, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-            { label: 'Agenda Mec.', path: '/admin/agenda-mecanicos', icon: Calendar, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-          ].map(({ label, path, icon: Icon, color, bg }) => (
+            { label: 'Operacional', path: '/admin/operacional', icon: Wrench, color: 'text-orange-400' },
+            { label: 'Financeiro', path: '/admin/financeiro', icon: DollarSign, color: 'text-emerald-400' },
+            { label: 'Produtividade', path: '/admin/produtividade', icon: TrendingUp, color: 'text-blue-400' },
+            { label: 'Agenda', path: '/admin/agenda-mecanicos', icon: Calendar, color: 'text-purple-400' },
+          ].map(({ label, path, icon: Icon, color }) => (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-left"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors text-sm"
             >
-              <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-4 h-4 ${color}`} />
-              </div>
-              <span className="text-sm font-medium text-foreground">{label}</span>
+              <Icon className={`w-3.5 h-3.5 ${color}`} />
+              <span>{label}</span>
             </button>
           ))}
         </div>
