@@ -15,6 +15,7 @@ import {
   BackgroundVariant,
   type Connection,
   type Node,
+  type Edge,
 } from '@xyflow/react';
 import { Save, RefreshCw, Trash2, Plus, GitBranch, Zap } from 'lucide-react';
 import { nodeTypes, type IANodeData } from './IAFlowNodes';
@@ -31,8 +32,8 @@ function FlowCanvas() {
     saveFlow,
   } = useIAFlow();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([] as Node[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([] as Edge[]);
   const isInitialized = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -90,10 +91,16 @@ function FlowCanvas() {
   // On connect (new edge)
   const onConnect = useCallback((params: Connection) => {
     setEdges((eds) => {
-      const newEdges = addEdge(
-        { ...params, animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } },
-        eds
-      );
+      const newEdge: Edge = {
+        id: `e-${params.source}-${params.target}-${Date.now()}`,
+        source: params.source,
+        target: params.target,
+        sourceHandle: params.sourceHandle ?? undefined,
+        targetHandle: params.targetHandle ?? undefined,
+        animated: true,
+        style: { stroke: '#a855f7', strokeWidth: 2 },
+      };
+      const newEdges = [...eds, newEdge];
       setNodes((currentNodes) => {
         scheduleSave(currentNodes, newEdges);
         return currentNodes;
