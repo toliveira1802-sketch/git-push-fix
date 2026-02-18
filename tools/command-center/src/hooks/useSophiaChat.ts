@@ -3,8 +3,11 @@
  *
  * Fluxo:
  * 1. Tenta HTTP direto na VPS (VITE_SOPHIA_API_URL ou /api/chat)
- * 2. Fallback: Supabase (cria ia_task + escuta resposta via Realtime)
- * 3. Sempre salva historico no ia_logs
+ * 2. Fallback: Claude API direto (VITE_ANTHROPIC_API_KEY)
+ * 3. Fallback: Supabase (cria ia_task + escuta resposta via Realtime)
+ * 4. Sempre salva historico no ia_logs
+ *
+ * Fix: responseHandledRef evita duplicidade entre resposta otimista e Realtime
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -42,7 +45,6 @@ const VALID_CLAUDE_MODELS = [
 function getClaudeModel(agentModel?: string): string {
   if (!agentModel) return CLAUDE_DEFAULT_MODEL;
   if (VALID_CLAUDE_MODELS.includes(agentModel)) return agentModel;
-  // Modelo desconhecido ou descontinuado — usa o default
   return CLAUDE_DEFAULT_MODEL;
 }
 
@@ -60,6 +62,10 @@ export function useSophiaChat(sophia: IAAgent | null) {
   const [thinkingTime, setThinkingTime] = useState(0);
   const thinkingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingTaskRef = useRef<string | null>(null);
+
+  // Flag anti-duplicidade: quando true, Realtime ignora mensagens da Sophia
+  // Resetado apos 5s ou quando Realtime confirma com o mesmo conteudo
+  const responseHandledRef = useRef<string | null>(null);
 
   // ==================== CHECK VPS CONNECTION ====================
   const checkConnection = useCallback(async () => {
@@ -84,7 +90,6 @@ export function useSophiaChat(sophia: IAAgent | null) {
 
   useEffect(() => {
     checkConnection();
-    // Re-check every 60s
     const interval = setInterval(checkConnection, 60000);
     return () => clearInterval(interval);
   }, [checkConnection]);
@@ -139,17 +144,43 @@ export function useSophiaChat(sophia: IAAgent | null) {
           const log = payload.new as any;
           if (log.tipo !== 'message') return;
 
-          // Se e resposta da Sophia, remove o timer de thinking
-          if (log.metadata_json?.role === 'sophia') {
+          const isSophia = log.metadata_json?.role === 'sophia';
+
+          // Anti-duplicidade: se já tratamos esta resposta via HTTP/Claude,
+          // apenas atualize o ID (de temp pra real) e ignore
+          if (isSophia && responseHandledRef.current) {
+            const handledContent = responseHandledRef.current;
+            responseHandledRef.current = null; // Limpa flag
+
+            setMessages((prev) => {
+              // Substitui msg otimista (com ID temp) pela real (com ID do banco)
+              const updated = prev.map(m => {
+                if (m.role === 'sophia' && m.content === handledContent && m.id.startsWith('http-') || m.id.startsWith('claude-')) {
+                  return { ...m, id: log.id }; // Atualiza ID
+                }
+                return m;
+              });
+              return updated;
+            });
+            return; // Não adiciona — já está na tela
+          }
+
+          // Se é resposta da Sophia (via Supabase flow), remove timer
+          if (isSophia) {
             stopThinking();
             setSending(false);
             pendingTaskRef.current = null;
           }
 
           setMessages((prev) => {
+            // Checa duplicação por ID
             if (prev.some((m) => m.id === log.id)) return prev;
-            // Se e resposta da Sophia, remove msg temp 'waiting'
-            const filtered = log.metadata_json?.role === 'sophia'
+            // Checa duplicação por conteúdo exato (mesma role)
+            if (isSophia && prev.some((m) => m.role === 'sophia' && m.content === log.mensagem && m.status === 'delivered')) {
+              return prev;
+            }
+
+            const filtered = isSophia
               ? prev.filter(m => m.status !== 'waiting')
               : prev;
             return [
@@ -168,7 +199,7 @@ export function useSophiaChat(sophia: IAAgent | null) {
       )
       .subscribe();
 
-    // Tambem escuta task completions (pra saber quando a resposta chegou via Supabase flow)
+    // Escuta task completions (Supabase flow)
     const taskChannel = supabase
       .channel('sophia_tasks_completion')
       .on(
@@ -185,8 +216,6 @@ export function useSophiaChat(sophia: IAAgent | null) {
             pendingTaskRef.current === task.id &&
             (task.status === 'concluida' || task.status === 'erro')
           ) {
-            // Task completed - response should arrive via ia_logs realtime
-            // But if it doesn't after 2s, force stop thinking
             setTimeout(() => {
               if (pendingTaskRef.current === task.id) {
                 stopThinking();
@@ -272,50 +301,51 @@ export function useSophiaChat(sophia: IAAgent | null) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: trimmed }),
-          signal: AbortSignal.timeout(120000), // 2 min timeout
+          signal: AbortSignal.timeout(120000),
         });
 
         if (res.ok) {
           const data = await res.json();
+          const responseContent = data.message || 'Sem resposta.';
 
-          // Remove waiting msg
-          setMessages(prev => prev.filter(m => m.status !== 'waiting'));
+          // Marca flag anti-duplicidade ANTES de add ao state
+          responseHandledRef.current = responseContent;
+
+          // Remove waiting + add resposta
+          setMessages(prev => {
+            const filtered = prev.filter(m => m.status !== 'waiting');
+            return [
+              ...filtered,
+              {
+                id: 'http-' + Date.now(),
+                role: 'sophia' as const,
+                content: responseContent,
+                timestamp: new Date().toISOString(),
+                status: 'delivered' as const,
+                metadata: data.action ? { action: data.action, source: 'http' } : { source: 'http' },
+              },
+            ];
+          });
+
           stopThinking();
           setSending(false);
 
-          // Add sophia response (o server.ts ja salva no ia_logs, mas Realtime pode demorar)
-          // Entao adicionamos otimisticamente aqui
-          const sophiaMsg: ChatMessage = {
-            id: 'http-' + Date.now(),
-            role: 'sophia',
-            content: data.message || 'Sem resposta.',
-            timestamp: new Date().toISOString(),
-            status: 'delivered',
-            metadata: data.action ? { action: data.action } : undefined,
-          };
-          setMessages(prev => {
-            // Evita duplicacao se Realtime chegar antes
-            const withoutDupes = prev.filter(m =>
-              m.role !== 'sophia' || m.content !== sophiaMsg.content || m.status === 'waiting'
-            );
-            return [...withoutDupes, sophiaMsg];
-          });
+          // Limpa flag apos 5s (safety)
+          setTimeout(() => { responseHandledRef.current = null; }, 5000);
           return;
         } else {
-          // HTTP falhou - fall through to Supabase
-          console.warn('[SophiaChat] HTTP failed, falling back to Supabase');
-          setConnectionMode('supabase');
+          console.warn('[SophiaChat] HTTP failed, falling back');
+          setConnectionMode(ANTHROPIC_API_KEY ? 'claude' : 'supabase');
         }
       } catch (err) {
-        console.warn('[SophiaChat] HTTP error, falling back to Supabase:', err);
-        setConnectionMode('supabase');
+        console.warn('[SophiaChat] HTTP error, falling back:', err);
+        setConnectionMode(ANTHROPIC_API_KEY ? 'claude' : 'supabase');
       }
     }
 
     // ---- CLAUDE API FALLBACK (direct LLM call) ----
     if (ANTHROPIC_API_KEY) {
       try {
-        // Build conversation history (last 20 messages for context)
         const recentMsgs = messages.slice(-20).filter(m => m.status === 'delivered');
         const claudeMessages = recentMsgs.map(m => ({
           role: m.role === 'user' ? 'user' as const : 'assistant' as const,
@@ -344,12 +374,29 @@ export function useSophiaChat(sophia: IAAgent | null) {
           const data = await res.json();
           const responseText = data.content?.[0]?.text || 'Sem resposta.';
 
-          // Remove waiting msg
-          setMessages(prev => prev.filter(m => m.status !== 'waiting'));
+          // Marca flag anti-duplicidade ANTES de salvar no ia_logs
+          responseHandledRef.current = responseText;
+
+          // Remove waiting + add resposta
+          setMessages(prev => {
+            const filtered = prev.filter(m => m.status !== 'waiting');
+            return [
+              ...filtered,
+              {
+                id: 'claude-' + Date.now(),
+                role: 'sophia' as const,
+                content: responseText,
+                timestamp: new Date().toISOString(),
+                status: 'delivered' as const,
+                metadata: { source: 'claude-api', model: data.model },
+              },
+            ];
+          });
+
           stopThinking();
           setSending(false);
 
-          // Save Sophia response to ia_logs
+          // Salva no ia_logs (Realtime vai disparar, mas responseHandledRef bloqueia duplicata)
           await supabase.from('ia_logs').insert({
             agent_id: sophia.id,
             tipo: 'message',
@@ -357,18 +404,8 @@ export function useSophiaChat(sophia: IAAgent | null) {
             metadata_json: { role: 'sophia', source: 'claude-api-fallback', model: data.model },
           });
 
-          const sophiaMsg: ChatMessage = {
-            id: 'claude-' + Date.now(),
-            role: 'sophia',
-            content: responseText,
-            timestamp: new Date().toISOString(),
-            status: 'delivered',
-            metadata: { source: 'claude-api', model: data.model },
-          };
-          setMessages(prev => {
-            const withoutDupes = prev.filter(m => m.status !== 'waiting');
-            return [...withoutDupes, sophiaMsg];
-          });
+          // Limpa flag apos 5s (safety)
+          setTimeout(() => { responseHandledRef.current = null; }, 5000);
           return;
         } else {
           const errBody = await res.text().catch(() => '');
@@ -402,8 +439,8 @@ export function useSophiaChat(sophia: IAAgent | null) {
         pendingTaskRef.current = null;
 
         setMessages(prev => {
-          const hasResponse = prev.some(m => m.status === 'waiting');
-          if (hasResponse) {
+          const hasWaiting = prev.some(m => m.status === 'waiting');
+          if (hasWaiting) {
             return prev.map(m =>
               m.status === 'waiting'
                 ? {
@@ -427,7 +464,6 @@ export function useSophiaChat(sophia: IAAgent | null) {
   // ==================== CLEAR CHAT ====================
   const clearChat = useCallback(async () => {
     if (!sophia) return;
-    // Nao deleta do banco, apenas limpa local
     setMessages([]);
   }, [sophia]);
 
