@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronDown, ChevronRight, Route, Bot, Crown, Server, Wifi, WifiOff, Power, Brain, MessageSquare, LayoutDashboard, Sparkles, Image } from 'lucide-react';
 import {
   RouteConfig,
@@ -433,6 +433,30 @@ function SidebarAgentItem({
 /* ----- Sophia Sidebar Info ----- */
 
 function SophiaSidebarInfo() {
+  const [vpsStatus, setVpsStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+
+  // Check VPS status
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_SOPHIA_API_URL;
+    if (!apiUrl) {
+      setVpsStatus('offline');
+      return;
+    }
+
+    const check = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/health`, { signal: AbortSignal.timeout(5000) });
+        setVpsStatus(res.ok ? 'online' : 'offline');
+      } catch {
+        setVpsStatus('offline');
+      }
+    };
+
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       <div className="flex-1 overflow-y-auto px-3 py-4">
@@ -450,6 +474,30 @@ function SophiaSidebarInfo() {
           </div>
         </div>
 
+        {/* VPS Status */}
+        <div className="mb-4 rounded-lg border border-slate-700/40 p-2.5 bg-slate-800/30">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              VPS Worker
+            </span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
+              vpsStatus === 'online'
+                ? 'bg-green-500/15 text-green-400'
+                : vpsStatus === 'checking'
+                  ? 'bg-amber-500/15 text-amber-400'
+                  : 'bg-red-500/15 text-red-400'
+            }`}>
+              {vpsStatus === 'online' ? <Wifi size={8} /> : vpsStatus === 'checking' ? <Brain size={8} /> : <WifiOff size={8} />}
+              {vpsStatus === 'online' ? 'Online' : vpsStatus === 'checking' ? 'Verificando' : 'Offline'}
+            </span>
+          </div>
+          {vpsStatus === 'offline' && (
+            <p className="text-[10px] text-slate-600 mt-1.5">
+              Worker offline. Chat funciona via Supabase.
+            </p>
+          )}
+        </div>
+
         {/* Hierarchy */}
         <div className="space-y-2 mb-4">
           <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-1">
@@ -462,9 +510,9 @@ function SophiaSidebarInfo() {
             </div>
             <div className="ml-4 space-y-1.5 border-l border-slate-700/40 pl-3">
               {[
-                { nome: 'Anna', cor: 'text-pink-400', desc: 'Princesa #1' },
-                { nome: 'Simone', cor: 'text-cyan-400', desc: 'Princesa #2' },
-                { nome: 'Thamy', cor: 'text-amber-400', desc: 'Princesa #3' },
+                { nome: 'Anna', cor: 'text-pink-400', desc: 'Atendimento' },
+                { nome: 'Simone', cor: 'text-cyan-400', desc: 'Financeiro' },
+                { nome: 'Thamy', cor: 'text-amber-400', desc: 'Marketing' },
               ].map(p => (
                 <div key={p.nome} className="flex items-center gap-2">
                   <Sparkles size={8} className={p.cor} />
@@ -476,18 +524,18 @@ function SophiaSidebarInfo() {
           </div>
         </div>
 
-        {/* Capabilities */}
+        {/* What Sophia does */}
         <div className="space-y-2">
           <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-1">
-            Capacidades
+            O que Sophia faz
           </p>
           {[
-            'Criar agentes sob demanda',
-            'Analisar metricas do negocio',
-            'Gerenciar equipe de IAs',
-            'Consultar knowledge base',
-            'Tomar decisoes estrategicas',
-            'Observar e auto-aprender',
+            'Responde sobre o negocio',
+            'Cria e gerencia princesas',
+            'Analisa metricas e gargalos',
+            'Consulta knowledge base',
+            'Toma decisoes estrategicas',
+            'Observa e aprende',
           ].map((cap) => (
             <div
               key={cap}
@@ -499,24 +547,12 @@ function SophiaSidebarInfo() {
           ))}
         </div>
 
-        {/* Quick commands */}
-        <div className="mt-4 space-y-2">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-1">
-            Comandos rapidos
+        {/* Info box */}
+        <div className="mt-4 p-2.5 rounded-lg bg-purple-500/5 border border-purple-500/15">
+          <p className="text-[10px] text-purple-300/60 leading-relaxed">
+            Use a aba <strong className="text-purple-300/80">Chat</strong> para conversar. Sophia responde sobre metricas,
+            cria princesas e executa acoes. Decisoes aparecem no <strong className="text-purple-300/80">Dashboard</strong>.
           </p>
-          {[
-            'Analise geral do negocio',
-            'Status dos agentes',
-            'Relatorio de leads',
-            'Gargalos operacionais',
-          ].map((cmd) => (
-            <div
-              key={cmd}
-              className="px-2 py-1.5 rounded-md bg-purple-500/5 border border-purple-500/10 text-[11px] text-purple-300/70 cursor-default"
-            >
-              {cmd}
-            </div>
-          ))}
         </div>
       </div>
 
@@ -526,6 +562,12 @@ function SophiaSidebarInfo() {
           <span className="flex items-center gap-1.5 text-slate-400">
             <Crown size={10} className="text-purple-400" />
             Modo: <span className="text-purple-400 font-medium">Semi-auto</span>
+          </span>
+          <span className={`flex items-center gap-1 text-[10px] ${
+            vpsStatus === 'online' ? 'text-green-400' : 'text-slate-600'
+          }`}>
+            {vpsStatus === 'online' ? <Wifi size={8} /> : <WifiOff size={8} />}
+            VPS
           </span>
         </div>
       </div>

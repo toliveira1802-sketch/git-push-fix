@@ -21,8 +21,10 @@ const STATUS_COLORS: Record<IAStatus, { dot: string; text: string; bg: string }>
   pausado: { dot: 'bg-amber-500', text: 'text-amber-400', bg: 'bg-amber-500/10' },
 };
 
-const TYPE_CONFIG = {
+const TYPE_CONFIG: Record<string, { label: string; color: string; icon: typeof Crown }> = {
   lider: { label: 'Lider', color: 'text-purple-400 bg-purple-500/15 border-purple-500/30', icon: Crown },
+  rainha: { label: 'Rainha', color: 'text-purple-400 bg-purple-500/15 border-purple-500/30', icon: Crown },
+  princesa: { label: 'Princesa', color: 'text-pink-400 bg-pink-500/15 border-pink-500/30', icon: Crown },
   escravo: { label: 'Escravo', color: 'text-slate-400 bg-slate-500/15 border-slate-500/30', icon: Bot },
   bot_local: { label: 'Bot Local', color: 'text-cyan-400 bg-cyan-500/15 border-cyan-500/30', icon: Server },
 };

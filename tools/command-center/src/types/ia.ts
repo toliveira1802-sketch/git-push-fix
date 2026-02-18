@@ -1,4 +1,4 @@
-export type IAType = 'lider' | 'escravo' | 'bot_local';
+export type IAType = 'lider' | 'rainha' | 'princesa' | 'escravo' | 'bot_local';
 export type IAStatus = 'online' | 'offline' | 'erro' | 'pausado';
 export type LLMProvider = 'ollama' | 'kimi' | 'claude' | 'local';
 export type TaskStatus = 'pendente' | 'rodando' | 'concluida' | 'erro' | 'cancelada';
