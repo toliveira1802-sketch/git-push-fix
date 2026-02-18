@@ -10,6 +10,7 @@ import PresentationMode from './components/PresentationMode';
 import PagePreview from './components/PagePreview';
 import PageEditor from './components/PageEditor';
 import IAPanel from './components/IAPanel';
+import IAFlowEditor from './components/IAFlowEditor';
 import SophiaChat from './components/SophiaChat';
 import SophiaDashboard from './components/SophiaDashboard';
 import SophiaAvatars from './components/SophiaAvatars';
@@ -40,7 +41,7 @@ export default function App() {
   const [showMinimap, setShowMinimap] = useState(true);
   const [showStats, setShowStats] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
-  const [activeTab, setActiveTab] = useState<'rotas' | 'ias' | 'sophia-chat' | 'sophia-dashboard' | 'sophia-avatars'>('rotas');
+  const [activeTab, setActiveTab] = useState<'rotas' | 'ias' | 'ia-flow' | 'sophia-chat' | 'sophia-dashboard' | 'sophia-avatars'>('rotas');
   const [previewPath, setPreviewPath] = useState<string | null>(null);
   const [editingRoute, setEditingRoute] = useState<boolean>(false);
 
@@ -49,6 +50,14 @@ export default function App() {
 
   // Editable connections between pages
   const conn = useConnections();
+
+  // Handle route node drag end — persist position
+  const handleNodeDragEnd = useCallback((routeId: string, x: number, y: number) => {
+    const route = filteredRoutes.find(r => r.id === routeId);
+    if (route) {
+      pageConfigs.savePositionUpsert(routeId, route, x, y);
+    }
+  }, [filteredRoutes, pageConfigs]);
 
   // Track page views for Sophia
   const handleSelectRoute = useCallback((route: RouteConfig) => {
@@ -128,6 +137,8 @@ export default function App() {
 
         {activeTab === 'ias' ? (
           <IAPanel />
+        ) : activeTab === 'ia-flow' ? (
+          <IAFlowEditor />
         ) : activeTab === 'sophia-chat' ? (
           <SophiaChat sophia={sophia} />
         ) : activeTab === 'sophia-dashboard' ? (
@@ -206,6 +217,8 @@ export default function App() {
                     connectMode={conn.editable}
                     isConnectSource={conn.connectingFrom === route.id}
                     onConnectClick={handleConnectClick}
+                    onDragEnd={handleNodeDragEnd}
+                    draggable={!conn.editable}
                   />
                 ))}
               </div>

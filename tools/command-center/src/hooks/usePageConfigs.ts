@@ -189,6 +189,39 @@ export function usePageConfigs() {
     // Se nao existe registro, nao salva posicao isolada (precisa do saveConfig primeiro)
   }, [configs]);
 
+  // Salva posicao com upsert — cria registro se nao existir (para drag & drop)
+  const savePositionUpsert = useCallback(async (routeId: string, route: RouteConfig, x: number, y: number) => {
+    const existing = configs.get(routeId);
+    if (existing?.id) {
+      await supabase
+        .from('cc_page_configs')
+        .update({ pos_x: x, pos_y: y })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('cc_page_configs')
+        .insert({
+          route_id: routeId,
+          path: route.path,
+          component: route.component,
+          file_name: route.fileName,
+          description: route.description,
+          status: route.status,
+          category: route.category,
+          requires_auth: route.requiresAuth,
+          roles: route.roles,
+          pos_x: x,
+          pos_y: y,
+          notes: '',
+          priority: 'nenhuma',
+          tags: [],
+          kpis: [],
+          connections: [],
+        });
+      await loadAll();
+    }
+  }, [configs, loadAll]);
+
   // Deleta config (volta pro hardcoded)
   const deleteConfig = useCallback(async (routeId: string) => {
     const existing = configs.get(routeId);
@@ -232,6 +265,7 @@ export function usePageConfigs() {
     getConfig,
     saveConfig,
     savePosition,
+    savePositionUpsert,
     deleteConfig,
     mergeWithRoutes,
     reload: loadAll,

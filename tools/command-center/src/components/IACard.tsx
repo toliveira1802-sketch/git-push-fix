@@ -8,6 +8,7 @@ import {
   Cpu,
   MessageSquare,
   ScrollText,
+  Settings,
   Crown,
   Bot,
   Server,
@@ -41,10 +42,11 @@ interface IACardProps {
   isLeader?: boolean;
   onToggle: (id: string) => void;
   onShowLogs: (agentId: string, agentName: string) => void;
+  onConfigClick?: (agent: IAAgent) => void;
   children?: IAAgent[];
 }
 
-export default function IACard({ agent, isLeader, onToggle, onShowLogs, children }: IACardProps) {
+export default function IACard({ agent, isLeader, onToggle, onShowLogs, onConfigClick, children }: IACardProps) {
   const [expanded, setExpanded] = useState(isLeader);
   const status = STATUS_COLORS[agent.status];
   const typeConfig = TYPE_CONFIG[agent.tipo];
@@ -122,6 +124,15 @@ export default function IACard({ agent, isLeader, onToggle, onShowLogs, children
             >
               <ScrollText size={14} />
             </button>
+            {onConfigClick && (
+              <button
+                onClick={() => onConfigClick(agent)}
+                className="p-1.5 rounded-lg bg-slate-700/30 text-slate-500 hover:bg-slate-700 hover:text-purple-400 transition-all"
+                title="Configurar"
+              >
+                <Settings size={14} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -161,6 +172,7 @@ export default function IACard({ agent, isLeader, onToggle, onShowLogs, children
                   isLeader={false}
                   onToggle={onToggle}
                   onShowLogs={onShowLogs}
+                  onConfigClick={onConfigClick}
                 />
               ))}
             </div>

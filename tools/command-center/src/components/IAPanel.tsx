@@ -13,10 +13,13 @@ import {
 import { useIAManager } from '../hooks/useIAManager';
 import IACard from './IACard';
 import IALogs from './IALogs';
+import AgentConfigPanel from './AgentConfigPanel';
+import type { IAAgent } from '../types/ia';
 
 export default function IAPanel() {
   const { agents, loading, error, listAgents, toggleAgent } = useIAManager();
   const [logTarget, setLogTarget] = useState<{ id: string; name: string } | null>(null);
+  const [configTarget, setConfigTarget] = useState<IAAgent | null>(null);
 
   // Separate: rainha, princesas (children of rainha), bot_local, legacy liders
   const rainha = agents.find(a => a.tipo === 'rainha');
@@ -111,6 +114,7 @@ export default function IAPanel() {
               isLeader
               onToggle={toggleAgent}
               onShowLogs={(id, name) => setLogTarget({ id, name })}
+              onConfigClick={setConfigTarget}
             />
           </div>
         )}
@@ -133,6 +137,7 @@ export default function IAPanel() {
                   isLeader={false}
                   onToggle={toggleAgent}
                   onShowLogs={(id, name) => setLogTarget({ id, name })}
+                  onConfigClick={setConfigTarget}
                 />
               ))}
             </div>
@@ -165,6 +170,7 @@ export default function IAPanel() {
                   isLeader={false}
                   onToggle={toggleAgent}
                   onShowLogs={(id, name) => setLogTarget({ id, name })}
+                  onConfigClick={setConfigTarget}
                 />
               ))}
             </div>
@@ -192,6 +198,7 @@ export default function IAPanel() {
                   isLeader
                   onToggle={toggleAgent}
                   onShowLogs={(id, name) => setLogTarget({ id, name })}
+                  onConfigClick={setConfigTarget}
                   children={lider.children}
                 />
               ))}
@@ -206,6 +213,15 @@ export default function IAPanel() {
           agentId={logTarget.id}
           agentName={logTarget.name}
           onClose={() => setLogTarget(null)}
+        />
+      )}
+
+      {/* Config panel */}
+      {configTarget && (
+        <AgentConfigPanel
+          agent={configTarget}
+          onClose={() => setConfigTarget(null)}
+          onSave={() => { listAgents(); setConfigTarget(null); }}
         />
       )}
     </div>

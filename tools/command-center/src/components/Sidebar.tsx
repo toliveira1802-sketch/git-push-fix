@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight, Route, Bot, Crown, Server, Wifi, WifiOff, Power, Brain, MessageSquare, LayoutDashboard, Sparkles, Image, AlertTriangle } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Route, Bot, Crown, Server, Wifi, WifiOff, Power, Brain, MessageSquare, LayoutDashboard, Sparkles, Image, AlertTriangle, GitBranch } from 'lucide-react';
 import {
   RouteConfig,
   RouteCategory,
@@ -10,7 +10,7 @@ import { DOCTOR_AUTO_ROUTES, getRouteStats } from '../data/routes';
 import { useIAManager } from '../hooks/useIAManager';
 import type { IAAgent } from '../types/ia';
 
-type TabType = 'rotas' | 'ias' | 'sophia-chat' | 'sophia-dashboard' | 'sophia-avatars';
+type TabType = 'rotas' | 'ias' | 'ia-flow' | 'sophia-chat' | 'sophia-dashboard' | 'sophia-avatars';
 
 interface SidebarProps {
   selectedRouteId: string | null;
@@ -92,6 +92,7 @@ export default function Sidebar({
         {([
           { key: 'rotas' as TabType, icon: Route, label: 'Rotas' },
           { key: 'ias' as TabType, icon: Bot, label: 'IAs' },
+          { key: 'ia-flow' as TabType, icon: GitBranch, label: 'Fluxo' },
           { key: 'sophia-chat' as TabType, icon: Crown, label: 'Sophia' },
         ]).map(tab => (
           <button
@@ -99,7 +100,9 @@ export default function Sidebar({
             onClick={() => onTabChange(tab.key)}
             className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-3 text-xs font-medium transition-colors ${
               (activeTab === tab.key || (tab.key === 'sophia-chat' && isSophiaTab))
-                ? (tab.key === 'sophia-chat' ? 'text-purple-400 border-b-2 border-purple-400 bg-slate-800/50' : 'text-blue-400 border-b-2 border-blue-400 bg-slate-800/50')
+                ? (tab.key === 'sophia-chat' ? 'text-purple-400 border-b-2 border-purple-400 bg-slate-800/50'
+                  : tab.key === 'ia-flow' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800/50'
+                  : 'text-blue-400 border-b-2 border-blue-400 bg-slate-800/50')
                 : 'text-slate-400 hover:text-slate-300 hover:bg-slate-800/30'
             }`}
           >
@@ -154,6 +157,9 @@ export default function Sidebar({
       ) : activeTab === 'ias' ? (
         /* IAs sidebar - quick agent list */
         <IAAgentsSidebar />
+      ) : activeTab === 'ia-flow' ? (
+        /* Flow sidebar - minimal info */
+        <IAFlowSidebar />
       ) : (
         <>
           {/* Search */}
@@ -466,6 +472,67 @@ function SidebarAgentItem({
       </div>
       {hasChildren && expanded && children}
     </div>
+  );
+}
+
+/* ----- IA Flow Sidebar ----- */
+
+function IAFlowSidebar() {
+  return (
+    <>
+      <div className="flex-1 overflow-y-auto px-3 py-4">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+            <GitBranch size={20} className="text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-100">Editor de Fluxo</h3>
+            <p className="text-[10px] text-slate-500">Arraste agentes para o canvas</p>
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="space-y-2 mb-4">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-1">
+            Como usar
+          </p>
+          {[
+            'Clique nos agentes do painel esquerdo para adicionar',
+            'Arraste os blocos para organizar',
+            'Conecte saidas com entradas via handles',
+            'Use "Gatilho" pra adicionar triggers',
+            'Tudo salva automaticamente (1.5s)',
+          ].map((tip) => (
+            <div
+              key={tip}
+              className="flex items-start gap-2 px-2 py-1.5 rounded-md bg-slate-800/30"
+            >
+              <span className="w-1 h-1 rounded-full bg-emerald-400 flex-shrink-0 mt-1.5" />
+              <span className="text-[11px] text-slate-400 leading-relaxed">{tip}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Info box */}
+        <div className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+          <p className="text-[10px] text-emerald-300/60 leading-relaxed">
+            Monte o fluxo conectando <strong className="text-emerald-300/80">Sophia</strong> as princesas
+            e triggers. O fluxo e salvo no banco e sera usado pelo worker na VPS.
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-slate-700 px-3 py-2.5 bg-slate-900/80">
+        <div className="flex items-center justify-between text-xs">
+          <span className="flex items-center gap-1.5 text-slate-400">
+            <GitBranch size={10} className="text-emerald-400" />
+            Auto-save: <span className="text-emerald-400 font-medium">Ativo</span>
+          </span>
+        </div>
+      </div>
+    </>
   );
 }
 
