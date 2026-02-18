@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, DollarSign, Loader2, TrendingUp, Car, ChevronRight, AlertCircle } from 'lucide-react';
+import { Calendar, DollarSign, Loader2, TrendingUp, Car, ChevronRight, AlertCircle, Wrench } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { AdminSubNav } from '@/components/layout/AdminSubNav';
@@ -73,6 +73,27 @@ export default function AdminDashboard() {
     <AdminLayout>
       <AdminSubNav />
       <div className="p-4 md:p-6 space-y-6">
+
+        {/* Acesso Rápido */}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Operacional', path: '/admin/operacional', icon: Wrench, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+            { label: 'Financeiro', path: '/admin/financeiro', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+            { label: 'Produtividade', path: '/admin/produtividade', icon: TrendingUp, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+            { label: 'Agenda Mec.', path: '/admin/agenda-mecanicos', icon: Calendar, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+          ].map(({ label, path, icon: Icon, color, bg }) => (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-left"
+            >
+              <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+                <Icon className={`w-4 h-4 ${color}`} />
+              </div>
+              <span className="text-sm font-medium text-foreground">{label}</span>
+            </button>
+          ))}
+        </div>
 
         {/* Pendências do dia */}
         <Card className="border border-border bg-card">
