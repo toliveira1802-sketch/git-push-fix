@@ -145,7 +145,6 @@ export default function AdminOSDetalhes() {
       <AdminLayout>
         <OSSearchCreate 
           onOSCreated={(newOsId) => {
-            console.log("OS Created, redirecting to:", newOsId);
             // Force full page reload to ensure clean state
             window.location.replace(`/admin/os/${newOsId}?new=true`);
           }} 

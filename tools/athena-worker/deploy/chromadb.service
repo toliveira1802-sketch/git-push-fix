@@ -1,0 +1,19 @@
+[Unit]
+Description=ChromaDB - Vector Database for Doctor Auto RAG
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/chroma run --host 0.0.0.0 --port 8000 --path /opt/doctor-auto-ia/chromadb-data
+Restart=always
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chromadb
+
+MemoryMax=2G
+
+[Install]
+WantedBy=multi-user.target

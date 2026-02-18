@@ -137,8 +137,6 @@ export default function AdminChecklist() {
         throw new Error(error.message || "Falha ao sincronizar");
       }
 
-      console.log("Resposta da API:", data);
-
       toast.success("Checklist Sincronizado com Doctor Auto Prime Core", {
         description: "Os dados foram enviados com sucesso!",
         duration: 5000,

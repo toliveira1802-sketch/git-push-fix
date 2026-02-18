@@ -307,6 +307,41 @@ export default function Login() {
           </div>
         )}
 
+        {/* Modo Desenvolvedor — apenas em DEV local */}
+        {import.meta.env.DEV && (
+          <div className="mt-6 p-4 rounded-lg border border-dashed border-muted-foreground/20 bg-muted/30">
+            <p className="text-xs text-muted-foreground text-center mb-3">
+              Modo Desenvolvedor
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setEmail('admin@doctorautoprime.com.br');
+                  setPassword('admin123');
+                  setActiveTab('login');
+                  toast.info('Credenciais preenchidas! Clique em Entrar.');
+                }}
+                className="w-full text-xs"
+              >
+                <Wrench className="w-3 h-3 mr-2" />
+                Preencher Credenciais de Teste
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCreateTestAdmin}
+                disabled={isLoading}
+                className="w-full text-xs text-muted-foreground"
+              >
+                <UserPlus className="w-3 h-3 mr-2" />
+                Criar Admin de Teste
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-muted-foreground text-sm">

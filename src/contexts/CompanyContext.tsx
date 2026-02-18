@@ -41,7 +41,6 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // DEV BYPASS: não buscar empresas do banco
     if (DEV_BYPASS) {
-      console.log('DEV BYPASS: usando empresa fake');
       return;
     }
 

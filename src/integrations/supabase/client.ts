@@ -5,14 +5,8 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debug: verificar se as variáveis estão definidas
-console.log('Supabase URL defined:', !!SUPABASE_URL);
-console.log('Supabase Key defined:', !!SUPABASE_ANON_KEY);
-
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('ERRO: Variáveis de ambiente do Supabase não configuradas!');
-  console.error('VITE_SUPABASE_URL:', SUPABASE_URL);
-  console.error('VITE_SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '[DEFINIDA]' : '[INDEFINIDA]');
+  console.error('[Supabase] Variáveis de ambiente não configuradas — verifique .env');
 }
 
 // Import the supabase client like this:
