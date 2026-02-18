@@ -1,13 +1,29 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, Redirect } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
 import { AuthProvider } from "./contexts/AuthContext";
+
+/** Guard: redireciona para /login se não autenticado */
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (!user) return <Redirect to="/login" />;
+  return <>{children}</>;
+}
 
 
 // Auth Pages
@@ -132,11 +148,20 @@ function OrphanLoading() {
 }
 
 function Router() {
+  const { user, loading } = useAuth();
+
+  // Redireciona raiz baseado em autenticação
+  const rootRedirect = loading ? null : user ? "/admin/dashboard" : "/login";
+
   return (
     <Switch>
       {/* ========== ROTAS PÚBLICAS ========== */}
       <Route path="/">
-        <Redirect to="/admin/dashboard" />
+        {rootRedirect ? <Redirect to={rootRedirect} /> : (
+          <div className="min-h-screen flex items-center justify-center bg-background">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
       </Route>
       <Route path="/login" component={Login} />
       <Route path="/trocar-senha" component={TrocarSenha} />
@@ -148,73 +173,74 @@ function Router() {
       <Route path="/__dev" component={DevScreens} />
       <Route path="/__dev/explorer">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><DevExplorer /></ErrorBoundary></Suspense>}</Route>
 
-      {/* Avisos e Perfil */}
-      <Route path="/avisos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><Avisos /></ErrorBoundary></Suspense>}</Route>
-      <Route path="/perfil">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><Profile /></ErrorBoundary></Suspense>}</Route>
+      {/* Avisos e Perfil — protegidos */}
+      <Route path="/avisos">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><Avisos /></ErrorBoundary></Suspense></RequireAuth>}</Route>
+      <Route path="/perfil">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><Profile /></ErrorBoundary></Suspense></RequireAuth>}</Route>
+
 
       {/* ========== ÁREA DO CLIENTE (Garagem Virtual) ========== */}
-      <Route path="/app/garagem" component={ClienteGaragem} />
+      <Route path="/app/garagem">{() => <RequireAuth><ClienteGaragem /></RequireAuth>}</Route>
 
       {/* ========== ÁREA ADMINISTRATIVA ========== */}
       {/* Dashboard Principal */}
-      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/dashboard">{() => <RequireAuth><AdminDashboard /></RequireAuth>}</Route>
       <Route path="/admin">
         <Redirect to="/admin/dashboard" />
       </Route>
 
       {/* Visão Geral e Operacional */}
-      <Route path="/admin/overview">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminDashboardOverview /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/admin/overview">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><OrphanAdminDashboardOverview /></ErrorBoundary></Suspense></RequireAuth>}</Route>
       {/* Visão Geral do Cliente (perfil) */}
-      <Route path="/visao-geral">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><VisaoGeral /></ErrorBoundary></Suspense>}</Route>
-      <Route path="/admin/operacional">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminOperacional /></ErrorBoundary></Suspense>}</Route>
+      <Route path="/visao-geral">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><VisaoGeral /></ErrorBoundary></Suspense></RequireAuth>}</Route>
+      <Route path="/admin/operacional">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminOperacional /></ErrorBoundary></Suspense></RequireAuth>}</Route>
 
       {/* Ordens de Serviço */}
-      <Route path="/admin/ordens-servico" component={AdminOrdensServico} />
-      <Route path="/admin/nova-os" component={AdminNovaOS} />
-      <Route path="/admin/os/:id" component={AdminOSDetalhes} />
-      <Route path="/admin/os-ultimate" component={OSUltimate} />
-      <Route path="/admin/os-ultimate/:id" component={OSUltimate} />
+      <Route path="/admin/ordens-servico">{() => <RequireAuth><AdminOrdensServico /></RequireAuth>}</Route>
+      <Route path="/admin/nova-os">{() => <RequireAuth><AdminNovaOS /></RequireAuth>}</Route>
+      <Route path="/admin/os/:id">{(params) => <RequireAuth><AdminOSDetalhes /></RequireAuth>}</Route>
+      <Route path="/admin/os-ultimate">{() => <RequireAuth><OSUltimate /></RequireAuth>}</Route>
+      <Route path="/admin/os-ultimate/:id">{() => <RequireAuth><OSUltimate /></RequireAuth>}</Route>
 
       {/* Pátio */}
-      <Route path="/admin/patio" component={AdminPatio} />
-      <Route path="/admin/patio/:id" component={AdminPatioDetalhes} />
+      <Route path="/admin/patio">{() => <RequireAuth><AdminPatio /></RequireAuth>}</Route>
+      <Route path="/admin/patio/:id">{() => <RequireAuth><AdminPatioDetalhes /></RequireAuth>}</Route>
 
       {/* Agenda */}
-      <Route path="/admin/agendamentos" component={AdminAgendamentos} />
-      <Route path="/admin/agenda-mecanicos" component={AdminAgendaMecanicos} />
+      <Route path="/admin/agendamentos">{() => <RequireAuth><AdminAgendamentos /></RequireAuth>}</Route>
+      <Route path="/admin/agenda-mecanicos">{() => <RequireAuth><AdminAgendaMecanicos /></RequireAuth>}</Route>
 
       {/* Clientes, Veículos e Serviços */}
-      <Route path="/admin/clientes" component={AdminClientesPage} />
-      <Route path="/admin/veiculos">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminVeiculos /></ErrorBoundary></Suspense>}</Route>
-      <Route path="/admin/servicos" component={AdminServicos} />
+      <Route path="/admin/clientes">{() => <RequireAuth><AdminClientesPage /></RequireAuth>}</Route>
+      <Route path="/admin/veiculos">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminVeiculos /></ErrorBoundary></Suspense></RequireAuth>}</Route>
+      <Route path="/admin/servicos">{() => <RequireAuth><AdminServicos /></RequireAuth>}</Route>
 
       {/* Financeiro e Produtividade */}
-      <Route path="/admin/financeiro" component={AdminFinanceiro} />
-      <Route path="/admin/produtividade" component={AdminProdutividade} />
-      <Route path="/admin/analytics-mecanicos" component={AdminMechanicAnalytics} />
-      <Route path="/admin/feedback-mecanicos" component={AdminMechanicFeedback} />
-      <Route path="/admin/metas" component={AdminMetas} />
+      <Route path="/admin/financeiro">{() => <RequireAuth><AdminFinanceiro /></RequireAuth>}</Route>
+      <Route path="/admin/produtividade">{() => <RequireAuth><AdminProdutividade /></RequireAuth>}</Route>
+      <Route path="/admin/analytics-mecanicos">{() => <RequireAuth><AdminMechanicAnalytics /></RequireAuth>}</Route>
+      <Route path="/admin/feedback-mecanicos">{() => <RequireAuth><AdminMechanicFeedback /></RequireAuth>}</Route>
+      <Route path="/admin/metas">{() => <RequireAuth><AdminMetas /></RequireAuth>}</Route>
 
       {/* Relatórios e Config */}
-      <Route path="/admin/relatorios" component={AdminRelatorios} />
-      <Route path="/admin/documentacao" component={AdminDocumentacao} />
-      <Route path="/admin/configuracoes" component={AdminConfiguracoes} />
-      <Route path="/admin/pendencias" component={AdminPendencias} />
-      <Route path="/admin/checklist" component={AdminChecklist} />
-      <Route path="/admin/melhorias">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminMelhorias /></ErrorBoundary></Suspense>}</Route>
-      <Route path="/admin/parametros">{() => <Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminParametros /></ErrorBoundary></Suspense>}</Route>
-      <Route path="/admin/importar-veiculos-antigos" component={ImportarVeiculosAntigos} />
-      <Route path="/admin/usuarios" component={AdminUsuarios} />
+      <Route path="/admin/relatorios">{() => <RequireAuth><AdminRelatorios /></RequireAuth>}</Route>
+      <Route path="/admin/documentacao">{() => <RequireAuth><AdminDocumentacao /></RequireAuth>}</Route>
+      <Route path="/admin/configuracoes">{() => <RequireAuth><AdminConfiguracoes /></RequireAuth>}</Route>
+      <Route path="/admin/pendencias">{() => <RequireAuth><AdminPendencias /></RequireAuth>}</Route>
+      <Route path="/admin/checklist">{() => <RequireAuth><AdminChecklist /></RequireAuth>}</Route>
+      <Route path="/admin/melhorias">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminMelhorias /></ErrorBoundary></Suspense></RequireAuth>}</Route>
+      <Route path="/admin/parametros">{() => <RequireAuth><Suspense fallback={<OrphanLoading />}><ErrorBoundary><AdminParametros /></ErrorBoundary></Suspense></RequireAuth>}</Route>
+      <Route path="/admin/importar-veiculos-antigos">{() => <RequireAuth><ImportarVeiculosAntigos /></RequireAuth>}</Route>
+      <Route path="/admin/usuarios">{() => <RequireAuth><AdminUsuarios /></RequireAuth>}</Route>
 
       {/* ========== ÁREA GESTÃO ========== */}
-      <Route path="/gestao" component={GestaoDashboards} />
-      <Route path="/gestao/rh" component={GestaoRH} />
-      <Route path="/gestao/operacoes" component={GestaoOperacoes} />
-      <Route path="/gestao/financeiro" component={GestaoFinanceiro} />
-      <Route path="/gestao/tecnologia" component={GestaoTecnologia} />
-      <Route path="/gestao/comercial" component={GestaoComercial} />
-      <Route path="/gestao/melhorias" component={GestaoMelhorias} />
-      <Route path="/gestao/veiculos-orfaos" component={GestaoVeiculosOrfaos} />
+      <Route path="/gestao">{() => <RequireAuth><GestaoDashboards /></RequireAuth>}</Route>
+      <Route path="/gestao/rh">{() => <RequireAuth><GestaoRH /></RequireAuth>}</Route>
+      <Route path="/gestao/operacoes">{() => <RequireAuth><GestaoOperacoes /></RequireAuth>}</Route>
+      <Route path="/gestao/financeiro">{() => <RequireAuth><GestaoFinanceiro /></RequireAuth>}</Route>
+      <Route path="/gestao/tecnologia">{() => <RequireAuth><GestaoTecnologia /></RequireAuth>}</Route>
+      <Route path="/gestao/comercial">{() => <RequireAuth><GestaoComercial /></RequireAuth>}</Route>
+      <Route path="/gestao/melhorias">{() => <RequireAuth><GestaoMelhorias /></RequireAuth>}</Route>
+      <Route path="/gestao/veiculos-orfaos">{() => <RequireAuth><GestaoVeiculosOrfaos /></RequireAuth>}</Route>
 
       {/* ========== ÓRFÃS — lazy-loaded via DevLab ========== */}
       {/* Raiz */}
