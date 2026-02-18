@@ -264,11 +264,10 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
 
   const handleQuickRegister = async () => {
     if (!newClient.name || !newClient.phone || !newClient.vehiclePlate || !newClient.vehicleBrand || !newClient.vehicleModel) {
-      toast.error('Preencha todos os campos obrigatórios')
+      toast.error('Preencha nome, telefone, placa, marca e modelo')
       return
     }
 
-    // Verificar se usuário está autenticado
     if (!session) {
       toast.error('Você precisa estar logado para cadastrar clientes')
       return
@@ -276,66 +275,91 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     
     setIsCreating(true)
     try {
-      // Usar edge function para criar cliente, veículo e OS
-      const { data, error } = await supabase.functions.invoke('create-quick-client', {
-        body: {
-          name: newClient.name,
-          phone: newClient.phone,
-          email: newClient.email || undefined,
-          vehiclePlate: newClient.vehiclePlate,
-          vehicleBrand: newClient.vehicleBrand,
-          vehicleModel: newClient.vehicleModel,
-          vehicleYear: newClient.vehicleYear ? parseInt(newClient.vehicleYear) : undefined,
-          vehicleColor: newClient.vehicleColor || undefined,
-        },
-      })
+      // 1. Criar cliente diretamente no banco
+      const { data: clientData, error: clientError } = await supabase
+        .from('clientes')
+        .insert({
+          name: newClient.name.trim(),
+          phone: newClient.phone.replace(/\D/g, ''),
+          email: newClient.email?.trim() || null,
+          status: 'active',
+          registration_source: 'admin',
+          pending_review: false,
+        })
+        .select('id')
+        .single()
 
-      if (error) {
-        console.error('Erro na edge function:', error)
-        toast.error(error.message || 'Erro ao criar cliente')
-        return
+      if (clientError) throw new Error(`Erro ao criar cliente: ${clientError.message}`)
+      const clientId = clientData.id
+
+      // 2. Criar veículo
+      const vehicleYear = newClient.vehicleYear ? Number(newClient.vehicleYear) : null
+      const { data: vehicleData, error: vehicleError } = await supabase
+        .from('veiculos')
+        .insert({
+          client_id: clientId,
+          plate: newClient.vehiclePlate.trim().toUpperCase(),
+          brand: newClient.vehicleBrand.trim(),
+          model: newClient.vehicleModel.trim(),
+          year: vehicleYear,
+          color: newClient.vehicleColor?.trim() || null,
+          is_active: true,
+        })
+        .select('id')
+        .single()
+
+      if (vehicleError) {
+        await supabase.from('clientes').delete().eq('id', clientId)
+        throw new Error(`Erro ao criar veículo: ${vehicleError.message}`)
+      }
+      const vehicleId = vehicleData.id
+
+      // 3. Gerar número de OS não-sequencial e criar OS
+      const year = new Date().getFullYear()
+      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase()
+      const orderNumber = `${year}-${randomSuffix}`
+
+      const { data: osData, error: osError } = await supabase
+        .from('ordens_servico')
+        .insert({
+          order_number: orderNumber,
+          client_id: clientId,
+          vehicle_id: vehicleId,
+          status: 'orcamento',
+        })
+        .select('id')
+        .single()
+
+      if (osError) {
+        await supabase.from('veiculos').delete().eq('id', vehicleId)
+        await supabase.from('clientes').delete().eq('id', clientId)
+        throw new Error(`Erro ao criar OS: ${osError.message}`)
       }
 
-      if (!data?.success) {
-        toast.error(data?.error || 'Erro ao criar cliente')
-        return
-      }
-
-      // Atualizar lista local de clientes e veículos
-      setClients(prev => [...prev, { id: data.clientId, name: newClient.name, phone: newClient.phone, email: newClient.email || null }])
+      // Atualizar lista local
+      setClients(prev => [...prev, { id: clientId, name: newClient.name, phone: newClient.phone, email: newClient.email || null }])
       setVehicles(prev => [...prev, { 
-        id: data.vehicleId, 
-        client_id: data.clientId, 
+        id: vehicleId, 
+        client_id: clientId, 
         plate: newClient.vehiclePlate.toUpperCase(), 
         brand: newClient.vehicleBrand, 
         model: newClient.vehicleModel, 
-        year: newClient.vehicleYear ? parseInt(newClient.vehicleYear) : null,
-        color: newClient.vehicleColor || null
+        year: vehicleYear,
+        color: newClient.vehicleColor || null 
       }])
       
-      toast.success(`Cliente, veículo e OS ${data.orderNumber} criados!`)
+      toast.success(`Cliente, veículo e OS ${orderNumber} criados!`)
       setShowQuickRegister(false)
-      
-      // Limpar formulário
-      setNewClient({
-        name: '',
-        phone: '',
-        email: '',
-        vehicleBrand: '',
-        vehicleModel: '',
-        vehicleYear: '',
-        vehiclePlate: '',
-        vehicleColor: ''
-      })
-      
+      setNewClient({ name: '', phone: '', email: '', vehiclePlate: '', vehicleBrand: '', vehicleModel: '', vehicleYear: undefined, vehicleColor: '' })
+
       if (onOSCreated) {
-        onOSCreated(data.serviceOrderId)
-      } else {
-        navigate(`/admin/os/${data.serviceOrderId}?new=true`)
+        onOSCreated(osData.id)
       }
-    } catch (error: any) {
-      console.error('Erro ao criar:', error)
-      toast.error(error.message || 'Erro inesperado ao criar cliente/veículo')
+
+
+    } catch (err: any) {
+      console.error('handleQuickRegister error:', err)
+      toast.error(err.message || 'Erro ao criar cliente/veículo/OS')
     } finally {
       setIsCreating(false)
     }
