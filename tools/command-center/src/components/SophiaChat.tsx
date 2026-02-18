@@ -36,6 +36,7 @@ const QUICK_COMMANDS = [
 
 const CONNECTION_LABELS = {
   http: { label: 'VPS Direta', color: 'text-green-400', bg: 'bg-green-500/15', icon: Zap },
+  claude: { label: 'Claude API', color: 'text-purple-400', bg: 'bg-purple-500/15', icon: Sparkles },
   supabase: { label: 'Supabase', color: 'text-blue-400', bg: 'bg-blue-500/15', icon: Database },
   checking: { label: 'Verificando...', color: 'text-amber-400', bg: 'bg-amber-500/15', icon: RefreshCw },
   offline: { label: 'Offline', color: 'text-red-400', bg: 'bg-red-500/15', icon: WifiOff },
@@ -230,6 +231,8 @@ export default function SophiaChat({ sophia }: SophiaChatProps) {
                   <p className="text-[11px] text-slate-400">
                     {connectionMode === 'http' ? (
                       <>Conectado via <span className="text-green-400 font-medium">VPS direta</span> — respostas instantaneas</>
+                    ) : connectionMode === 'claude' ? (
+                      <>Conectado via <span className="text-purple-400 font-medium">Claude API</span> — respostas diretas sem VPS</>
                     ) : connectionMode === 'supabase' ? (
                       <>Conectado via <span className="text-blue-400 font-medium">Supabase</span> — o worker precisa estar rodando na VPS</>
                     ) : (
@@ -238,7 +241,7 @@ export default function SophiaChat({ sophia }: SophiaChatProps) {
                   </p>
                   {connectionMode === 'supabase' && sophia.status !== 'online' && (
                     <p className="text-[10px] text-amber-400/80 mt-1">
-                      Sophia esta offline. Ligue o worker na VPS para conversar.
+                      Sophia esta offline. Configure VITE_ANTHROPIC_API_KEY ou ligue o worker na VPS.
                     </p>
                   )}
                 </div>
@@ -316,7 +319,7 @@ export default function SophiaChat({ sophia }: SophiaChatProps) {
             placeholder={
               sending
                 ? 'Sophia esta pensando...'
-                : sophia.status === 'online' || connectionMode === 'http'
+                : sophia.status === 'online' || connectionMode === 'http' || connectionMode === 'claude'
                   ? 'Fale com a Sophia...'
                   : 'Sophia offline — mensagem sera enfileirada'
             }

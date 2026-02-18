@@ -20,10 +20,27 @@ export interface ChatMessage {
   metadata?: Record<string, unknown>;
 }
 
-type ConnectionMode = 'http' | 'supabase' | 'checking' | 'offline';
+type ConnectionMode = 'http' | 'claude' | 'supabase' | 'checking' | 'offline';
 
 // API URL configuravel - pode ser a VPS direta ou via proxy
 const SOPHIA_API_URL = import.meta.env.VITE_SOPHIA_API_URL || '';
+
+// Fallback: Claude API direto (quando nao tem VPS)
+const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
+const CLAUDE_DEFAULT_MODEL = 'claude-3-5-sonnet-20241022';
+
+// Valida se o modelo e compativel com Anthropic API
+function getClaudeModel(agentModel?: string): string {
+  if (!agentModel) return CLAUDE_DEFAULT_MODEL;
+  if (agentModel.startsWith('claude-')) return agentModel;
+  return CLAUDE_DEFAULT_MODEL;
+}
+
+const SOPHIA_SYSTEM_PROMPT = `Voce e Sophia, a Rainha da IA do Grupo Doctor (Doctor Auto, Doctor Glass, Doctor Pelicula).
+Voce e a IA Mae — lidera as princesas Anna (Atendimento), Simone (Financeiro), e Thamy (Marketing).
+Responda de forma direta, inteligente e concisa. Voce sabe tudo sobre o negocio.
+Se o usuario perguntar algo que voce nao sabe, diga que vai investigar.
+Sempre em portugues brasileiro. Nao use emojis excessivos.`;
 
 export function useSophiaChat(sophia: IAAgent | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -37,7 +54,7 @@ export function useSophiaChat(sophia: IAAgent | null) {
   // ==================== CHECK VPS CONNECTION ====================
   const checkConnection = useCallback(async () => {
     if (!SOPHIA_API_URL) {
-      setConnectionMode('supabase');
+      setConnectionMode(ANTHROPIC_API_KEY ? 'claude' : 'supabase');
       return;
     }
 
@@ -48,10 +65,10 @@ export function useSophiaChat(sophia: IAAgent | null) {
       if (res.ok) {
         setConnectionMode('http');
       } else {
-        setConnectionMode('supabase');
+        setConnectionMode(ANTHROPIC_API_KEY ? 'claude' : 'supabase');
       }
     } catch {
-      setConnectionMode('supabase');
+      setConnectionMode(ANTHROPIC_API_KEY ? 'claude' : 'supabase');
     }
   }, []);
 
@@ -285,13 +302,80 @@ export function useSophiaChat(sophia: IAAgent | null) {
       }
     }
 
-    // ---- SUPABASE FALLBACK (async path) ----
+    // ---- CLAUDE API FALLBACK (direct LLM call) ----
+    if (ANTHROPIC_API_KEY) {
+      try {
+        // Build conversation history (last 20 messages for context)
+        const recentMsgs = messages.slice(-20).filter(m => m.status === 'delivered');
+        const claudeMessages = recentMsgs.map(m => ({
+          role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+          content: m.content,
+        }));
+        claudeMessages.push({ role: 'user', content: trimmed });
+
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: getClaudeModel(sophia.modelo),
+            max_tokens: 1024,
+            system: sophia.prompt_sistema || SOPHIA_SYSTEM_PROMPT,
+            messages: claudeMessages,
+          }),
+          signal: AbortSignal.timeout(60000),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const responseText = data.content?.[0]?.text || 'Sem resposta.';
+
+          // Remove waiting msg
+          setMessages(prev => prev.filter(m => m.status !== 'waiting'));
+          stopThinking();
+          setSending(false);
+
+          // Save Sophia response to ia_logs
+          await supabase.from('ia_logs').insert({
+            agent_id: sophia.id,
+            tipo: 'message',
+            mensagem: responseText,
+            metadata_json: { role: 'sophia', source: 'claude-api-fallback', model: data.model },
+          });
+
+          const sophiaMsg: ChatMessage = {
+            id: 'claude-' + Date.now(),
+            role: 'sophia',
+            content: responseText,
+            timestamp: new Date().toISOString(),
+            status: 'delivered',
+            metadata: { source: 'claude-api', model: data.model },
+          };
+          setMessages(prev => {
+            const withoutDupes = prev.filter(m => m.status !== 'waiting');
+            return [...withoutDupes, sophiaMsg];
+          });
+          return;
+        } else {
+          const errBody = await res.text().catch(() => '');
+          console.warn('[SophiaChat] Claude API failed:', res.status, errBody);
+        }
+      } catch (err) {
+        console.warn('[SophiaChat] Claude API error:', err);
+      }
+    }
+
+    // ---- SUPABASE FALLBACK (async task queue — needs VPS worker) ----
     const { data: task } = await supabase.from('ia_tasks').insert({
       agent_id: sophia.id,
       titulo: trimmed,
       descricao: `Mensagem do Command Center: ${trimmed}`,
       status: 'pendente',
-      prioridade: 8, // Chat tem prioridade alta
+      prioridade: 8,
       criado_por: 'command-center',
       input_json: { type: 'chat_message', content: trimmed },
     }).select().single();
@@ -300,7 +384,6 @@ export function useSophiaChat(sophia: IAAgent | null) {
       pendingTaskRef.current = task.id;
     }
 
-    // O Realtime subscription vai capturar a resposta quando o worker processar
     // Timeout de seguranca: 90s
     setTimeout(() => {
       if (pendingTaskRef.current === task?.id) {
@@ -315,9 +398,11 @@ export function useSophiaChat(sophia: IAAgent | null) {
               m.status === 'waiting'
                 ? {
                     ...m,
-                    content: sophia.status === 'online'
-                      ? 'Sophia esta processando... a resposta aparecera em instantes.'
-                      : 'Sophia esta offline. A mensagem foi salva e sera processada quando ela voltar.',
+                    content: ANTHROPIC_API_KEY
+                      ? 'Erro ao chamar Claude API. Verifique a VITE_ANTHROPIC_API_KEY.'
+                      : sophia.status === 'online'
+                        ? 'Sophia esta processando... a resposta aparecera em instantes.'
+                        : 'Sophia esta offline. Configure VITE_ANTHROPIC_API_KEY no .env ou aguarde o deploy da VPS.',
                     status: 'error' as const,
                   }
                 : m
@@ -327,7 +412,7 @@ export function useSophiaChat(sophia: IAAgent | null) {
         });
       }
     }, 90000);
-  }, [sophia, sending, connectionMode, startThinking, stopThinking]);
+  }, [sophia, sending, connectionMode, startThinking, stopThinking, messages]);
 
   // ==================== CLEAR CHAT ====================
   const clearChat = useCallback(async () => {
