@@ -1,225 +1,301 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Car, 
-  Users, 
-  ClipboardList, 
-  DollarSign, 
-  TrendingUp,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
+import { Calendar, DollarSign, Loader2, TrendingUp, Car, ChevronRight, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { AdminSubNav } from '@/components/layout/AdminSubNav';
-
-interface DashboardMetrics {
-  totalOS: number;
-  osAbertas: number;
-  osConcluidas: number;
-  totalClientes: number;
-  totalVeiculos: number;
-  faturamentoMes: number;
-}
+import { useNavigate } from '@/hooks/useNavigate';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminDashboard() {
-  const { user, signOut } = useAuth();
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
-    totalOS: 0,
-    osAbertas: 0,
-    osConcluidas: 0,
-    totalClientes: 0,
-    totalVeiculos: 0,
-    faturamentoMes: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState('Admin');
+  const navigate = useNavigate();
+  const {
+    stats,
+    loading,
+    todayAppointments,
+    returnVehicles,
+    vehiclesInYard,
+  } = useAdminDashboard();
+
+  // Pendências do dia
+  const [pendencias, setPendencias] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-
+    const fetchPendencias = async () => {
       try {
-        // Buscar nome do usuário
-        const { data: profile } = await supabase
-          .from('colaboradores')
-          .select('full_name')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (profile?.full_name) {
-          setUserName(profile.full_name);
-        }
+        const { data, error } = await supabase
+          .from('pendencias')
+          .select('id, titulo, descricao, prioridade, status, tipo, vehicle_plate')
+          .eq('status', 'pendente')
+          .order('created_at', { ascending: false })
+          .limit(5);
 
-        // Buscar métricas (queries paralelas)
-        const [osResult, clientesResult, veiculosResult] = await Promise.all([
-          supabase.from('ordens_servico').select('id, status, total', { count: 'exact' }),
-          supabase.from('clientes').select('id', { count: 'exact' }),
-          supabase.from('veiculos').select('id', { count: 'exact' }),
-        ]);
-
-        const os = osResult.data || [];
-        const osAbertas = os.filter(o => o.status !== 'entregue' && o.status !== 'cancelada').length;
-        const osConcluidas = os.filter(o => o.status === 'entregue').length;
-        const faturamento = os
-          .filter(o => o.status === 'entregue')
-          .reduce((acc, o) => acc + (o.total || 0), 0);
-
-        setMetrics({
-          totalOS: osResult.count || 0,
-          osAbertas,
-          osConcluidas,
-          totalClientes: clientesResult.count || 0,
-          totalVeiculos: veiculosResult.count || 0,
-          faturamentoMes: faturamento,
-        });
+        if (error) throw error;
+        setPendencias(data || []);
       } catch (error) {
-        console.error('Erro ao buscar métricas:', error);
-      } finally {
-        setLoading(false);
+        console.error('Erro ao carregar pendências:', error);
       }
     };
+    fetchPendencias();
+  }, []);
 
-    fetchData();
-  }, [user]);
+  // Modal states
+  const [showAppointments, setShowAppointments] = useState(false);
+  const [showReturns, setShowReturns] = useState(false);
+  const [showVehiclesInYard, setShowVehiclesInYard] = useState(false);
 
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
+  const statusLabels: Record<string, string> = {
+    pendente: 'Pendente',
+    confirmado: 'Confirmado',
+    em_execucao: 'Em Execução',
+    diagnostico: 'Diagnóstico',
+    orcamento: 'Orçamento',
+    aguardando_aprovacao: 'Aguardando',
+    pronto_retirada: 'Pronto',
+    agendado: 'Agendado',
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <AdminSubNav />
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
       <AdminSubNav />
       <div className="p-4 md:p-6 space-y-6">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-2">Dashboard</h2>
-          <p className="text-muted-foreground">
-            Visão geral da oficina - {new Date().toLocaleDateString('pt-BR', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </p>
-        </div>
 
-        {/* Métricas Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Ordens de Serviço
-              </CardTitle>
-              <ClipboardList className="w-5 h-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{loading ? '...' : metrics.totalOS}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total de OS cadastradas
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-500/30 bg-orange-500/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-orange-600">
-                OS em Andamento
-              </CardTitle>
-              <Clock className="w-5 h-5 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-600">
-                {loading ? '...' : metrics.osAbertas}
+        {/* Pendências do dia */}
+        <Card className="border border-border bg-card">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <h2 className="text-base font-semibold text-foreground">Pendências do dia</h2>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Veículos na oficina
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-green-500/30 bg-green-500/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-green-600">
-                OS Concluídas
-              </CardTitle>
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {loading ? '...' : metrics.osConcluidas}
+              <button
+                onClick={() => navigate('/admin/pendencias')}
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                Ver todas
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            {pendencias.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma pendência para hoje. Bom trabalho!</p>
+            ) : (
+              <div className="space-y-2">
+                {pendencias.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">{p.titulo}</p>
+                        {p.vehicle_plate && (
+                          <p className="text-xs text-muted-foreground font-mono">{p.vehicle_plate}</p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {p.prioridade || p.tipo}
+                    </Badge>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Entregas realizadas
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Clientes
-              </CardTitle>
-              <Users className="w-5 h-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{loading ? '...' : metrics.totalClientes}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Clientes cadastrados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Veículos
-              </CardTitle>
-              <Car className="w-5 h-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{loading ? '...' : metrics.totalVeiculos}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Veículos registrados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/30 bg-primary/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-primary">
-                Faturamento
-              </CardTitle>
-              <DollarSign className="w-5 h-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">
-                {loading ? '...' : formatCurrency(metrics.faturamentoMes)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total em OS entregues
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Placeholder para próximos módulos */}
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Módulos em Desenvolvimento</h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              Aqui serão exibidos: Kanban de OS, Agenda de Mecânicos, Alertas e Gráficos de Performance.
-            </p>
+            )}
           </CardContent>
         </Card>
+
+        {/* Stats Grid - 2x2 */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Veículos no Pátio */}
+          <Card
+            className="border border-border bg-card cursor-pointer hover:bg-accent/50 transition-colors"
+            onClick={() => setShowVehiclesInYard(true)}
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Car className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground">{stats.vehiclesInYard}</p>
+                  <p className="text-sm text-muted-foreground">Veículos no Pátio</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Agendamentos Hoje */}
+          <Card
+            className="border border-border bg-card cursor-pointer hover:bg-accent/50 transition-colors"
+            onClick={() => setShowAppointments(true)}
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground">{stats.appointmentsToday}</p>
+                  <p className="text-sm text-muted-foreground">Agendamentos Hoje</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Faturado (Mês) */}
+          <Card className="border border-border bg-card">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground">
+                    R$ {stats.monthlyRevenue.toLocaleString('pt-BR')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Faturado (Mês)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Retorno do Mês */}
+          <Card
+            className="border border-border bg-card cursor-pointer hover:bg-accent/50 transition-colors"
+            onClick={() => setShowReturns(true)}
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground">{stats.returnsMonth}</p>
+                  <p className="text-sm text-muted-foreground">Retorno do Mês</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      {/* Modal Agendamentos Hoje */}
+      <Dialog open={showAppointments} onOpenChange={setShowAppointments}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-400" />
+              Agendamentos de Hoje
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            {todayAppointments.length > 0 ? (
+              <div className="space-y-3">
+                {todayAppointments.map((apt) => (
+                  <div key={apt.id} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{apt.client_name}</p>
+                        <p className="text-sm text-muted-foreground">{apt.vehicle}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-primary">{apt.time}</p>
+                        <p className="text-xs text-muted-foreground">{statusLabels[apt.status] || apt.status}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-8 text-muted-foreground">Nenhum agendamento para hoje</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Retorno do Mês */}
+      <Dialog open={showReturns} onOpenChange={setShowReturns}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-purple-400" />
+              Retornos do Mês
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            {returnVehicles.length > 0 ? (
+              <div className="space-y-3">
+                {returnVehicles.map((rv) => (
+                  <div key={rv.id} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-mono font-bold text-primary">{rv.plate}</p>
+                        <p className="text-sm text-muted-foreground">{rv.vehicle}</p>
+                        <p className="text-xs text-muted-foreground">{rv.client_name}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{rv.data_entrega}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-8 text-muted-foreground">Nenhum retorno este mês</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Veículos no Pátio */}
+      <Dialog open={showVehiclesInYard} onOpenChange={setShowVehiclesInYard}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="w-5 h-5 text-purple-400" />
+              Veículos no Pátio
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            {vehiclesInYard.length > 0 ? (
+              <div className="space-y-3">
+                {vehiclesInYard.map((v) => (
+                  <div
+                    key={v.id}
+                    className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                    onClick={() => {
+                      setShowVehiclesInYard(false);
+                      navigate(`/admin/patio/${v.id}`);
+                    }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-mono font-bold text-primary">{v.plate}</p>
+                        <p className="text-sm text-muted-foreground">{v.vehicle}</p>
+                        <p className="text-xs text-muted-foreground">{v.client_name}</p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {statusLabels[v.status] || v.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-8 text-muted-foreground">Nenhum veículo no pátio</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
