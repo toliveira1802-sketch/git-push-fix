@@ -354,9 +354,7 @@ function App() {
             <CompanyProvider>
               <TooltipProvider>
                 <Toaster />
-                <GradualLaunch>
-                  <Router />
-                </GradualLaunch>
+                <Router />
               </TooltipProvider>
             </CompanyProvider>
           </AuthProvider>
