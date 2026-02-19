@@ -26,7 +26,7 @@ export interface OSData {
   completed_at: string | null;
   budget_sent_at: string | null;
   budget_approved_at: string | null;
-  // Related data
+  // Related data (desnormalizado na ordens_servico)
   client: {
     id: string;
     name: string;
@@ -80,75 +80,68 @@ export function useOSDetails(osId: string | undefined) {
 
     setIsLoading(true);
     try {
+      // ordens_servico tem dados desnormalizados: client_name, client_phone, plate, vehicle
       const { data, error } = await supabase
         .from("ordens_servico")
-        .select(`
-          *,
-          clientes (
-            id, name, phone, email
-          ),
-          veiculos (
-            id, plate, brand, model, year, color, km
-          ),
-          mecanicos (
-            id, name
-          )
-        `)
+        .select("*")
         .eq("id", osId)
         .single();
 
       if (error) throw error;
 
       if (data) {
+        // Mapear colunas reais da ordens_servico para a interface OSData
+        const d = data as any;
+
+        // Extrair brand e model do campo "vehicle" (ex: "VW Jetta GLI 2.0 TSI")
+        const vehicleParts = (d.vehicle || '').split(' ');
+        const brand = vehicleParts[0] || '';
+        const model = vehicleParts.slice(1).join(' ') || '';
+
         const osData: OSData = {
-          id: data.id,
-          order_number: data.order_number,
-          status: data.status,
-          priority: data.priority,
-          problem_description: data.problem_description,
-          diagnosis: data.diagnosis,
-          observations: data.observations,
-          entry_km: data.entry_km,
-          entry_checklist: data.entry_checklist as Record<string, boolean> | null,
-          estimated_completion: data.estimated_completion,
-          total: Number(data.total) || 0,
-          total_parts: Number(data.total_parts) || 0,
-          total_labor: Number(data.total_labor) || 0,
-          total_discount: Number(data.total_discount) || 0,
-          approved_total: Number((data as any).approved_total) || 0,
-          payment_status: data.payment_status,
-          payment_method: data.payment_method,
-          em_terceiros: data.em_terceiros,
-          recurso: data.recurso,
-          created_at: data.created_at,
-          completed_at: data.completed_at,
-          budget_sent_at: (data as any).budget_sent_at || null,
-          budget_approved_at: (data as any).budget_approved_at || null,
-          client: data.clientes
-            ? {
-                id: data.clientes.id,
-                name: data.clientes.name,
-                phone: data.clientes.phone,
-                email: data.clientes.email,
-              }
-            : null,
-          vehicle: data.veiculos
-            ? {
-                id: data.veiculos.id,
-                plate: data.veiculos.plate,
-                brand: data.veiculos.brand,
-                model: data.veiculos.model,
-                year: data.veiculos.year,
-                color: data.veiculos.color,
-                km: data.veiculos.km,
-              }
-            : null,
-          mechanic: data.mecanicos
-            ? {
-                id: data.mecanicos.id,
-                name: data.mecanicos.name,
-              }
-            : null,
+          id: d.id,
+          order_number: d.numero_os || '',
+          status: d.status || 'diagnostico',
+          priority: d.prioridade || null,
+          problem_description: d.descricao_problema || null,
+          diagnosis: d.diagnostico || null,
+          observations: d.observacoes || null,
+          entry_km: d.km_atual || d.km_entrada || null,
+          entry_checklist: d.checklist_entrada || null,
+          estimated_completion: d.data_previsao_entrega || null,
+          total: Number(d.valor_orcado) || 0,
+          total_parts: 0, // calculado pelos itens
+          total_labor: 0,
+          total_discount: 0,
+          approved_total: Number(d.valor_aprovado) || 0,
+          payment_status: d.status_pagamento || null,
+          payment_method: d.forma_pagamento || null,
+          em_terceiros: false,
+          recurso: null,
+          created_at: d.created_at || d.data_entrada,
+          completed_at: d.data_conclusao || null,
+          budget_sent_at: d.enviado_gestao_em || null,
+          budget_approved_at: d.data_aprovacao || null,
+          // Dados desnormalizados
+          client: d.client_name ? {
+            id: d.id, // sem FK real
+            name: d.client_name,
+            phone: d.client_phone || '',
+            email: null,
+          } : null,
+          vehicle: d.plate ? {
+            id: d.id, // sem FK real
+            plate: d.plate,
+            brand: brand,
+            model: model,
+            year: null,
+            color: null,
+            km: d.km_atual || null,
+          } : null,
+          mechanic: d.mecanico_responsavel ? {
+            id: d.mechanic_id || d.id,
+            name: d.mecanico_responsavel,
+          } : null,
         };
         setOS(osData);
       }
@@ -168,25 +161,32 @@ export function useOSDetails(osId: string | undefined) {
     }
 
     try {
+      // Tentar os_historico primeiro, depois historico_ordem_servico
       const { data, error } = await supabase
-        .from("historico_ordem_servico")
+        .from("os_historico" as any)
         .select("*")
-        .eq("service_order_id", osId)
+        .eq("ordem_servico_id", osId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback: tabela pode não existir
+        console.warn("os_historico não disponível:", error.message);
+        setHistory([]);
+        return;
+      }
 
       setHistory(
-        (data || []).map((e) => ({
+        (data || []).map((e: any) => ({
           id: e.id,
-          event_type: e.event_type,
-          description: e.description,
+          event_type: e.tipo_evento || e.event_type || 'info',
+          description: e.descricao || e.description || '',
           created_at: e.created_at,
-          metadata: e.metadata as Record<string, any> | null,
+          metadata: e.metadata || null,
         }))
       );
     } catch (error) {
       console.error("Erro ao carregar histórico:", error);
+      setHistory([]);
     }
   }, [osId]);
 
@@ -195,7 +195,7 @@ export function useOSDetails(osId: string | undefined) {
     fetchHistory();
   }, [fetchOS, fetchHistory]);
 
-  // Update OS
+  // Update OS — mapear de volta para colunas reais
   const updateOS = async (
     updates: Partial<
       Omit<OSData, "id" | "client" | "vehicle" | "mechanic" | "created_at">
@@ -205,9 +205,22 @@ export function useOSDetails(osId: string | undefined) {
 
     setIsSaving(true);
     try {
+      // Mapear nomes de campo da interface para colunas reais
+      const dbUpdates: Record<string, any> = {};
+      if (updates.problem_description !== undefined) dbUpdates.descricao_problema = updates.problem_description;
+      if (updates.diagnosis !== undefined) dbUpdates.diagnostico = updates.diagnosis;
+      if (updates.observations !== undefined) dbUpdates.observacoes = updates.observations;
+      if (updates.entry_km !== undefined) dbUpdates.km_atual = updates.entry_km;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if ((updates as any).entry_checklist !== undefined) dbUpdates.checklist_entrada = (updates as any).entry_checklist;
+      if ((updates as any).budget_sent_at !== undefined) dbUpdates.enviado_gestao_em = (updates as any).budget_sent_at;
+      if ((updates as any).budget_approved_at !== undefined) dbUpdates.data_aprovacao = (updates as any).budget_approved_at;
+
+      dbUpdates.updated_at = new Date().toISOString();
+
       const { error } = await supabase
         .from("ordens_servico")
-        .update(updates)
+        .update(dbUpdates)
         .eq("id", osId);
 
       if (error) throw error;
@@ -249,14 +262,18 @@ export function useOSDetails(osId: string | undefined) {
     if (!osId) return false;
 
     try {
-      const { error } = await supabase.from("historico_ordem_servico").insert({
-        service_order_id: osId,
-        event_type: eventType,
-        description,
+      const { error } = await supabase.from("os_historico" as any).insert({
+        ordem_servico_id: osId,
+        tipo_evento: eventType,
+        descricao: description,
         metadata: metadata || null,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Se tabela não existir, log silencioso
+        console.warn("Não foi possível gravar histórico:", error.message);
+        return false;
+      }
       await fetchHistory();
       return true;
     } catch (error) {
@@ -269,11 +286,11 @@ export function useOSDetails(osId: string | undefined) {
   const markBudgetSent = async (): Promise<boolean> => {
     if (!osId) return false;
 
-    const success = await updateOS({ 
+    const success = await updateOS({
       budget_sent_at: new Date().toISOString(),
       status: os?.status === "orcamento" ? "aguardando_aprovacao" : os?.status || "orcamento",
     } as any);
-    
+
     if (success) {
       await addHistoryEvent("budget_sent", "Orçamento enviado ao cliente via WhatsApp");
     }
@@ -284,11 +301,11 @@ export function useOSDetails(osId: string | undefined) {
   const markBudgetApproved = async (): Promise<boolean> => {
     if (!osId) return false;
 
-    const success = await updateOS({ 
+    const success = await updateOS({
       budget_approved_at: new Date().toISOString(),
       status: "aprovado",
     } as any);
-    
+
     if (success) {
       await addHistoryEvent("budget_approved", "Orçamento aprovado pelo cliente");
     }

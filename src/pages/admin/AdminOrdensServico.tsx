@@ -6,25 +6,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface OSRow {
   id: string;
-  order_number: string;
+  numero_os: string;
   status: string;
   created_at: string;
-  entry_km: number | null;
-  total: number | null;
-  approved_total: number | null;
-  problem_description: string | null;
-  clientes: {
-    id: string;
-    name: string;
-    phone: string;
-  } | null;
-  veiculos: {
-    id: string;
-    plate: string;
-    brand: string;
-    model: string;
-    year: number | null;
-  } | null;
+  km_atual: number | null;
+  valor_orcado: number | null;
+  valor_aprovado: number | null;
+  valor_final: number | null;
+  descricao_problema: string | null;
+  plate: string | null;
+  vehicle: string | null;
+  client_name: string | null;
+  client_phone: string | null;
 }
 
 const statusConfig: Record<string, { label: string; color: string; bgSolid: string; icon: React.ElementType }> = {
@@ -55,9 +48,8 @@ export default function AdminOrdensServico() {
       const { data, error } = await supabase
         .from("ordens_servico")
         .select(`
-          id, order_number, status, created_at, entry_km, total, approved_total, problem_description,
-          clientes (id, name, phone),
-          veiculos (id, plate, brand, model, year)
+          id, numero_os, status, created_at, km_atual, valor_orcado, valor_aprovado, valor_final, descricao_problema,
+          plate, vehicle, client_name, client_phone
         `)
         .order("created_at", { ascending: false });
 
@@ -71,14 +63,16 @@ export default function AdminOrdensServico() {
   };
 
   const filtered = osList.filter(os => {
-    const plate = os.veiculos?.plate?.toLowerCase() || '';
-    const clientName = os.clientes?.name?.toLowerCase() || '';
-    const orderNum = os.order_number?.toLowerCase() || '';
+    const plate = os.plate?.toLowerCase() || '';
+    const clientName = os.client_name?.toLowerCase() || '';
+    const orderNum = os.numero_os?.toLowerCase() || '';
+    const vehicleDesc = os.vehicle?.toLowerCase() || '';
     const searchLower = search.toLowerCase();
 
     const matchesSearch = plate.includes(searchLower) ||
       clientName.includes(searchLower) ||
-      orderNum.includes(searchLower);
+      orderNum.includes(searchLower) ||
+      vehicleDesc.includes(searchLower);
     const matchesFilter = filter === 'todos' || os.status === filter;
 
     return matchesSearch && matchesFilter;
@@ -151,22 +145,19 @@ export default function AdminOrdensServico() {
                 <tbody>
                   {filtered.map(os => {
                     const c = statusConfig[os.status] || statusConfig.diagnostico;
-                    const vehicleDesc = os.veiculos
-                      ? `${os.veiculos.brand} ${os.veiculos.model}${os.veiculos.year ? ` ${os.veiculos.year}` : ''}`
-                      : '-';
-                    const valor = Number(os.approved_total) || Number(os.total) || 0;
+                    const valor = Number(os.valor_aprovado) || Number(os.valor_orcado) || Number(os.valor_final) || 0;
                     return (
                       <tr
                         key={os.id}
                         onClick={() => setLocation(`/admin/os/${os.id}`)}
                         className="border-b border-border hover:bg-accent/50 cursor-pointer"
                       >
-                        <td className="px-3 py-2 font-mono">{os.order_number}</td>
+                        <td className="px-3 py-2 font-mono">{os.numero_os}</td>
                         <td className="px-3 py-2">
-                          <p className="font-bold">{os.veiculos?.plate || '-'}</p>
-                          <p className="text-muted-foreground text-xs">{vehicleDesc}</p>
+                          <p className="font-bold">{os.plate || '-'}</p>
+                          <p className="text-muted-foreground text-xs">{os.vehicle || '-'}</p>
                         </td>
-                        <td className="px-3 py-2">{os.clientes?.name || '-'}</td>
+                        <td className="px-3 py-2">{os.client_name || '-'}</td>
                         <td className="px-3 py-2">
                           <span className={`text-xs px-2 py-0.5 rounded-full border ${c.color}`}>
                             {c.label}

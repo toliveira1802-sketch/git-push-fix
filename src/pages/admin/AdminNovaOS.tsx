@@ -68,67 +68,81 @@ export default function NovaOS() {
       const searchClean = searchTerm.replace(/\D/g, ""); // Remove não-números para telefone
       const searchUpper = searchTerm.toUpperCase().replace(/[^A-Z0-9]/g, ""); // Limpa placa
 
-      // Buscar por telefone
+      // Buscar por telefone na tabela clients
       const { data: clientsByPhone, error: phoneError } = await supabase
-        .from("clientes")
-        .select(`id, name, phone, email, veiculos (id, brand, model, plate, year, km)`)
-        .ilike("phone", `%${searchClean}%`)
+        .from("clients" as any)
+        .select(`id, nome, telefone, email`)
+        .ilike("telefone", `%${searchClean}%`)
         .limit(10);
 
       if (phoneError) throw phoneError;
 
-      // Buscar por placa
+      // Buscar veículos de cada cliente encontrado
+      const clientIds = (clientsByPhone || []).map((c: any) => c.id);
+      let vehiclesForClients: any[] = [];
+      if (clientIds.length > 0) {
+        const { data: vData } = await supabase
+          .from("vehicles" as any)
+          .select("id, brand, model, plate, year, km_atual, user_id")
+          .in("user_id", clientIds);
+        vehiclesForClients = vData || [];
+      }
+
+      // Buscar por placa na tabela vehicles
       const { data: vehiclesByPlate, error: plateError } = await supabase
-        .from("veiculos")
-        .select(`id, brand, model, plate, year, km, clientes:client_id (id, name, phone, email)`)
+        .from("vehicles" as any)
+        .select(`id, brand, model, plate, year, km_atual, user_id`)
         .ilike("plate", `%${searchUpper}%`)
         .limit(10);
 
       if (plateError) throw plateError;
 
+      // Buscar clientes dos veículos encontrados por placa
+      const ownerIds = (vehiclesByPlate || []).map((v: any) => v.user_id).filter(Boolean);
+      let ownersData: any[] = [];
+      if (ownerIds.length > 0) {
+        const { data: oData } = await supabase
+          .from("clients" as any)
+          .select("id, nome, telefone, email")
+          .in("id", ownerIds);
+        ownersData = oData || [];
+      }
+
       // Combinar resultados
       const clientsMap = new Map<string, ClienteEncontrado>();
 
       // Adicionar clientes encontrados por telefone
-        (clientsByPhone as any[])?.forEach((client: any) => {
+      (clientsByPhone as any[])?.forEach((client: any) => {
+        const clientVehicles = vehiclesForClients.filter((v: any) => v.user_id === client.id);
         clientsMap.set(client.id, {
           id: client.id,
-          name: client.name,
-          phone: client.phone,
+          name: client.nome,
+          phone: client.telefone,
           email: client.email,
-          vehicles: (client.veiculos || []).map((v: any) => ({ ...v, km: v.km })),
+          vehicles: clientVehicles.map((v: any) => ({
+            id: v.id, brand: v.brand, model: v.model, plate: v.plate, year: v.year, km: v.km_atual,
+          })),
         });
       });
 
       // Adicionar clientes encontrados por placa
       (vehiclesByPlate as any[])?.forEach((vehicle: any) => {
-        const client = vehicle.clientes;
-        if (client) {
-          if (clientsMap.has(client.id)) {
-            const existing = clientsMap.get(client.id)!;
+        const owner = ownersData.find((o: any) => o.id === vehicle.user_id);
+        if (owner) {
+          if (clientsMap.has(owner.id)) {
+            const existing = clientsMap.get(owner.id)!;
             if (!existing.vehicles.find((v) => v.id === vehicle.id)) {
               existing.vehicles.push({
-                id: vehicle.id,
-                brand: vehicle.brand,
-                model: vehicle.model,
-                plate: vehicle.plate,
-                year: vehicle.year,
-                km: vehicle.km,
+                id: vehicle.id, brand: vehicle.brand, model: vehicle.model,
+                plate: vehicle.plate, year: vehicle.year, km: vehicle.km_atual,
               });
             }
           } else {
-            clientsMap.set(client.id, {
-              id: client.id,
-              name: client.name,
-              phone: client.phone,
-              email: client.email,
+            clientsMap.set(owner.id, {
+              id: owner.id, name: owner.nome, phone: owner.telefone, email: owner.email,
               vehicles: [{
-                id: vehicle.id,
-                brand: vehicle.brand,
-                model: vehicle.model,
-                plate: vehicle.plate,
-                year: vehicle.year,
-                km: vehicle.km,
+                id: vehicle.id, brand: vehicle.brand, model: vehicle.model,
+                plate: vehicle.plate, year: vehicle.year, km: vehicle.km_atual,
               }],
             });
           }
@@ -179,28 +193,31 @@ export default function NovaOS() {
     setIsLoading(true);
 
     try {
-      // 1. Criar cliente
+      const plateClean = quickForm.plate.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const vehicleDesc = `${quickForm.brand.trim() || ''} ${quickForm.model.trim()}`.trim();
+
+      // 1. Criar cliente na tabela clients
       const { data: newClient, error: clientError } = await supabase
-        .from("clientes")
+        .from("clients" as any)
         .insert({
-          name: quickForm.name.trim(),
-          phone: quickForm.phone.trim() || "Não informado",
+          nome: quickForm.name.trim(),
+          telefone: quickForm.phone.trim() || "Não informado",
           status: "ativo",
-          registration_source: 'admin',
+          origem_cadastro: 'oficina',
         })
         .select("id")
         .single();
 
       if (clientError) throw clientError;
 
-      // 2. Criar veículo
+      // 2. Criar veículo na tabela vehicles
       const { data: newVehicle, error: vehicleError } = await supabase
-        .from("veiculos")
+        .from("vehicles" as any)
         .insert({
-          client_id: newClient.id,
+          user_id: newClient.id,
           brand: quickForm.brand.trim() || "Não informado",
           model: quickForm.model.trim(),
-          plate: quickForm.plate.toUpperCase().replace(/[^A-Z0-9]/g, ""),
+          plate: plateClean,
           is_active: true,
         })
         .select("id")
@@ -208,22 +225,22 @@ export default function NovaOS() {
 
       if (vehicleError) throw vehicleError;
 
-      // 3. Criar OS (order_number é gerado automaticamente pelo trigger)
-      // order_number is auto-generated by database trigger
+      // 3. Criar OS com dados desnormalizados
       const { data: newOS, error: osError } = await supabase
         .from("ordens_servico")
         .insert({
-          client_id: newClient.id,
-          vehicle_id: newVehicle.id,
+          client_name: quickForm.name.trim(),
+          client_phone: quickForm.phone.trim() || null,
+          plate: plateClean,
+          vehicle: vehicleDesc,
           status: "diagnostico",
-          order_number: "", // Will be overwritten by trigger
         } as any)
-        .select("id, order_number")
+        .select("id, numero_os")
         .single();
 
       if (osError) throw osError;
 
-      toast.success(`OS ${newOS.order_number} criada com sucesso!`);
+      toast.success(`OS ${newOS.numero_os} criada com sucesso!`);
       
       // Redirecionar para detalhes da OS
       navigate(`/admin/os-ultimate/${newOS.id}`);
@@ -250,22 +267,24 @@ export default function NovaOS() {
     setIsLoading(true);
 
     try {
-      // Criar OS com cliente e veículo existentes
-      // order_number is auto-generated by database trigger
+      const vehicleDesc = `${selectedVehicle.brand || ''} ${selectedVehicle.model || ''}`.trim();
+
+      // Criar OS com dados desnormalizados
       const { data: newOS, error: osError } = await supabase
         .from("ordens_servico")
         .insert({
-          client_id: selectedClient.id,
-          vehicle_id: selectedVehicle.id,
+          client_name: selectedClient.name,
+          client_phone: selectedClient.phone,
+          plate: selectedVehicle.plate,
+          vehicle: vehicleDesc,
           status: "diagnostico",
-          order_number: "", // Will be overwritten by trigger
         } as any)
-        .select("id, order_number")
+        .select("id, numero_os")
         .single();
 
       if (osError) throw osError;
 
-      toast.success(`OS ${newOS.order_number} criada com sucesso!`);
+      toast.success(`OS ${newOS.numero_os} criada com sucesso!`);
       
       // Redirecionar para detalhes da OS
       navigate(`/admin/os-ultimate/${newOS.id}`);

@@ -89,15 +89,16 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
       setIsLoading(true)
       try {
         const [clientsRes, vehiclesRes] = await Promise.all([
-          supabase.from('clientes').select('id, name, phone, email').eq('status', 'active'),
-          supabase.from('veiculos').select('id, client_id, plate, brand, model, year, color').eq('is_active', true)
+          (supabase as any).from('clients').select('id, nome, telefone, email').eq('status', 'ativo'),
+          (supabase as any).from('vehicles').select('id, user_id, plate, brand, model, year, color').eq('is_active', true)
         ])
-        
+
         if (clientsRes.error) throw clientsRes.error
         if (vehiclesRes.error) throw vehiclesRes.error
-        
-        setClients(clientsRes.data || [])
-        setVehicles(vehiclesRes.data || [])
+
+        // Mapear colunas PT -> EN
+        setClients((clientsRes.data || []).map((c: any) => ({ id: c.id, name: c.nome, phone: c.telefone, email: c.email })))
+        setVehicles((vehiclesRes.data || []).map((v: any) => ({ id: v.id, client_id: v.user_id, plate: v.plate, brand: v.brand, model: v.model, year: v.year, color: v.color })))
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
         toast.error('Erro ao carregar clientes e veículos')
@@ -155,30 +156,29 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     return results.slice(0, 20) // Limit results
   }, [search, clients, vehicles])
 
-  // Generate order number
+  // Generate order number — numero_os no banco
   const generateOrderNumber = async (): Promise<string> => {
     const year = new Date().getFullYear()
-    
-    // Get the latest order number for this year
+
     const { data, error } = await supabase
       .from('ordens_servico')
-      .select('order_number')
-      .like('order_number', `${year}-%`)
-      .order('order_number', { ascending: false })
+      .select('numero_os')
+      .like('numero_os', `OS-${year}-%`)
+      .order('numero_os', { ascending: false })
       .limit(1)
-    
+
     if (error) throw error
-    
+
     let nextNumber = 1
     if (data && data.length > 0) {
-      const lastNumber = data[0].order_number
-      const parts = lastNumber.split('-')
-      if (parts.length === 2) {
-        nextNumber = parseInt(parts[1], 10) + 1
+      const lastNum = data[0].numero_os
+      const match = lastNum.match(/(\d+)$/)
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1
       }
     }
-    
-    return `${year}-${nextNumber.toString().padStart(5, '0')}`
+
+    return `OS-${year}-${nextNumber.toString().padStart(3, '0')}`
   }
 
   const handleSelectResult = async (result: SearchResult) => {
@@ -197,21 +197,28 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     setIsCreating(true)
     try {
       const orderNumber = await generateOrderNumber()
-      
-      // Create the service order
+
+      // Buscar nome do cliente e dados do veículo para desnormalizar
+      const clientData = clients.find(c => c.id === clientId)
+      const vehicleData = vehicles.find(v => v.id === vehicleId)
+      const vehicleDesc = vehicleData ? `${vehicleData.brand} ${vehicleData.model}` : ''
+
+      // Create the service order (dados desnormalizados)
       const { data, error } = await supabase
         .from('ordens_servico')
         .insert({
-          order_number: orderNumber,
-          client_id: clientId,
-          vehicle_id: vehicleId,
+          numero_os: orderNumber,
+          client_name: clientData?.name || '',
+          client_phone: clientData?.phone || null,
+          plate: vehicleData?.plate || '',
+          vehicle: vehicleDesc,
           status: 'orcamento',
-        })
+        } as any)
         .select('id')
         .single()
-      
+
       if (error) throw error
-      
+
       toast.success(`OS ${orderNumber} criada!`)
       
       if (onOSCreated) {
@@ -237,9 +244,9 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     try {
       // 1. Create vehicle
       const { data: vehicleData, error: vehicleError } = await supabase
-        .from('veiculos')
+        .from('vehicles')
         .insert({
-          client_id: selectedClient.id,
+          user_id: selectedClient.id,
           plate: newVehicle.plate.toUpperCase(),
           brand: newVehicle.brand,
           model: newVehicle.model,
@@ -275,16 +282,15 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
     
     setIsCreating(true)
     try {
-      // 1. Criar cliente diretamente no banco
+      // 1. Criar cliente na tabela clients
       const { data: clientData, error: clientError } = await supabase
-        .from('clientes')
+        .from('clients')
         .insert({
-          name: newClient.name.trim(),
-          phone: newClient.phone.replace(/\D/g, ''),
+          nome: newClient.name.trim(),
+          telefone: newClient.phone.replace(/\D/g, ''),
           email: newClient.email?.trim() || null,
-          status: 'active',
-          registration_source: 'admin',
-          pending_review: false,
+          status: 'ativo',
+          origem_cadastro: 'oficina',
         })
         .select('id')
         .single()
@@ -292,12 +298,12 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
       if (clientError) throw new Error(`Erro ao criar cliente: ${clientError.message}`)
       const clientId = clientData.id
 
-      // 2. Criar veículo
+      // 2. Criar veículo na tabela vehicles
       const vehicleYear = newClient.vehicleYear ? Number(newClient.vehicleYear) : null
       const { data: vehicleData, error: vehicleError } = await supabase
-        .from('veiculos')
+        .from('vehicles')
         .insert({
-          client_id: clientId,
+          user_id: clientId,
           plate: newClient.vehiclePlate.trim().toUpperCase(),
           brand: newClient.vehicleBrand.trim(),
           model: newClient.vehicleModel.trim(),
@@ -309,30 +315,31 @@ export function OSSearchCreate({ onOSCreated }: OSSearchCreateProps) {
         .single()
 
       if (vehicleError) {
-        await supabase.from('clientes').delete().eq('id', clientId)
+        await (supabase as any).from('clients').delete().eq('id', clientId)
         throw new Error(`Erro ao criar veículo: ${vehicleError.message}`)
       }
       const vehicleId = vehicleData.id
 
-      // 3. Gerar número de OS não-sequencial e criar OS
-      const year = new Date().getFullYear()
-      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase()
-      const orderNumber = `${year}-${randomSuffix}`
+      // 3. Gerar número de OS e criar OS (dados desnormalizados)
+      const orderNumber = await generateOrderNumber()
+      const vehicleDesc = `${newClient.vehicleBrand.trim()} ${newClient.vehicleModel.trim()}`
 
       const { data: osData, error: osError } = await supabase
         .from('ordens_servico')
         .insert({
-          order_number: orderNumber,
-          client_id: clientId,
-          vehicle_id: vehicleId,
+          numero_os: orderNumber,
+          client_name: newClient.name.trim(),
+          client_phone: newClient.phone.replace(/\D/g, '') || null,
+          plate: newClient.vehiclePlate.trim().toUpperCase(),
+          vehicle: vehicleDesc,
           status: 'orcamento',
-        })
+        } as any)
         .select('id')
         .single()
 
       if (osError) {
-        await supabase.from('veiculos').delete().eq('id', vehicleId)
-        await supabase.from('clientes').delete().eq('id', clientId)
+        await (supabase as any).from('vehicles').delete().eq('id', vehicleId)
+        await (supabase as any).from('clients').delete().eq('id', clientId)
         throw new Error(`Erro ao criar OS: ${osError.message}`)
       }
 

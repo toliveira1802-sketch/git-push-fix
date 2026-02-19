@@ -8,7 +8,7 @@ export type BudgetTier = "premium" | "standard" | "eco";
 
 export interface OSItemData {
   id: string;
-  service_order_id: string;
+  ordem_servico_id: string;
   description: string;
   type: "peca" | "mao_de_obra";
   quantity: number;
@@ -69,32 +69,33 @@ export function useOSItems(serviceOrderId: string | undefined) {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("itens_ordem_servico")
+        .from("ordens_servico_itens" as any)
         .select("*")
-        .eq("service_order_id", serviceOrderId)
+        .eq("ordem_servico_id", serviceOrderId)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
 
-      // Map database fields to our interface
-      const mappedItems: OSItemData[] = (data || []).map((item) => ({
+      // Map database fields (PT) to our interface (EN)
+      // DB cols: descricao, tipo, quantidade, valor_unitario, valor_total, status, prioridade, motivo_recusa, valor_custo, valor_venda_sugerido, margem_aplicada, justificativa_desconto, data_retorno_estimada
+      const mappedItems: OSItemData[] = (data || []).map((item: any) => ({
         id: item.id,
-        service_order_id: item.service_order_id,
-        description: item.description,
-        type: item.type as "peca" | "mao_de_obra",
-        quantity: Number(item.quantity) || 1,
-        cost_price: Number((item as any).cost_price) || 0,
-        suggested_price: (item as any).suggested_price ? Number((item as any).suggested_price) : null,
-        unit_price: Number(item.unit_price),
-        total_price: Number(item.total_price),
-        margin_percent: Number((item as any).margin_percent) || DEFAULT_MARGIN,
+        ordem_servico_id: item.ordem_servico_id,
+        description: item.descricao || item.description || '',
+        type: (item.tipo || item.type || 'servico') as "peca" | "mao_de_obra",
+        quantity: Number(item.quantidade || item.quantity) || 1,
+        cost_price: Number(item.valor_custo || item.cost_price) || 0,
+        suggested_price: item.valor_venda_sugerido ? Number(item.valor_venda_sugerido) : null,
+        unit_price: Number(item.valor_unitario || item.unit_price) || 0,
+        total_price: Number(item.valor_total || item.total_price) || 0,
+        margin_percent: Number(item.margem_aplicada || item.margin_percent) || DEFAULT_MARGIN,
         status: (item.status as ItemStatus) || "pendente",
-        priority: (item.priority as PrioridadeType) || "amarelo",
-        notes: item.notes,
-        refusal_reason: (item as any).refusal_reason || null,
-        discount_justification: (item as any).discount_justification || null,
-        estimated_return_date: (item as any).estimated_return_date || null,
-        budget_tier: ((item as any).budget_tier as BudgetTier) || "standard",
+        priority: (item.prioridade || item.priority || "amarelo") as PrioridadeType,
+        notes: item.notes || null,
+        refusal_reason: item.motivo_recusa || item.refusal_reason || null,
+        discount_justification: item.justificativa_desconto || item.discount_justification || null,
+        estimated_return_date: item.data_retorno_estimada || item.estimated_return_date || null,
+        budget_tier: ((item.budget_tier || "standard") as BudgetTier),
         created_at: item.created_at,
       }));
 
@@ -121,21 +122,19 @@ export function useOSItems(serviceOrderId: string | undefined) {
       const suggestedPrice = calculateSuggestedPrice(input.cost_price, margin);
       const totalPrice = input.unit_price * input.quantity;
 
-      const { error } = await supabase.from("itens_ordem_servico").insert({
-        service_order_id: serviceOrderId,
-        description: input.description,
-        type: input.type,
-        quantity: input.quantity,
-        unit_price: input.unit_price,
-        total_price: totalPrice,
-        priority: input.priority,
+      const { error } = await supabase.from("ordens_servico_itens" as any).insert({
+        ordem_servico_id: serviceOrderId,
+        descricao: input.description,
+        tipo: input.type === "peca" ? "peca" : "servico",
+        quantidade: input.quantity,
+        valor_unitario: input.unit_price,
+        valor_total: totalPrice,
+        prioridade: input.priority,
         status: "pendente",
-        notes: input.notes || null,
-        cost_price: input.cost_price,
-        suggested_price: suggestedPrice,
-        margin_percent: calculateMargin(input.cost_price, input.unit_price),
-        discount_justification: input.discount_justification || null,
-        budget_tier: input.budget_tier || "standard",
+        valor_custo: input.cost_price,
+        valor_venda_sugerido: suggestedPrice,
+        margem_aplicada: calculateMargin(input.cost_price, input.unit_price),
+        justificativa_desconto: input.discount_justification || null,
       });
 
       if (error) throw error;
@@ -156,7 +155,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
   // Update item
   const updateItem = async (
     itemId: string,
-    updates: Partial<Omit<OSItemData, "id" | "service_order_id" | "created_at">>
+    updates: Partial<Omit<OSItemData, "id" | "ordem_servico_id" | "created_at">>
   ): Promise<boolean> => {
     setIsSaving(true);
     try {
@@ -168,19 +167,28 @@ export function useOSItems(serviceOrderId: string | undefined) {
       const unitPrice = updates.unit_price ?? item.unit_price;
       const costPrice = updates.cost_price ?? item.cost_price;
 
-      const updateData: any = { ...updates };
+      // Mapear EN -> PT para o banco
+      const dbUpdate: any = {};
+      if (updates.description !== undefined) dbUpdate.descricao = updates.description;
+      if (updates.quantity !== undefined) dbUpdate.quantidade = updates.quantity;
+      if (updates.unit_price !== undefined) dbUpdate.valor_unitario = updates.unit_price;
+      if (updates.cost_price !== undefined) dbUpdate.valor_custo = updates.cost_price;
+      if (updates.status !== undefined) dbUpdate.status = updates.status;
+      if (updates.priority !== undefined) dbUpdate.prioridade = updates.priority;
+      if (updates.refusal_reason !== undefined) dbUpdate.motivo_recusa = updates.refusal_reason;
+      if (updates.discount_justification !== undefined) dbUpdate.justificativa_desconto = updates.discount_justification;
 
       if (updates.quantity !== undefined || updates.unit_price !== undefined) {
-        updateData.total_price = quantity * unitPrice;
+        dbUpdate.valor_total = quantity * unitPrice;
       }
 
       if (updates.cost_price !== undefined || updates.unit_price !== undefined) {
-        updateData.margin_percent = calculateMargin(costPrice, unitPrice);
+        dbUpdate.margem_aplicada = calculateMargin(costPrice, unitPrice);
       }
 
       const { error } = await supabase
-        .from("itens_ordem_servico")
-        .update(updateData)
+        .from("ordens_servico_itens" as any)
+        .update(dbUpdate)
         .eq("id", itemId);
 
       if (error) throw error;
@@ -202,7 +210,7 @@ export function useOSItems(serviceOrderId: string | undefined) {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from("itens_ordem_servico")
+        .from("ordens_servico_itens" as any)
         .delete()
         .eq("id", itemId);
 
@@ -250,30 +258,22 @@ export function useOSItems(serviceOrderId: string | undefined) {
     try {
       // Fetch fresh items
       const { data: freshItems, error: fetchError } = await supabase
-        .from("itens_ordem_servico")
-        .select("total_price, status, type")
-        .eq("service_order_id", serviceOrderId);
+        .from("ordens_servico_itens" as any)
+        .select("valor_total, status, tipo")
+        .eq("ordem_servico_id", serviceOrderId);
 
       if (fetchError) throw fetchError;
 
-      const total = (freshItems || []).reduce((sum, i) => sum + Number(i.total_price), 0);
+      const total = (freshItems || []).reduce((sum: number, i: any) => sum + Number(i.valor_total), 0);
       const totalApproved = (freshItems || [])
-        .filter((i) => i.status === "aprovado")
-        .reduce((sum, i) => sum + Number(i.total_price), 0);
-      const totalParts = (freshItems || [])
-        .filter((i) => i.type === "peca")
-        .reduce((sum, i) => sum + Number(i.total_price), 0);
-      const totalLabor = (freshItems || [])
-        .filter((i) => i.type === "mao_de_obra")
-        .reduce((sum, i) => sum + Number(i.total_price), 0);
+        .filter((i: any) => i.status === "aprovado")
+        .reduce((sum: number, i: any) => sum + Number(i.valor_total), 0);
 
       const { error } = await supabase
         .from("ordens_servico")
         .update({
-          total,
-          total_parts: totalParts,
-          total_labor: totalLabor,
-          approved_total: totalApproved,
+          valor_orcado: total,
+          valor_aprovado: totalApproved,
         })
         .eq("id", serviceOrderId);
 
