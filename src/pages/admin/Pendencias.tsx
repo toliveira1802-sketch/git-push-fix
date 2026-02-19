@@ -41,6 +41,41 @@ const CorinthiansIcon = ({ size = 24 }: { size?: number }) => (
   </svg>
 );
 
+const MOCK_MEMBERS: TeamMember[] = [
+  {
+    id: 'mock-thales',
+    name: 'THALES',
+    symbol: 'corinthians',
+    tasks: [
+      { id: 'mt1', text: 'Verificar pastilha de freio - Civic XYZ-1234', completed: false },
+      { id: 'mt2', text: 'Trocar óleo motor - HB20 ABC-5678', completed: false },
+      { id: 'mt3', text: 'Alinhamento e balanceamento - Corolla DEF-9012', completed: true },
+      { id: 'mt4', text: 'Diagnóstico elétrico - Onix GHI-3456', completed: false },
+    ],
+  },
+  {
+    id: 'mock-pedro',
+    name: 'PEDRO',
+    symbol: 'pombo',
+    tasks: [
+      { id: 'mp1', text: 'Revisão de 50k km - Sandero JKL-7890', completed: false },
+      { id: 'mp2', text: 'Troca de correia dentada - Polo MNO-2345', completed: true },
+      { id: 'mp3', text: 'Verificar vazamento de água - Creta PQR-6789', completed: false },
+    ],
+  },
+  {
+    id: 'mock-joao',
+    name: 'JOÃO',
+    symbol: 'pombo',
+    tasks: [
+      { id: 'mj1', text: 'Retífica de motor - Uno STU-0123', completed: false },
+      { id: 'mj2', text: 'Substituição de amortecedor - Tracker VWX-4567', completed: false },
+      { id: 'mj3', text: 'Limpeza de bico injetor - Gol YZA-8901', completed: true },
+      { id: 'mj4', text: 'Troca de embreagem - Compass BCD-2345', completed: false },
+    ],
+  },
+];
+
 export default function Pendencias() {
   const navigate = useNavigate();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -62,7 +97,7 @@ export default function Pendencias() {
         .select('id, titulo, status, mechanic_id')
         .order('created_at', { ascending: false });
 
-      if (mechanics) {
+      if (mechanics && mechanics.length > 0) {
         const members: TeamMember[] = (mechanics as any[]).map((m: any, index) => ({
           id: m.id,
           name: m.name.toUpperCase(),
@@ -76,6 +111,9 @@ export default function Pendencias() {
             }))
         }));
         setTeamMembers(members);
+      } else {
+        // Fallback to mock data when no mechanics are registered
+        setTeamMembers(MOCK_MEMBERS);
       }
       setLoading(false);
     };
