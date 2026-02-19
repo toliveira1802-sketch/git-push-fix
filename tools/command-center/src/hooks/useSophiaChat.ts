@@ -29,7 +29,8 @@ type ConnectionMode = 'http' | 'claude' | 'supabase' | 'checking' | 'offline';
 const SOPHIA_API_URL = import.meta.env.VITE_SOPHIA_API_URL || '';
 
 // Fallback: Claude API direto (quando nao tem VPS)
-const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
+// Key injetada via VITE_ANTHROPIC_API_KEY ou runtime env no docker (window.__ANTHROPIC_API_KEY__)
+const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || (window as any).__ANTHROPIC_API_KEY__ || '';
 const CLAUDE_DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 
 // Modelos Claude ativos (descontinuados sao rejeitados)
